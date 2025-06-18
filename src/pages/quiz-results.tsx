@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ANIMAL_TYPES } from "@/lib/animals";
 import { getPreferenceDescription, getSchoolImplication } from "@/lib/scoring";
+import { api } from "@/config/api";
 
 interface QuizResult {
   id?: number;
@@ -47,14 +48,17 @@ export default function QuizResults() {
   const { data: submissionData, isLoading, error } = useQuery({
     queryKey: [`/api/submissions/${submissionId}`],
     queryFn: async () => {
-      const token = localStorage.getItem("authToken");
-      const response = await fetch(`/api/submissions/${submissionId}`, {
+      const response = await fetch(api(`/api/submissions/${submissionId}`), {
+        method: 'GET',
         headers: {
-          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
+      
       if (!response.ok) {
-        throw new Error("Failed to fetch submission data");
+        const errorData = await response.json().catch(() => ({ message: 'Failed to fetch submission data' }));
+        throw new Error(errorData.message || 'Failed to fetch submission data');
       }
       return response.json();
     },
@@ -85,8 +89,29 @@ export default function QuizResults() {
         learningStyle: submissionData.learningStyle,
         learningScores: submissionData.learningScores,
       });
+    } else if (!isLoading && error) {
+      // If we can't fetch from API, try sessionStorage as fallback
+      const savedResults = sessionStorage.getItem('quizResults');
+      if (savedResults) {
+        const parsedResults = JSON.parse(savedResults);
+        setResult({
+          id: parsedResults.id,
+          studentName: parsedResults.studentName,
+          gradeLevel: parsedResults.gradeLevel || "",
+          personalityType: parsedResults.personalityType,
+          animal: parsedResults.animalType,
+          passportCode: parsedResults.passportCode,
+          currencyBalance: parsedResults.currencyBalance || 50,
+          scores: parsedResults.scores,
+          preferences: calculatePreferences(parsedResults.scores),
+          learningStyle: parsedResults.learningStyle,
+          learningScores: parsedResults.learningScores,
+        });
+        // Clear the session storage after using it
+        sessionStorage.removeItem('quizResults');
+      }
     }
-  }, [submissionData, isDemo, setLocation]);
+  }, [submissionData, isDemo, setLocation, isLoading, error]);
 
   const calculatePreferences = (scores: any) => {
     const getStrength = (diff: number): string => {

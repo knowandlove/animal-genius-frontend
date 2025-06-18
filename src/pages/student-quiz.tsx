@@ -147,6 +147,8 @@ export default function StudentQuiz() {
       return apiRequest('POST', '/api/quiz-submissions', submissionData);
     },
     onSuccess: (data) => {
+      console.log('Quiz submission response:', data);
+      
       // Invalidate relevant caches so teachers see new results immediately
       queryClient.invalidateQueries({ queryKey: ["/api/classes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/submissions"] });
@@ -157,16 +159,58 @@ export default function StudentQuiz() {
         localStorage.removeItem(`quiz-state-${classCode}`);
       }
       
+      // Store quiz results for display on next page
+      const quizResultsData = {
+        studentName: `${firstName} ${lastInitial}.`,
+        gradeLevel,
+        animalType: results?.animal || '',
+        personalityType: results?.mbtiType || '',
+        scores: results?.scores,
+        learningStyle: results?.learningStyle,
+        learningScores: results?.learningScores,
+        ...data // Include any data from server response
+      };
+      
       toast({
-        title: "Quiz completed!",
+        title: "Quiz completed! 🎉",
         description: "Your results have been saved successfully.",
       });
 
-      // Redirect to results page with the submission ID
-      if (data && data.id) {
+      // Check response for passport code or ID
+      if (data && data.passportCode) {
+        console.log('Received passport code:', data.passportCode);
+        
+        // Store results for the island welcome page
+        sessionStorage.setItem('quizResults', JSON.stringify(quizResultsData));
+        
+        // Show success message with passport code
+        toast({
+          title: "Your Passport Code",
+          description: `${data.passportCode} - Save this to visit your island anytime!`,
+        });
+        
+        // Redirect to island after a short delay
+        setTimeout(() => {
+          setLocation(`/island/${data.passportCode}`);
+        }, 2000);
+      } else if (data && data.id) {
+        // If we only have an ID, try the results page
+        console.log('No passport code in response, trying results page with ID:', data.id);
+        
+        // Store results for the results page
+        sessionStorage.setItem('quizResults', JSON.stringify(quizResultsData));
+        
         setTimeout(() => {
           setLocation(`/results/${data.id}`);
-        }, 1000); // Small delay to show the success message
+        }, 1500);
+      } else {
+        // If no passport code or ID, show error but keep user on completion screen
+        console.error('Incomplete response from server:', data);
+        toast({
+          title: "⚠️ Important",
+          description: "Your results were saved, but no passport code was generated. Please ask your teacher for your passport code to access your island.",
+          variant: "destructive",
+        });
       }
     },
     onError: (error: Error) => {
@@ -344,6 +388,7 @@ export default function StudentQuiz() {
       learningScores: results?.learningScores || { visual: 0, auditory: 0, kinesthetic: 0, readingWriting: 0 },
     };
 
+    console.log('Submitting quiz data:', submissionData);
     setHasSubmitted(true);
     submitResultsMutation.mutate(submissionData);
   };
@@ -473,6 +518,15 @@ export default function StudentQuiz() {
       emoji: '🐾'
     };
     
+    // Check if we have submission data from a successful save
+    const [submissionData, setSubmissionData] = useState<any>(null);
+    
+    useEffect(() => {
+      if (submitResultsMutation.isSuccess && submitResultsMutation.data) {
+        setSubmissionData(submitResultsMutation.data);
+      }
+    }, [submitResultsMutation.isSuccess, submitResultsMutation.data]);
+    
     return (
       <div className="max-w-4xl mx-auto p-6 min-h-screen" style={{
         background: 'linear-gradient(135deg, #d3f2ed 0%, #e8f7f3 40%, #f0faf7 100%)'
@@ -498,6 +552,25 @@ export default function StudentQuiz() {
             <h1 className="text-4xl font-heading text-foreground mb-2">You're a {results.animal}!</h1>
             <p className="text-xl font-body text-muted-foreground mb-4">{animal.traits}</p>
             <p className="text-lg font-body mb-6">{animal.description}</p>
+            
+            {/* Show passport code if already received */}
+            {submissionData?.passportCode && (
+              <div className="bg-green-100 border-2 border-green-300 rounded-lg p-4 mb-6">
+                <h3 className="font-semibold text-green-800 mb-2">Your Island Passport Code:</h3>
+                <div className="text-3xl font-mono font-bold text-green-900">
+                  {submissionData.passportCode}
+                </div>
+                <p className="text-sm text-green-700 mt-2">
+                  Save this code! You'll need it to visit your island.
+                </p>
+                <Button 
+                  onClick={() => setLocation(`/island/${submissionData.passportCode}`)}
+                  className="mt-3 bg-green-600 hover:bg-green-700"
+                >
+                  🏝️ Visit Your Island Now
+                </Button>
+              </div>
+            )}
             
             <div className="bg-muted rounded-lg p-4 mb-6">
               <h3 className="font-subheading text-foreground mb-2">Your Personality Type: {results.mbtiType}</h3>
