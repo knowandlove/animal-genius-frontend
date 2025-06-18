@@ -192,22 +192,23 @@ export default function StudentQuiz() {
         toast({
           title: "Your Passport Code",
           description: `${data.passportCode} - Save this to visit your island anytime!`,
+          duration: 10000, // Show for 10 seconds
         });
         
-        // Redirect to island after a short delay
-        setTimeout(() => {
-          setLocation(`/island/${data.passportCode}`);
-        }, 2000);
+        // No auto-redirect - let them read their results!
       } else if (data && data.id) {
-        // If we only have an ID, try the results page
-        console.log('No passport code in response, trying results page with ID:', data.id);
+        // If we only have an ID, show a message
+        console.log('No passport code in response, but got ID:', data.id);
         
-        // Store results for the results page
+        // Store results for potential future use
         sessionStorage.setItem('quizResults', JSON.stringify(quizResultsData));
         
-        setTimeout(() => {
-          setLocation(`/results/${data.id}`);
-        }, 1500);
+        // Show message to ask teacher
+        toast({
+          title: "Results Saved!",
+          description: "Ask your teacher for your passport code to visit your island.",
+          duration: 10000,
+        });
       } else {
         // If no passport code or ID, show error but keep user on completion screen
         console.error('Incomplete response from server:', data);
