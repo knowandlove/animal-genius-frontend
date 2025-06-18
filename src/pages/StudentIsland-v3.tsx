@@ -25,6 +25,8 @@ import { useIslandStore } from "@/stores/islandStore";
 import IslandRoom from "@/components/island/IslandRoom-v2";
 import IslandInventory from "@/components/island/IslandInventory-v2";
 import DragDropContext from "@/components/island/drag-drop/DragDropContext";
+import WelcomeAnimation from "@/components/island/WelcomeAnimation";
+import { AnimatePresence } from "framer-motion";
 
 export default function StudentIsland() {
   const { passportCode } = useParams();
@@ -34,6 +36,7 @@ export default function StudentIsland() {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const [purchaseMessage, setPurchaseMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   // Island store
   const { 
@@ -52,9 +55,33 @@ export default function StudentIsland() {
   // Initialize island store when data loads
   useEffect(() => {
     if (islandData) {
-      initializeFromServerData(islandData);
+      // Convert owned items to inventory format
+      const inventoryItems = [];
+      if (islandData.avatarData?.owned) {
+        islandData.avatarData.owned.forEach((itemId: string) => {
+          const item = getItemById(itemId);
+          if (item) {
+            inventoryItems.push({
+              ...item,
+              quantity: 1,
+              obtainedAt: new Date()
+            });
+          }
+        });
+      }
+      
+      initializeFromServerData({
+        ...islandData,
+        inventoryItems
+      });
+      
+      // Check if this is first visit
+      const hasBeenWelcomed = localStorage.getItem(`island-welcomed-${passportCode}`);
+      if (!hasBeenWelcomed) {
+        setShowWelcome(true);
+      }
     }
-  }, [islandData, initializeFromServerData]);
+  }, [islandData, passportCode, initializeFromServerData]);
 
   // Fetch store status
   const { data: storeStatus } = useQuery({
@@ -206,6 +233,20 @@ export default function StudentIsland() {
 
   return (
     <>
+      <AnimatePresence>
+        {showWelcome && islandData && (
+          <WelcomeAnimation
+            studentName={islandData.studentName}
+            animalType={islandData.animalType}
+            passportCode={islandData.passportCode}
+            onComplete={() => {
+              setShowWelcome(false);
+              localStorage.setItem(`island-welcomed-${passportCode}`, 'true');
+            }}
+          />
+        )}
+      </AnimatePresence>
+      
       <DragDropContext>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
         {/* Header */}
