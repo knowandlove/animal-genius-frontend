@@ -1,17 +1,26 @@
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Shirt, Home } from 'lucide-react';
 import { useIslandStore } from '@/stores/islandStore';
 
-export default function EditorControls() {
+const EditorControls = React.memo(() => {
   const inventoryMode = useIslandStore((state) => state.ui.inventoryMode);
   const setInventoryMode = useIslandStore((state) => state.setInventoryMode);
+
+  const handleAvatarClick = React.useCallback(() => {
+    setInventoryMode(inventoryMode === 'avatar' ? null : 'avatar');
+  }, [inventoryMode, setInventoryMode]);
+
+  const handleRoomClick = React.useCallback(() => {
+    setInventoryMode(inventoryMode === 'room' ? null : 'room');
+  }, [inventoryMode, setInventoryMode]);
 
   return (
     <div className="flex gap-2">
       <Button
         size="sm"
         variant={inventoryMode === 'avatar' ? 'default' : 'outline'}
-        onClick={() => setInventoryMode(inventoryMode === 'avatar' ? null : 'avatar')}
+        onClick={handleAvatarClick}
         className="flex items-center gap-2"
       >
         <Shirt className="w-4 h-4" />
@@ -20,7 +29,7 @@ export default function EditorControls() {
       <Button
         size="sm"
         variant={inventoryMode === 'room' ? 'default' : 'outline'}
-        onClick={() => setInventoryMode(inventoryMode === 'room' ? null : 'room')}
+        onClick={handleRoomClick}
         className="flex items-center gap-2"
       >
         <Home className="w-4 h-4" />
@@ -28,4 +37,8 @@ export default function EditorControls() {
       </Button>
     </div>
   );
-}
+});
+
+EditorControls.displayName = 'EditorControls';
+
+export default EditorControls;

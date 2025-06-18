@@ -1,11 +1,9 @@
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
-import LayeredAvatar from '@/components/avatar-v2/LayeredAvatar';
 import { useIslandStore } from '@/stores/islandStore';
 import { cn } from '@/lib/utils';
 
 export default function AvatarCustomizerView() {
-  const avatar = useIslandStore((state) => state.avatar);
   const inventory = useIslandStore((state) => state.inventory);
   const draftAvatar = useIslandStore((state) => state.draftAvatar);
   const updateDraftAvatar = useIslandStore((state) => state.updateDraftAvatar);
@@ -37,20 +35,11 @@ export default function AvatarCustomizerView() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Avatar Preview */}
-      <div className="flex justify-center">
-        <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl p-6">
-          <LayeredAvatar
-            animalType={avatar.type}
-            items={draftAvatar.equipped}
-            width={200}
-            height={200}
-            animated={true}
-          />
-        </div>
+    <div className="space-y-4">
+      <div className="text-sm text-muted-foreground text-center p-3 bg-purple-50 rounded-lg">
+        Click items to equip them on your avatar
       </div>
-
+      
       {/* Item Categories */}
       <div className="space-y-4">
         {(['hat', 'glasses', 'accessory'] as const).map((slot) => (
@@ -72,7 +61,7 @@ export default function AvatarCustomizerView() {
                 No {slot}s owned yet. Visit the store!
               </p>
             ) : (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {categorizedItems[slot].map((item) => (
                   <motion.button
                     key={item.id}

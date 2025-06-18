@@ -27,7 +27,7 @@ import DragDropContext from "@/components/island/drag-drop/DragDropContext";
 import WelcomeAnimation from "@/components/island/WelcomeAnimation";
 import EditorControls from "@/components/island/EditorControls";
 import UnifiedInventoryPanel from "@/components/island/UnifiedInventoryPanel";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 
 export default function StudentIsland() {
   const { passportCode } = useParams();
@@ -41,8 +41,15 @@ export default function StudentIsland() {
   // Island store
   const { 
     initializeFromServerData,
-    setAvatarEquipment
-  } = useIslandStore();
+    setAvatarEquipment,
+    inventoryMode,
+    draftAvatar
+  } = useIslandStore((state) => ({
+    initializeFromServerData: state.initializeFromServerData,
+    setAvatarEquipment: state.setAvatarEquipment,
+    inventoryMode: state.ui.inventoryMode,
+    draftAvatar: state.draftAvatar
+  }));
 
   // Fetch student island data
   const { data: islandData, isLoading, error } = useQuery({
@@ -297,18 +304,59 @@ export default function StudentIsland() {
 
         {/* Main Content */}
         <div className="container mx-auto px-4 py-8">
-          {/* Room Display */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">Your Island</CardTitle>
-                <EditorControls />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <IslandRoom />
-            </CardContent>
-          </Card>
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Room Display - scales when inventory is open */}
+            <div className={cn(
+              "transition-all duration-300",
+              inventoryMode ? "lg:col-span-2" : "lg:col-span-3"
+            )}>
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-xl">Your Island</CardTitle>
+                    <EditorControls />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {/* Show avatar preview in avatar mode, room in all other modes */}
+                  {inventoryMode === 'avatar' ? (
+                    <div className="flex items-center justify-center h-[600px] bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg">
+                      <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <LayeredAvatar
+                          animalType={island.animalType}
+                          items={draftAvatar.equipped}
+                          width={400}
+                          height={400}
+                          animated={true}
+                        />
+                      </motion.div>
+                    </div>
+                  ) : (
+                    <IslandRoom />
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Inventory Sidebar - only visible when a mode is active */}
+            <AnimatePresence>
+              {inventoryMode && (
+                <motion.div
+                  className="lg:col-span-1"
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 50 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <UnifiedInventoryPanel />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Action Buttons */}
           <div className="mt-6 flex justify-center">
@@ -328,9 +376,6 @@ export default function StudentIsland() {
             </Button>
           </div>
         </div>
-
-        {/* Unified Inventory Panel */}
-        <UnifiedInventoryPanel />
 
         {/* Store Modal */}
         <Dialog open={showStore} onOpenChange={setShowStore}>

@@ -68,7 +68,7 @@ export default function RoomDecoratorView() {
                   </Badge>
                 </h3>
                 
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {items.map((item) => (
                     <DraggableItem
                       key={item.id}
