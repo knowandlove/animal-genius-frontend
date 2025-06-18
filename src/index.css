@@ -1,0 +1,339 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Oswald:wght@200..700&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Font Loading */
+@font-face {
+  font-family: 'Selima';
+  src: url('/fonts/Selima.otf') format('opentype'),
+       url('/fonts/Selima.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Brand Color Palette from Style Guide */
+  --background: 211 39% 92%; /* Mint gradient base */
+  --foreground: 0 0% 25%; /* Dark gray for text */
+  --muted: 0 0% 95%; /* Light gray backgrounds */
+  --muted-foreground: 0 0% 50%; /* #808080 - Neutral Gray */
+  --popover: 0 0% 100%; /* Pure White */
+  --popover-foreground: 0 0% 25%; /* Dark text */
+  --card: 0 0% 100%; /* Pure White */
+  --card-foreground: 0 0% 25%; /* Dark text */
+  --border: 86 24% 85%; /* Light sage green */
+  --input: 86 24% 85%; /* Light sage green */
+  --primary: 202 25% 65%; /* #85B2C8 - Panda Blue */
+  --primary-foreground: 0 0% 100%; /* Pure White */
+  --secondary: 334 19% 60%; /* #BD85C8 - Elephant Mauve */
+  --secondary-foreground: 0 0% 100%; /* Pure White */
+  --accent: 150 30% 55%; /* #829B79 - Beaver Forest */
+  --accent-foreground: 0 0% 100%; /* Pure White */
+  --destructive: 0 60% 65%; /* Soft red, not too harsh */
+  --destructive-foreground: 0 0% 100%; /* Pure White */
+  --ring: 202 25% 65%; /* #85B2C8 - Panda Blue */
+  --radius: 0.75rem;
+  
+  /* Brand colors from style guide */
+  --panda-blue: 202 25% 65%; /* #85B2C8 */
+  --elephant-mauve: 334 19% 60%; /* #BD85C8 */
+  --sage-green: 86 24% 60%; /* #9FC9C3 */
+  --neutral-gray: 0 0% 50%; /* #808080 */
+  --owl-sage: 74 30% 70%; /* #BAC97D */
+  --otter-peach: 32 72% 72%; /* #FACC7D */
+  --meerkat-slate: 233 20% 40%; /* #4B4959 */
+  --collie-warm: 21 48% 68%; /* #DEA77E */
+  --beaver-forest: 150 30% 55%; /* #829B79 */
+  
+  /* Chart colors using brand palette */
+  --chart-1: 202 25% 65%; /* Panda Blue */
+  --chart-2: 334 19% 60%; /* Elephant Mauve */
+  --chart-3: 150 30% 55%; /* Beaver Forest */
+  --chart-4: 32 72% 72%; /* Otter Peach */
+  --chart-5: 74 30% 70%; /* Owl Sage */
+  
+  /* Gaming theme colors */
+  --game-primary: 262 83% 58%; /* Purple for gaming excitement */
+  --game-secondary: 43 96% 56%; /* Gold for achievements */
+  --game-accent: 0 84% 60%; /* Red for urgency/alerts */
+  --game-success: 160 84% 39%; /* Green for correct answers */
+  --game-bg: 222 84% 5%; /* Dark background for gaming */
+  --game-surface: 217 33% 17%; /* Dark surface */
+}
+
+.dark {
+  --background: 222 84% 5%; /* #0F172A - Slate 900 */
+  --foreground: 210 40% 98%; /* #F8FAFC - Slate 50 */
+  --muted: 217 33% 17%; /* #1E293B - Slate 800 */
+  --muted-foreground: 215 20% 65%; /* #94A3B8 - Slate 400 */
+  --popover: 222 84% 5%; /* #0F172A - Slate 900 */
+  --popover-foreground: 210 40% 98%; /* #F8FAFC - Slate 50 */
+  --card: 217 33% 17%; /* #1E293B - Slate 800 */
+  --card-foreground: 210 40% 98%; /* #F8FAFC - Slate 50 */
+  --border: 215 28% 25%; /* #334155 - Slate 700 */
+  --input: 215 28% 25%; /* #334155 - Slate 700 */
+  --primary: 217 91% 60%; /* #2563EB - Blue 600 */
+  --primary-foreground: 0 0% 100%; /* Pure White */
+  --secondary: 6 85% 70%; /* #FF6B6B - Coral */
+  --secondary-foreground: 0 0% 100%; /* Pure White */
+  --accent: 160 84% 39%; /* #10B981 - Emerald 500 */
+  --accent-foreground: 0 0% 100%; /* Pure White */
+  --destructive: 0 84% 60%; /* #EF4444 - Red 500 */
+  --destructive-foreground: 0 0% 100%; /* Pure White */
+  --ring: 217 91% 60%; /* #2563EB - Blue 600 */
+  --radius: 0.75rem;
+}
+
+/* Brand Typography Classes */
+.font-heading {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 800; /* Extra Bold */
+}
+
+.font-display {
+  font-family: 'Selima', 'Dancing Script', cursive; /* Actual Selima font with fallback */
+  font-weight: normal;
+}
+
+.font-subheading {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.font-body {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 400;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-body antialiased text-foreground;
+    background: 
+      linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 50%, #d1d5db 100%),
+      radial-gradient(circle at 20% 80%, hsl(var(--primary))/0.1 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, hsl(var(--secondary))/0.08 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, hsl(var(--accent))/0.06 0%, transparent 50%);
+    min-height: 100vh;
+  }
+  
+  /* Force background on all pages except gaming */
+  .min-h-screen:not(.game-bg) {
+    background: inherit !important;
+  }
+  
+  /* Alternative background options */
+  .bg-option-1 {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
+  }
+  
+  .bg-option-2 {
+    background: 
+      radial-gradient(circle at 20% 80%, hsl(var(--primary))/0.1 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, hsl(var(--secondary))/0.1 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, hsl(var(--accent))/0.05 0%, transparent 50%),
+      hsl(var(--background));
+  }
+  
+  .bg-option-3 {
+    background: 
+      linear-gradient(135deg, transparent 25%, hsl(var(--muted))/0.3 25%, hsl(var(--muted))/0.3 50%, transparent 50%, transparent 75%, hsl(var(--muted))/0.3 75%),
+      hsl(var(--background));
+    background-size: 60px 60px;
+  }
+  
+  .bg-option-4 {
+    background: 
+      radial-gradient(circle, hsl(var(--muted))/0.4 1px, transparent 1px);
+    background-size: 20px 20px;
+    background-color: hsl(var(--background));
+  }
+}
+
+@layer utilities {
+  .animal-gradient {
+    background: linear-gradient(135deg, #85B2C8 0%, #729BAF 100%);
+  }
+  
+  .meerkat-gradient {
+    background: linear-gradient(135deg, #4B4959 0%, #3A3742 100%);
+  }
+  
+  .panda-gradient {
+    background: linear-gradient(135deg, #85B2C8 0%, #729BAF 100%);
+  }
+  
+  .owl-gradient {
+    background: linear-gradient(135deg, #BAC97D 0%, #A8B96B 100%);
+  }
+  
+  .beaver-gradient {
+    background: linear-gradient(135deg, #829B79 0%, #718862 100%);
+  }
+  
+  .elephant-gradient {
+    background: linear-gradient(135deg, #BD85C8 0%, #A372B2 100%);
+  }
+  
+  .otter-gradient {
+    background: linear-gradient(135deg, #FACC7D 0%, #F7C167 100%);
+  }
+  
+  .parrot-gradient {
+    background: linear-gradient(135deg, #FF8070 0%, #E6675A 100%);
+  }
+  
+  .border-collie-gradient {
+    background: linear-gradient(135deg, #DEA77E 0%, #D19968 100%);
+  }
+  
+  /* Brand-focused gradients using style guide colors */
+  .game-primary {
+    background: linear-gradient(135deg, #85B2C8 0%, #BD85C8 100%);
+  }
+  
+  .game-success {
+    background: linear-gradient(135deg, #829B79 0%, #BAC97D 100%);
+  }
+  
+  .game-warning {
+    background: linear-gradient(135deg, #FACC7D 0%, #DEA77E 100%);
+  }
+  
+  .game-accent {
+    background: linear-gradient(135deg, #9FC9C3 0%, #85B2C8 100%);
+  }
+  
+  /* Gaming theme utilities - Force dark theme for game pages */
+  .game-bg {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1e293b 100%) !important;
+    position: relative;
+    min-height: 100vh;
+  }
+  
+  .game-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(147, 51, 234, 0.06) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  
+  .game-surface {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    backdrop-filter: blur(8px);
+  }
+  
+  .game-primary-btn {
+    background: linear-gradient(135deg, #7C3AED, #A855F7) !important;
+    color: white !important;
+    border: 1px solid #8B5CF6 !important;
+    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+  }
+  
+  .game-primary-btn:hover {
+    background: linear-gradient(135deg, #6D28D9, #9333EA) !important;
+    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+    transform: translateY(-1px);
+  }
+  
+  /* Force game text colors */
+  .game-text {
+    color: white !important;
+  }
+  
+  .game-text-muted {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+  
+  /* Main page background - soft mint gradient */
+  .main-bg {
+    background: linear-gradient(135deg, #d3f2ed 0%, #e8f7f3 40%, #f0faf7 100%) !important;
+    min-height: 100vh;
+  }
+  
+  /* Force background on body and root */
+  html, body {
+    background: linear-gradient(135deg, #d3f2ed 0%, #e8f7f3 40%, #f0faf7 100%) !important;
+    background-attachment: fixed !important;
+  }
+  
+  #root {
+    background: linear-gradient(135deg, #d3f2ed 0%, #e8f7f3 40%, #f0faf7 100%) !important;
+    min-height: 100vh !important;
+  }
+  
+  /* Ultra aggressive mint background override */
+  * {
+    --tw-bg-opacity: 1;
+  }
+  
+  body,
+  html,
+  #root,
+  div[class*="min-h-screen"]:not([class*="game"]) {
+    background: #d3f2ed !important;
+    background: linear-gradient(135deg, #d3f2ed 0%, #e8f7f3 40%, #f0faf7 100%) !important;
+    background-attachment: fixed !important;
+  }
+  
+  /* Specifically target known page containers */
+  .min-h-screen:not(.game-bg):not([class*="game"]) {
+    background: linear-gradient(135deg, #d3f2ed 0%, #e8f7f3 40%, #f0faf7 100%) !important;
+  }
+  
+  /* Force dark styling for game page cards */
+  .game-bg .card,
+  .game-bg [data-card],
+  .game-bg div[class*="card"] {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+  }
+  
+  /* Override any white backgrounds in game pages */
+  .game-bg * {
+    color: white !important;
+  }
+  
+  .game-bg .text-muted-foreground,
+  .game-bg .text-gray-500,
+  .game-bg .text-gray-600 {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+  
+  .game-secondary-btn {
+    background: linear-gradient(135deg, #F59E0B, #FBBF24);
+    color: #1F2937;
+    border: 1px solid #F59E0B;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+  }
+  
+  .game-secondary-btn:hover {
+    background: linear-gradient(135deg, #D97706, #F59E0B);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+    transform: translateY(-1px);
+  }
+  
+  .game-success {
+    color: hsl(var(--game-success));
+  }
+  
+  .game-accent-text {
+    color: hsl(var(--game-accent));
+  }
+}
