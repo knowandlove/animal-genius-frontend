@@ -93,21 +93,30 @@ export default function QuizResults() {
       // If we can't fetch from API, try sessionStorage as fallback
       const savedResults = sessionStorage.getItem('quizResults');
       if (savedResults) {
-        const parsedResults = JSON.parse(savedResults);
-        setResult({
-          id: parsedResults.id,
-          studentName: parsedResults.studentName,
-          gradeLevel: parsedResults.gradeLevel || "",
-          personalityType: parsedResults.personalityType,
-          animal: parsedResults.animalType,
-          passportCode: parsedResults.passportCode,
-          currencyBalance: parsedResults.currencyBalance || 50,
-          scores: parsedResults.scores,
-          preferences: calculatePreferences(parsedResults.scores),
-          learningStyle: parsedResults.learningStyle,
-          learningScores: parsedResults.learningScores,
-        });
-        // Clear the session storage after using it
+        try {
+          const parsedResults = JSON.parse(savedResults);
+          // Validate that parsedResults has expected properties
+          if (parsedResults && parsedResults.personalityType && parsedResults.scores) {
+            setResult({
+              id: parsedResults.id,
+              studentName: parsedResults.studentName,
+              gradeLevel: parsedResults.gradeLevel || "",
+              personalityType: parsedResults.personalityType,
+              animal: parsedResults.animalType,
+              passportCode: parsedResults.passportCode,
+              currencyBalance: parsedResults.currencyBalance || 50,
+              scores: parsedResults.scores,
+              preferences: calculatePreferences(parsedResults.scores),
+              learningStyle: parsedResults.learningStyle,
+              learningScores: parsedResults.learningScores,
+            });
+          } else {
+            console.error('Invalid quiz results structure in sessionStorage');
+          }
+        } catch (e) {
+          console.error('Failed to parse quiz results from sessionStorage:', e);
+        }
+        // Clear the session storage after trying to use it, even if it fails
         sessionStorage.removeItem('quizResults');
       }
     }

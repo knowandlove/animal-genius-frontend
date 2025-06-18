@@ -45,7 +45,15 @@ export default function StudentQuiz() {
   const [selectedAnswer, setSelectedAnswer] = useState<'A' | 'B' | 'C' | 'D' | null>(null);
   const [answeredQuestions, setAnsweredQuestions] = useState<number[]>([]);
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [submissionData, setSubmissionData] = useState<any>(null); // MOVED UP HERE
   const { toast } = useToast();
+  
+  // Handle submission data updates
+  useEffect(() => {
+    if (submitResultsMutation.isSuccess && submitResultsMutation.data) {
+      setSubmissionData(submitResultsMutation.data);
+    }
+  }, [submitResultsMutation.isSuccess, submitResultsMutation.data]);
 
   // Persist quiz state to localStorage to prevent data loss on accidental refresh
   useEffect(() => {
@@ -61,6 +69,8 @@ export default function StudentQuiz() {
         if (parsed.gradeLevel) setGradeLevel(parsed.gradeLevel);
         if (parsed.showStudentInfo !== undefined) setShowStudentInfo(parsed.showStudentInfo);
         if (parsed.hasSubmitted !== undefined) setHasSubmitted(parsed.hasSubmitted);
+        if (parsed.quizComplete !== undefined) setQuizComplete(parsed.quizComplete);
+        if (parsed.results) setResults(parsed.results);
         
         // Show recovery message if quiz was in progress
         if (parsed.answers && parsed.answers.length > 0) {
@@ -87,11 +97,13 @@ export default function StudentQuiz() {
         lastInitial,
         gradeLevel,
         showStudentInfo,
-        hasSubmitted
+        hasSubmitted,
+        quizComplete,
+        results
       };
       localStorage.setItem(`quiz-state-${classCode}`, JSON.stringify(state));
     }
-  }, [currentQuestion, answers, answeredQuestions, firstName, lastInitial, gradeLevel, showStudentInfo, hasSubmitted, classCode]);
+  }, [currentQuestion, answers, answeredQuestions, firstName, lastInitial, gradeLevel, showStudentInfo, hasSubmitted, quizComplete, results, classCode]);
 
   // Prevent accidental page navigation/refresh during quiz
   useEffect(() => {
@@ -507,6 +519,28 @@ export default function StudentQuiz() {
     );
   }
 
+  // Reset quiz function for better UX
+  const resetQuiz = () => {
+    setCurrentQuestion(0);
+    setAnswers([]);
+    setQuizComplete(false);
+    setResults(null);
+    setShowCelebration(false);
+    setKalMessage("Welcome back! Let's discover your amazing personality again!");
+    // Keep student info since it's likely the same student
+    setShowStudentInfo(false); // Skip info screen on retry
+    setSelectedAnswer(null);
+    setAnsweredQuestions([]);
+    setHasSubmitted(false);
+    setSubmissionData(null);
+    submitResultsMutation.reset(); // Reset mutation state
+    
+    // Clear saved quiz state
+    if (classCode) {
+      localStorage.removeItem(`quiz-state-${classCode}`);
+    }
+  };
+
   // Show results page
   if (quizComplete && results) {
     // Map correct animal emojis for your 8 animals
@@ -517,15 +551,6 @@ export default function StudentQuiz() {
       traits: [],
       emoji: '🐾'
     };
-    
-    // Check if we have submission data from a successful save
-    const [submissionData, setSubmissionData] = useState<any>(null);
-    
-    useEffect(() => {
-      if (submitResultsMutation.isSuccess && submitResultsMutation.data) {
-        setSubmissionData(submitResultsMutation.data);
-      }
-    }, [submitResultsMutation.isSuccess, submitResultsMutation.data]);
     
     return (
       <div className="max-w-4xl mx-auto p-6 min-h-screen" style={{
@@ -602,7 +627,7 @@ export default function StudentQuiz() {
               >
                 {submitResultsMutation.isPending ? 'Saving...' : hasSubmitted ? 'Results Saved' : 'Save My Results'}
               </Button>
-              <Button variant="outline" onClick={() => window.location.reload()}>
+              <Button variant="outline" onClick={resetQuiz}>
                 Take Quiz Again
               </Button>
             </div>

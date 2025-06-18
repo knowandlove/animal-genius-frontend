@@ -10,7 +10,9 @@ export class GameWebSocket {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private isAuthenticated = false;
+  private isAuthenticating = false;
   private pendingAuth: { gameCode: string; playerName: string } | null = null;
+  private messageQueue: Array<{ type: string; data: any }> = [];
 
   constructor() {
     // Use the WebSocket URL from config
@@ -49,9 +51,21 @@ export class GameWebSocket {
             // Mark as authenticated when we successfully join a game
             if (message.type === 'joined-game') {
               this.isAuthenticated = true;
+              this.isAuthenticating = false;
               this.pendingAuth = null;
               if (process.env.NODE_ENV === 'development') {
                 console.log('🔐 WebSocket authenticated successfully');
+              }
+              
+              // Process any queued messages
+              while (this.messageQueue.length > 0) {
+                const queuedMessage = this.messageQueue.shift();
+                if (queuedMessage) {
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log('📤 Sending queued message:', queuedMessage.type);
+                  }
+                  this.send(queuedMessage.type, queuedMessage.data);
+                }
               }
             }
             
@@ -86,6 +100,7 @@ export class GameWebSocket {
             console.log('WebSocket disconnected, code:', event.code, 'reason:', event.reason);
           }
           this.isAuthenticated = false;
+          this.isAuthenticating = false;
           this.emit('disconnected', {});
           
           // Only attempt reconnect if it wasn't a deliberate close
@@ -146,6 +161,9 @@ export class GameWebSocket {
     }
 
     this.messageHandlers.clear();
+    this.messageQueue = []; // Clear any queued messages
+    this.isAuthenticated = false;
+    this.isAuthenticating = false;
   }
 
   send(type: string, data: any): boolean {
@@ -157,15 +175,36 @@ export class GameWebSocket {
       return false;
     }
 
-    // For critical game actions, ensure we're authenticated
-    if (type === 'submit-answer' && !this.isAuthenticated) {
+    // Queue any non-auth message if not authenticated
+    if (!this.isAuthenticated && type !== 'join-game') {
       if (process.env.NODE_ENV === 'development') {
-        console.error('📤 Cannot submit answer - not authenticated');
+        console.warn(`📤 Cannot send message type '${type}' - not authenticated. Queuing message.`);
       }
       
+      // Queue the message to be sent after authentication
+      this.messageQueue.push({ type, data });
+      
       // Try to re-authenticate if we have pending auth data
-      if (this.pendingAuth) {
-        this.send('join-game', this.pendingAuth);
+      if (this.pendingAuth && !this.isAuthenticating) {
+        // Only set isAuthenticating if the join-game message is successfully sent
+        const authAttempted = this.send('join-game', this.pendingAuth);
+        if (authAttempted) {
+          this.isAuthenticating = true;
+          
+          // Add a timeout to prevent getting stuck in an authenticating state
+          setTimeout(() => {
+            if (this.isAuthenticating) {
+              if (process.env.NODE_ENV === 'development') {
+                console.warn('Authentication timed out. Resetting auth flag.');
+              }
+              this.isAuthenticating = false;
+            }
+          }, 10000); // 10-second timeout
+        } else {
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Failed to initiate join-game message, not setting isAuthenticating flag.');
+          }
+        }
       }
       return false;
     }
