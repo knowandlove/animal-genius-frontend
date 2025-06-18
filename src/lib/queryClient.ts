@@ -39,6 +39,7 @@ async function throwIfResNotOk(res: Response, originalUrl?: string, originalOpti
       // Check if this is a student endpoint that shouldn't require auth
       const isStudentEndpoint = originalUrl && (
         originalUrl.includes('/api/island/') ||
+        originalUrl.includes('/api/island-page-data/') ||
         originalUrl.includes('/api/store/catalog')
       );
       
@@ -95,7 +96,12 @@ export async function apiRequest(
   // Check if this is a student endpoint that shouldn't require auth
   const isStudentEndpoint = 
     url.includes('/api/island/') ||
+    url.includes('/api/island-page-data/') ||
     url.includes('/api/store/catalog');
+  
+  console.log('[AUTH DEBUG] Request to:', url);
+  console.log('[AUTH DEBUG] Is student endpoint:', isStudentEndpoint);
+  console.log('[AUTH DEBUG] Has token:', !!token);
   
   const headers: Record<string, string> = {};
   if (data) {
@@ -105,6 +111,9 @@ export async function apiRequest(
   // Only add auth header if we have a token AND it's not a student endpoint
   if (token && !isStudentEndpoint) {
     headers["Authorization"] = `Bearer ${token}`;
+    console.log('[AUTH DEBUG] Adding auth header');
+  } else {
+    console.log('[AUTH DEBUG] NOT adding auth header');
   }
 
   const requestOptions = {
@@ -136,9 +145,18 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     const token = localStorage.getItem("authToken");
+    const url = queryKey[0] as string;
+    
+    // Check if this is a student endpoint that shouldn't require auth
+    const isStudentEndpoint = 
+      url.includes('/api/island/') ||
+      url.includes('/api/island-page-data/') ||
+      url.includes('/api/store/catalog');
+    
     const headers: Record<string, string> = {};
     
-    if (token) {
+    // Only add auth header if we have a token AND it's not a student endpoint
+    if (token && !isStudentEndpoint) {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
@@ -147,13 +165,13 @@ export const getQueryFn: <T>(options: {
       credentials: "include" as RequestCredentials,
     };
 
-    const res = await fetch(api(queryKey[0] as string), requestOptions);
+    const res = await fetch(api(url), requestOptions);
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;
     }
 
-    const retryResponse = await throwIfResNotOk(res, api(queryKey[0] as string), requestOptions);
+    const retryResponse = await throwIfResNotOk(res, api(url), requestOptions);
     const finalResponse = retryResponse || res;
     return await finalResponse.json();
   };
