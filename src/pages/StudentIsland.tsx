@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
-import { Coins, Home, ShoppingBag, Package, Sparkles, X, Save, Wand2 } from "lucide-react";
+import { Coins, Home, ShoppingBag, Package, Sparkles, X, Save, Wand2, Clock, CheckCircle, XCircle, RefreshCw } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { StudentIsland, StoreItem, PurchaseStatus } from "@shared/currency-types";
 import type { PurchaseRequest } from "@shared/schema";
@@ -40,6 +40,11 @@ interface StoreStatus {
 // Interface for consolidated page data
 interface IslandPageData {
   island: StudentIsland;
+  wallet?: {
+    total: number;
+    pending: number;
+    available: number;
+  };
   storeStatus: StoreStatus;
   storeCatalog: StoreItem[];
   purchaseRequests: PurchaseRequest[];
@@ -50,6 +55,7 @@ export default function StudentIsland() {
   const queryClient = useQueryClient();
   const [showInventory, setShowInventory] = useState(false);
   const [showStore, setShowStore] = useState(false);
+  const [showOrders, setShowOrders] = useState(false);
   const [selectedItem, setSelectedItem] = useState<StoreItem | null>(null);
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const [purchaseMessage, setPurchaseMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -274,12 +280,23 @@ export default function StudentIsland() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 bg-yellow-100 rounded-full px-4 py-2">
-                <Coins className="w-5 h-5 text-yellow-600" />
-                <span className="font-bold text-lg">{islandData.currencyBalance}</span>
-                {totalPendingCost > 0 && (
-                  <span className="text-xs text-gray-600">({availableBalance} available)</span>
-                )}
+              <div className="flex flex-col items-end">
+                <div className="flex items-center gap-2 bg-yellow-100 rounded-lg px-4 py-2">
+                  <Coins className="w-5 h-5 text-yellow-600" />
+                  <div className="text-right">
+                    <div className="font-bold text-lg">
+                      {pageData?.wallet ? pageData.wallet.available : availableBalance} coins
+                    </div>
+                    {(pageData?.wallet?.pending || totalPendingCost) > 0 && (
+                      <div className="text-xs text-gray-600">
+                        {pageData?.wallet?.pending || totalPendingCost} pending
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Available to spend
+                </div>
               </div>
             </div>
           </CardContent>
@@ -342,7 +359,20 @@ export default function StudentIsland() {
         {/* Action Buttons */}
         <Card>
           <CardContent className="p-6">
-            <div className="flex justify-center gap-4">
+            <div className="flex flex-wrap justify-center gap-4">
+              <Button
+                size="lg"
+                onClick={() => setShowOrders(true)}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+              >
+                <ShoppingBag className="w-5 h-5" />
+                My Orders
+                {purchaseRequests && purchaseRequests.filter(r => r.status === 'pending').length > 0 && (
+                  <Badge variant="secondary" className="ml-1 bg-yellow-400 text-yellow-900">
+                    {purchaseRequests.filter(r => r.status === 'pending').length}
+                  </Badge>
+                )}
+              </Button>
               <Button
                 size="lg"
                 onClick={() => setShowInventory(true)}
@@ -551,6 +581,99 @@ export default function StudentIsland() {
               </TabsContent>
             </Tabs>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* My Orders Modal */}
+      <Dialog open={showOrders} onOpenChange={setShowOrders}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-2xl">My Orders</DialogTitle>
+                <DialogDescription>
+                  Track your purchase requests and see what's been approved
+                </DialogDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => queryClient.invalidateQueries({ queryKey: [`/api/island-page-data/${passportCode}`] })}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Refresh
+              </Button>
+            </div>
+          </DialogHeader>
+          
+          <div className="overflow-y-auto max-h-[60vh] space-y-3 mt-4">
+            {purchaseRequests && purchaseRequests.length > 0 ? (
+              <>
+                <div className="text-sm text-muted-foreground text-center pb-2 border-b">
+                  Your requests are sent to your teacher for approval. Please check back later for updates.
+                </div>
+                {purchaseRequests.map((request) => {
+                  const item = getItemById(request.itemId);
+                  return (
+                    <Card key={request.id} className={cn(
+                      "p-4",
+                      request.status === 'approved' && "border-green-200 bg-green-50",
+                      request.status === 'denied' && "border-red-200 bg-red-50",
+                      request.status === 'pending' && "border-yellow-200 bg-yellow-50"
+                    )}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "w-10 h-10 rounded-full flex items-center justify-center",
+                            request.status === 'approved' && "bg-green-200",
+                            request.status === 'denied' && "bg-red-200",
+                            request.status === 'pending' && "bg-yellow-200"
+                          )}>
+                            {request.status === 'approved' && <CheckCircle className="w-5 h-5 text-green-600" />}
+                            {request.status === 'denied' && <XCircle className="w-5 h-5 text-red-600" />}
+                            {request.status === 'pending' && <Clock className="w-5 h-5 text-yellow-600" />}
+                          </div>
+                          <div>
+                            <h4 className="font-semibold">{item?.name || 'Unknown Item'}</h4>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant={request.status === 'approved' ? 'default' : request.status === 'denied' ? 'destructive' : 'secondary'}>
+                                {request.status === 'approved' && 'Approved'}
+                                {request.status === 'denied' && 'Denied'}
+                                {request.status === 'pending' && 'Pending'}
+                              </Badge>
+                              <p className="text-sm text-muted-foreground">
+                                {request.status === 'pending' && 'Waiting for teacher'}
+                                {request.status === 'approved' && 'Check your inventory!'}
+                                {request.status === 'denied' && 'Request was denied'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="flex items-center gap-1 text-sm">
+                            <Coins className="w-4 h-4 text-yellow-600" />
+                            <span className="font-semibold">{request.cost}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {new Date(request.requestedAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <ShoppingBag className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                <p className="text-lg text-muted-foreground">No orders yet!</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Visit the store to buy cool items for your island
+                </p>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
