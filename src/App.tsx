@@ -28,7 +28,7 @@ const NotFound = lazy(() => import("@/pages/not-found"));
 const GameJoin = lazy(() => import("@/pages/game-join"));
 const GameLobby = lazy(() => import("@/pages/game-lobby"));
 const GamePlay = lazy(() => import("@/pages/game-play"));
-const StudentIsland = lazy(() => import("@/pages/StudentIsland"));
+const StudentIsland = lazy(() => import("@/pages/StudentIsland-v3"));
 const GameCreate = lazy(() => import("@/pages/teacher/game-create"));
 const TeacherGameDashboard = lazy(() => import("@/pages/teacher/game-dashboard"));
 const ColorPreview = lazy(() => import("@/pages/color-preview"));
