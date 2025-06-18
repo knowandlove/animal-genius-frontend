@@ -39,17 +39,10 @@ export default function StudentIsland() {
   const [showWelcome, setShowWelcome] = useState(false);
 
   // Island store
-  const { 
-    initializeFromServerData,
-    setAvatarEquipment,
-    inventoryMode,
-    draftAvatar
-  } = useIslandStore((state) => ({
-    initializeFromServerData: state.initializeFromServerData,
-    setAvatarEquipment: state.setAvatarEquipment,
-    inventoryMode: state.ui.inventoryMode,
-    draftAvatar: state.draftAvatar
-  }));
+  const initializeFromServerData = useIslandStore((state) => state.initializeFromServerData);
+  const setAvatarEquipment = useIslandStore((state) => state.setAvatarEquipment);
+  const inventoryMode = useIslandStore((state) => state.ui.inventoryMode);
+  const draftAvatar = useIslandStore((state) => state.draftAvatar);
 
   // Fetch student island data
   const { data: islandData, isLoading, error } = useQuery({
