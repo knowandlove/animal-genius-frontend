@@ -90,10 +90,13 @@ export default function StudentIsland() {
   useEffect(() => {
     if (islandData && passportCode) {
       // Build inventory from owned items
+      console.log('[DEBUG] avatarData.owned:', islandData.avatarData?.owned);
       const inventoryItems = islandData.avatarData?.owned?.map((itemId: string) => {
         const item = getItemById(itemId);
+        console.log('[DEBUG] Processing itemId:', itemId, 'Found item:', item);
         return item ? { ...item, quantity: 1 } : null;
       }).filter(Boolean) || [];
+      console.log('[DEBUG] Final inventoryItems:', inventoryItems);
       
       initializeFromServerData({
         ...islandData,
