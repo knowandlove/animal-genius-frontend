@@ -36,8 +36,14 @@ async function throwIfResNotOk(res: Response, originalUrl?: string, originalOpti
       const jsonResponse = await res.json();
       errorMessage = jsonResponse.message || res.statusText;
       
-      // Handle token expiration by attempting refresh
-      if ((res.status === 401 || res.status === 403) && errorMessage.includes("token")) {
+      // Check if this is a student endpoint that shouldn't require auth
+      const isStudentEndpoint = originalUrl && (
+        originalUrl.includes('/api/island/') ||
+        originalUrl.includes('/api/store/catalog')
+      );
+      
+      // Handle token expiration by attempting refresh (but not for student endpoints)
+      if ((res.status === 401 || res.status === 403) && errorMessage.includes("token") && !isStudentEndpoint) {
         const newToken = await refreshAuthToken();
         
         if (newToken && originalUrl) {
@@ -86,11 +92,18 @@ export async function apiRequest(
 ): Promise<any> {
   const token = localStorage.getItem("authToken");
   
+  // Check if this is a student endpoint that shouldn't require auth
+  const isStudentEndpoint = 
+    url.includes('/api/island/') ||
+    url.includes('/api/store/catalog');
+  
   const headers: Record<string, string> = {};
   if (data) {
     headers["Content-Type"] = "application/json";
   }
-  if (token) {
+  
+  // Only add auth header if we have a token AND it's not a student endpoint
+  if (token && !isStudentEndpoint) {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
