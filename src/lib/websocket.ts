@@ -1,5 +1,6 @@
 // WebSocket connection helper for the game system
 import { WSMessage } from '@shared/game-types';
+import { ws } from '@/config/api';
 
 export class GameWebSocket {
   private ws: WebSocket | null = null;
@@ -12,12 +13,8 @@ export class GameWebSocket {
   private pendingAuth: { gameCode: string; playerName: string } | null = null;
 
   constructor() {
-    // Determine WebSocket URL based on environment
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    
-    // WebSocket runs on same port as HTTP server (8080 in this case)
-    this.connectionUrl = `${protocol}//${host}/ws/game`;
+    // Use the WebSocket URL from config
+    this.connectionUrl = ws('/ws/game');
   }
 
   connect(): Promise<void> {
