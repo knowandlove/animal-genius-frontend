@@ -45,15 +45,8 @@ export default function StudentQuiz() {
   const [selectedAnswer, setSelectedAnswer] = useState<'A' | 'B' | 'C' | 'D' | null>(null);
   const [answeredQuestions, setAnsweredQuestions] = useState<number[]>([]);
   const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [submissionData, setSubmissionData] = useState<any>(null); // MOVED UP HERE
+  const [submissionData, setSubmissionData] = useState<any>(null);
   const { toast } = useToast();
-  
-  // Handle submission data updates
-  useEffect(() => {
-    if (submitResultsMutation.isSuccess && submitResultsMutation.data) {
-      setSubmissionData(submitResultsMutation.data);
-    }
-  }, [submitResultsMutation.isSuccess, submitResultsMutation.data]);
 
   // Persist quiz state to localStorage to prevent data loss on accidental refresh
   useEffect(() => {
@@ -234,6 +227,13 @@ export default function StudentQuiz() {
       console.error('Submit error:', error);
     },
   });
+
+  // Handle submission data updates
+  useEffect(() => {
+    if (submitResultsMutation.isSuccess && submitResultsMutation.data) {
+      setSubmissionData(submitResultsMutation.data);
+    }
+  }, [submitResultsMutation.isSuccess, submitResultsMutation.data]);
 
   // Milestone celebrations
   useEffect(() => {
