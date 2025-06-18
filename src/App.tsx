@@ -36,6 +36,7 @@ const ClassEconomy = lazy(() => import("@/pages/class-economy"));
 const AvatarTest = lazy(() => import("@/pages/avatar-test"));
 const AvatarTestV2 = lazy(() => import("@/pages/avatar-test-v2"));
 const AvatarEditor = lazy(() => import("@/pages/avatar-editor"));
+const ItemPositionMatrix = lazy(() => import("@/pages/admin/item-position-matrix"));
 
 // Import the properly configured query client
 import { queryClient } from "@/lib/queryClient";
@@ -145,6 +146,7 @@ function Router() {
             <Route path="/teacher/game/create" component={GameCreate} />
             <Route path="/teacher/game/:gameId" component={TeacherGameDashboard} />
             <Route path="/colors" component={ColorPreview} />
+            <Route path="/admin/item-positions" component={ItemPositionMatrix} />
           </>
         ) : (
           <>
