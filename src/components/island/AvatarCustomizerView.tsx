@@ -5,17 +5,10 @@ import { useIslandStore } from '@/stores/islandStore';
 import { cn } from '@/lib/utils';
 
 export default function AvatarCustomizerView() {
-  const { 
-    avatar,
-    inventory,
-    draftAvatar,
-    updateDraftAvatar
-  } = useIslandStore((state) => ({
-    avatar: state.avatar,
-    inventory: state.inventory,
-    draftAvatar: state.draftAvatar,
-    updateDraftAvatar: state.updateDraftAvatar,
-  }));
+  const avatar = useIslandStore((state) => state.avatar);
+  const inventory = useIslandStore((state) => state.inventory);
+  const draftAvatar = useIslandStore((state) => state.draftAvatar);
+  const updateDraftAvatar = useIslandStore((state) => state.updateDraftAvatar);
 
   // Filter inventory for avatar items only
   const avatarItems = inventory.items.filter(item => 

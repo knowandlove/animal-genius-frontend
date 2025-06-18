@@ -3,10 +3,8 @@ import { Shirt, Home } from 'lucide-react';
 import { useIslandStore } from '@/stores/islandStore';
 
 export default function EditorControls() {
-  const { inventoryMode, setInventoryMode } = useIslandStore((state) => ({
-    inventoryMode: state.ui.inventoryMode,
-    setInventoryMode: state.setInventoryMode,
-  }));
+  const inventoryMode = useIslandStore((state) => state.ui.inventoryMode);
+  const setInventoryMode = useIslandStore((state) => state.setInventoryMode);
 
   return (
     <div className="flex gap-2">

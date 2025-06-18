@@ -6,17 +6,10 @@ import { cn } from '@/lib/utils';
 import DraggableItem from './drag-drop/DraggableItem';
 
 export default function RoomDecoratorView() {
-  const { 
-    inventory,
-    draftRoom,
-    selectInventoryItem,
-    selectedItem
-  } = useIslandStore((state) => ({
-    inventory: state.inventory,
-    draftRoom: state.draftRoom,
-    selectInventoryItem: state.selectInventoryItem,
-    selectedItem: state.inventory.selectedItem,
-  }));
+  const inventory = useIslandStore((state) => state.inventory);
+  const draftRoom = useIslandStore((state) => state.draftRoom);
+  const selectInventoryItem = useIslandStore((state) => state.selectInventoryItem);
+  const selectedItem = useIslandStore((state) => state.inventory.selectedItem);
 
   // Filter inventory for room items only
   const roomItems = inventory.items.filter(item => 

@@ -8,19 +8,11 @@ import AvatarCustomizerView from './AvatarCustomizerView';
 import RoomDecoratorView from './RoomDecoratorView';
 
 export default function UnifiedInventoryPanel() {
-  const { 
-    inventoryMode,
-    saveDraftChanges,
-    discardDraftChanges,
-    setInventoryMode,
-    isSaving
-  } = useIslandStore((state) => ({
-    inventoryMode: state.ui.inventoryMode,
-    saveDraftChanges: state.saveDraftChanges,
-    discardDraftChanges: state.discardDraftChanges,
-    setInventoryMode: state.setInventoryMode,
-    isSaving: state.ui.isSaving,
-  }));
+  const inventoryMode = useIslandStore((state) => state.ui.inventoryMode);
+  const saveDraftChanges = useIslandStore((state) => state.saveDraftChanges);
+  const discardDraftChanges = useIslandStore((state) => state.discardDraftChanges);
+  const setInventoryMode = useIslandStore((state) => state.setInventoryMode);
+  const isSaving = useIslandStore((state) => state.ui.isSaving);
 
   const isOpen = inventoryMode !== null;
 
