@@ -23,28 +23,25 @@ import {
 import { cn } from "@/lib/utils";
 import { useIslandStore } from "@/stores/islandStore";
 import IslandRoom from "@/components/island/IslandRoom-v2";
-import IslandInventory from "@/components/island/IslandInventory-v2";
 import DragDropContext from "@/components/island/drag-drop/DragDropContext";
 import WelcomeAnimation from "@/components/island/WelcomeAnimation";
-import AvatarCustomizer from "@/components/island/AvatarCustomizer";
+import EditorControls from "@/components/island/EditorControls";
+import UnifiedInventoryPanel from "@/components/island/UnifiedInventoryPanel";
 import { AnimatePresence } from "framer-motion";
 
 export default function StudentIsland() {
   const { passportCode } = useParams();
   const queryClient = useQueryClient();
-  const [showInventory, setShowInventory] = useState(false);
   const [showStore, setShowStore] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const [purchaseMessage, setPurchaseMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showWelcome, setShowWelcome] = useState(false);
-  const [showCustomizer, setShowCustomizer] = useState(false);
 
   // Island store
   const { 
-    ui, 
-    setUIMode, 
-    initializeFromServerData
+    initializeFromServerData,
+    setAvatarEquipment
   } = useIslandStore();
 
   // Fetch student island data
@@ -71,9 +68,6 @@ export default function StudentIsland() {
           }
         });
       }
-      
-      // Debug log
-      console.log('[StudentIsland] Avatar equipped from server:', islandData.avatarData?.equipped);
       
       initializeFromServerData({
         ...islandData,
@@ -303,47 +297,21 @@ export default function StudentIsland() {
 
         {/* Main Content */}
         <div className="container mx-auto px-4 py-8">
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Room Display */}
-            <div className="lg:col-span-2">
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-xl">Your Room</CardTitle>
-                    <Button
-                      size="sm"
-                      variant={ui.mode === 'placing' ? 'default' : 'outline'}
-                      onClick={() => setUIMode(ui.mode === 'placing' ? 'normal' : 'placing')}
-                      className="flex items-center gap-2"
-                    >
-                      <Wand2 className="w-4 h-4" />
-                      {ui.mode === 'placing' ? 'Done Decorating' : 'Decorate Room'}
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <IslandRoom />
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Inventory Sidebar */}
-            <div className="lg:col-span-1">
-              <IslandInventory />
-            </div>
-          </div>
+          {/* Room Display */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl">Your Island</CardTitle>
+                <EditorControls />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <IslandRoom />
+            </CardContent>
+          </Card>
 
           {/* Action Buttons */}
-          <div className="mt-6 flex justify-center gap-4">
-            <Button
-              size="lg"
-              onClick={() => setShowCustomizer(true)}
-              className="flex items-center gap-2"
-              variant="outline"
-            >
-              <Shirt className="w-5 h-5" />
-              Customize Avatar
-            </Button>
+          <div className="mt-6 flex justify-center">
             <Button
               size="lg"
               onClick={() => setShowStore(true)}
@@ -361,16 +329,8 @@ export default function StudentIsland() {
           </div>
         </div>
 
-        {/* Avatar Customizer */}
-        {showCustomizer && (
-          <AvatarCustomizer
-            animalType={island.animalType}
-            ownedItems={island.avatarData?.owned || []}
-            equippedItems={island.avatarData?.equipped || {}}
-            onEquip={handleEquipItem}
-            onClose={() => setShowCustomizer(false)}
-          />
-        )}
+        {/* Unified Inventory Panel */}
+        <UnifiedInventoryPanel />
 
         {/* Store Modal */}
         <Dialog open={showStore} onOpenChange={setShowStore}>

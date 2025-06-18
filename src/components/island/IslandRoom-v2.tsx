@@ -10,7 +10,15 @@ export default function IslandRoom() {
     room, 
     ui,
     removeItem,
+    draftAvatar,
+    draftRoom,
   } = useIslandStore();
+  
+  // Use draft states when in edit modes
+  const isEditingAvatar = ui.inventoryMode === 'avatar';
+  const isEditingRoom = ui.inventoryMode === 'room';
+  const displayAvatar = isEditingAvatar ? { ...avatar, equipped: draftAvatar.equipped } : avatar;
+  const displayRoom = isEditingRoom ? { ...room, placedItems: draftRoom.placedItems } : room;
 
   return (
     <div className="relative w-full h-[600px] overflow-hidden rounded-lg shadow-inner">
@@ -23,11 +31,11 @@ export default function IslandRoom() {
         }}
       />
 
-      {/* Grid Overlay (visible in placing mode) */}
-      {ui.mode === 'placing' && (
+      {/* Grid Overlay (visible in room editing mode) */}
+      {isEditingRoom && (
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg text-sm">
-            <p className="font-semibold mb-1">🏠 Placement Mode</p>
+            <p className="font-semibold mb-1">🏠 Room Decoration Mode</p>
             <p className="text-xs opacity-90">Drag items from inventory to place them</p>
             <p className="text-xs opacity-90">Click placed items to remove them</p>
           </div>
@@ -36,9 +44,9 @@ export default function IslandRoom() {
 
       {/* Hotspots with Placed Items */}
       <div className="absolute inset-0">
-        {room.hotspots.map((hotspot) => {
+        {displayRoom.hotspots.map((hotspot) => {
           const isHighlighted = ui.highlightedHotspots.includes(hotspot.id);
-          const placedItem = room.placedItems.find(
+          const placedItem = displayRoom.placedItems.find(
             item => item.x === hotspot.x && item.y === hotspot.y
           );
 
@@ -48,7 +56,7 @@ export default function IslandRoom() {
               hotspot={hotspot}
               isHighlighted={isHighlighted}
               isOccupied={!!placedItem}
-              showGrid={ui.mode === 'placing'}
+              showGrid={isEditingRoom}
             >
               {/* Placed Item */}
               {placedItem && (
@@ -65,11 +73,11 @@ export default function IslandRoom() {
                     }}
                     className={cn(
                       "absolute inset-2 flex items-center justify-center",
-                      ui.mode === 'placing' && "hover:scale-110 cursor-pointer transition-transform"
+                      isEditingRoom && "hover:scale-110 cursor-pointer transition-transform"
                     )}
-                    onClick={() => ui.mode === 'placing' && removeItem(placedItem.id)}
-                    whileHover={ui.mode === 'placing' ? { scale: 1.05 } : {}}
-                    whileTap={ui.mode === 'placing' ? { scale: 0.95 } : {}}
+                    onClick={() => isEditingRoom && removeItem(placedItem.id)}
+                    whileHover={isEditingRoom ? { scale: 1.05 } : {}}
+                    whileTap={isEditingRoom ? { scale: 0.95 } : {}}
                   >
                     <div className="relative">
                       {/* Item Visual */}
@@ -85,7 +93,7 @@ export default function IslandRoom() {
                       </div>
                       
                       {/* Remove indicator on hover */}
-                      {ui.mode === 'placing' && (
+                      {isEditingRoom && (
                         <motion.div 
                           className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md"
                           initial={{ scale: 0 }}
@@ -103,36 +111,37 @@ export default function IslandRoom() {
         })}
       </div>
 
-      {/* Avatar */}
-      <motion.div
-        className="absolute pointer-events-none"
-        style={{
-          left: `${avatar.position.x}px`,
-          top: `${avatar.position.y}px`,
-          transform: 'translate(-50%, -50%)'
-        }}
-        animate={{
-          x: [0, 0, 0],
-          y: avatar.animation === 'idle' ? [0, -5, 0] : 0
-        }}
-        transition={{
-          duration: 3,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      >
-        {console.log('[IslandRoom] Avatar equipped:', avatar.equipped)}
-        <LayeredAvatar
-          animalType={avatar.type}
-          items={avatar.equipped}
-          width={150}
-          height={150}
-          animated={avatar.animation !== 'idle'}
-        />
-      </motion.div>
+      {/* Avatar (hidden in room editing mode) */}
+      {!isEditingRoom && (
+        <motion.div
+          className="absolute pointer-events-none"
+          style={{
+            left: `${displayAvatar.position.x}px`,
+            top: `${displayAvatar.position.y}px`,
+            transform: 'translate(-50%, -50%)'
+          }}
+          animate={{
+            x: [0, 0, 0],
+            y: displayAvatar.animation === 'idle' ? [0, -5, 0] : 0
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          <LayeredAvatar
+            animalType={displayAvatar.type}
+            items={displayAvatar.equipped}
+            width={150}
+            height={150}
+            animated={displayAvatar.animation !== 'idle'}
+          />
+        </motion.div>
+      )}
 
       {/* Decorative Elements */}
-      {ui.mode === 'normal' && (
+      {!isEditingRoom && !isEditingAvatar && (
         <>
           {/* Sparkle effects */}
           <div className="absolute top-10 right-10 animate-pulse">

@@ -40,6 +40,9 @@ export interface DraggedItem {
 // Animation states for the avatar
 export type AvatarAnimation = 'idle' | 'happy' | 'sleeping' | 'wave' | 'dance';
 
+// Inventory modes
+export type InventoryMode = 'avatar' | 'room' | null;
+
 // Main store interface
 export interface IslandStore {
   // Player data
@@ -77,11 +80,24 @@ export interface IslandStore {
   // UI state
   ui: {
     mode: 'normal' | 'placing' | 'inventory' | 'customizing';
+    inventoryMode: InventoryMode;
     draggedItem?: DraggedItem;
     highlightedHotspots: string[];
     showTutorial: boolean;
     lastSaved: Date | null;
     isSaving: boolean;
+  };
+  
+  // Draft states for unsaved changes
+  draftAvatar: {
+    equipped: {
+      hat?: ItemId;
+      glasses?: ItemId;
+      accessory?: ItemId;
+    };
+  };
+  draftRoom: {
+    placedItems: PlacedItem[];
   };
   
   // Actions
@@ -95,6 +111,11 @@ export interface IslandStore {
   setInventoryFilter: (filter: IslandStore['inventory']['filter']) => void;
   selectInventoryItem: (itemId: ItemId | undefined) => void;
   setUIMode: (mode: IslandStore['ui']['mode']) => void;
+  setInventoryMode: (mode: InventoryMode) => void;
+  updateDraftAvatar: (slot: string, itemId: ItemId | null) => void;
+  updateDraftRoom: (placedItems: PlacedItem[]) => void;
+  saveDraftChanges: () => Promise<void>;
+  discardDraftChanges: () => void;
   startDragging: (item: DraggedItem) => void;
   stopDragging: () => void;
   highlightHotspots: (hotspotIds: string[]) => void;
@@ -151,6 +172,7 @@ export const useIslandStore = create<IslandStore>()(
     
     ui: {
       mode: 'normal',
+      inventoryMode: null,
       draggedItem: undefined,
       highlightedHotspots: [],
       showTutorial: true,
@@ -158,27 +180,45 @@ export const useIslandStore = create<IslandStore>()(
       isSaving: false,
     },
     
+    draftAvatar: {
+      equipped: {},
+    },
+    
+    draftRoom: {
+      placedItems: [],
+    },
+    
     // Actions
     initializeFromServerData: (data) => {
+      const equipped = data.avatarData?.equipped || {};
+      const placedItems = data.roomData?.furniture || [];
+      
       set({
         passportCode: data.passportCode,
         playerName: data.studentName,
         balance: data.currencyBalance,
         avatar: {
           type: data.animalType.toLowerCase(),
-          equipped: data.avatarData?.equipped || {},
+          equipped: equipped,
           position: data.avatarData?.position || { x: 200, y: 300 },
           animation: 'idle',
         },
         room: {
           theme: data.roomData?.theme || 'wood',
-          placedItems: data.roomData?.furniture || [],
+          placedItems: placedItems,
           hotspots: get().room.hotspots, // Keep default hotspots
         },
         inventory: {
           items: data.inventoryItems || [],
           filter: 'all',
           selectedItem: undefined,
+        },
+        // Initialize drafts with current values
+        draftAvatar: {
+          equipped: { ...equipped },
+        },
+        draftRoom: {
+          placedItems: [...placedItems],
         },
       });
     },
@@ -189,6 +229,16 @@ export const useIslandStore = create<IslandStore>()(
       set((state) => ({
         avatar: {
           ...state.avatar,
+          equipped: {
+            ...state.avatar.equipped,
+            [slot]: itemId || undefined,
+          },
+        },
+      }));
+      
+      // Also update the drafts to keep them in sync
+      set((state) => ({
+        draftAvatar: {
           equipped: {
             ...state.avatar.equipped,
             [slot]: itemId || undefined,
@@ -283,6 +333,93 @@ export const useIslandStore = create<IslandStore>()(
       set((state) => ({
         ui: { ...state.ui, mode },
       }));
+    },
+    
+    setInventoryMode: (mode) => {
+      const state = get();
+      
+      // Check for unsaved changes when switching modes
+      if (state.ui.inventoryMode && state.ui.inventoryMode !== mode) {
+        const hasChanges = 
+          (state.ui.inventoryMode === 'avatar' && 
+           JSON.stringify(state.avatar.equipped) !== JSON.stringify(state.draftAvatar.equipped)) ||
+          (state.ui.inventoryMode === 'room' && 
+           JSON.stringify(state.room.placedItems) !== JSON.stringify(state.draftRoom.placedItems));
+           
+        if (hasChanges && !confirm('You have unsaved changes. Do you want to discard them?')) {
+          return; // User cancelled, don't switch modes
+        }
+        
+        // Discard changes if switching
+        if (hasChanges) {
+          get().discardDraftChanges();
+        }
+      }
+      
+      set((state) => ({
+        ui: { ...state.ui, inventoryMode: mode },
+      }));
+    },
+    
+    updateDraftAvatar: (slot, itemId) => {
+      set((state) => ({
+        draftAvatar: {
+          equipped: {
+            ...state.draftAvatar.equipped,
+            [slot]: itemId || undefined,
+          },
+        },
+      }));
+    },
+    
+    updateDraftRoom: (placedItems) => {
+      set({
+        draftRoom: { placedItems },
+      });
+    },
+    
+    saveDraftChanges: async () => {
+      const state = get();
+      
+      if (state.ui.inventoryMode === 'avatar') {
+        // Apply avatar changes
+        set({
+          avatar: {
+            ...state.avatar,
+            equipped: { ...state.draftAvatar.equipped },
+          },
+        });
+      } else if (state.ui.inventoryMode === 'room') {
+        // Apply room changes
+        set({
+          room: {
+            ...state.room,
+            placedItems: [...state.draftRoom.placedItems],
+          },
+        });
+      }
+      
+      // Save to server
+      await get().saveToServer();
+      
+      // Close inventory
+      set((state) => ({
+        ui: { ...state.ui, inventoryMode: null },
+      }));
+    },
+    
+    discardDraftChanges: () => {
+      const state = get();
+      
+      // Reset drafts to current values
+      set({
+        draftAvatar: {
+          equipped: { ...state.avatar.equipped },
+        },
+        draftRoom: {
+          placedItems: [...state.room.placedItems],
+        },
+      });
     },
     
     startDragging: (item) => {
