@@ -70,6 +70,9 @@ export default function StudentIsland() {
         });
       }
       
+      // Debug log
+      console.log('[StudentIsland] Avatar equipped from server:', islandData.avatarData?.equipped);
+      
       initializeFromServerData({
         ...islandData,
         inventoryItems

@@ -473,6 +473,10 @@ function LayeredAvatar({
   const [isHovered, setIsHovered] = useState(false);
   const [useAvatarImage, setUseAvatarImage] = useState(true);
 
+  // Debug log
+  console.log('[LayeredAvatar] Received items:', items);
+  console.log('[LayeredAvatar] Animal type:', animalType);
+
   const handleClick = () => {
     onClick?.();
   };

@@ -121,6 +121,7 @@ export default function IslandRoom() {
           ease: "easeInOut"
         }}
       >
+        {console.log('[IslandRoom] Avatar equipped:', avatar.equipped)}
         <LayeredAvatar
           animalType={avatar.type}
           items={avatar.equipped}
