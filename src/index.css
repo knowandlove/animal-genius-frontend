@@ -119,10 +119,10 @@
   body {
     @apply font-body antialiased text-foreground;
     background: 
-      linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 50%, #d1d5db 100%),
-      radial-gradient(circle at 20% 80%, hsl(var(--primary))/0.1 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, hsl(var(--secondary))/0.08 0%, transparent 50%),
-      radial-gradient(circle at 40% 40%, hsl(var(--accent))/0.06 0%, transparent 50%);
+      linear-gradient(135deg, #fdf4ff 0%, #f0f4ff 25%, #fff0f5 50%, #f5f3ff 75%, #f0f8ff 100%),
+      radial-gradient(circle at 20% 80%, rgba(189, 133, 200, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(133, 178, 200, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 50% 50%, rgba(255, 182, 193, 0.08) 0%, transparent 50%);
     min-height: 100vh;
   }
   
@@ -260,20 +260,20 @@
     color: rgba(255, 255, 255, 0.7) !important;
   }
   
-  /* Main page background - soft mint gradient */
+  /* Main page background - heart-brain inspired gradient */
   .main-bg {
-    background: linear-gradient(135deg, #d3f2ed 0%, #e8f7f3 40%, #f0faf7 100%) !important;
+    background: linear-gradient(135deg, #fdf4ff 0%, #f0f4ff 25%, #fff0f5 50%, #f5f3ff 75%, #f0f8ff 100%) !important;
     min-height: 100vh;
   }
   
   /* Force background on body and root */
   html, body {
-    background: linear-gradient(135deg, #d3f2ed 0%, #e8f7f3 40%, #f0faf7 100%) !important;
+    background: linear-gradient(135deg, #fdf4ff 0%, #f0f4ff 25%, #fff0f5 50%, #f5f3ff 75%, #f0f8ff 100%) !important;
     background-attachment: fixed !important;
   }
   
   #root {
-    background: linear-gradient(135deg, #d3f2ed 0%, #e8f7f3 40%, #f0faf7 100%) !important;
+    background: linear-gradient(135deg, #fdf4ff 0%, #f0f4ff 25%, #fff0f5 50%, #f5f3ff 75%, #f0f8ff 100%) !important;
     min-height: 100vh !important;
   }
   
@@ -286,14 +286,14 @@
   html,
   #root,
   div[class*="min-h-screen"]:not([class*="game"]) {
-    background: #d3f2ed !important;
-    background: linear-gradient(135deg, #d3f2ed 0%, #e8f7f3 40%, #f0faf7 100%) !important;
+    background: #fdf4ff !important;
+    background: linear-gradient(135deg, #fdf4ff 0%, #f0f4ff 25%, #fff0f5 50%, #f5f3ff 75%, #f0f8ff 100%) !important;
     background-attachment: fixed !important;
   }
   
   /* Specifically target known page containers */
   .min-h-screen:not(.game-bg):not([class*="game"]) {
-    background: linear-gradient(135deg, #d3f2ed 0%, #e8f7f3 40%, #f0faf7 100%) !important;
+    background: linear-gradient(135deg, #fdf4ff 0%, #f0f4ff 25%, #fff0f5 50%, #f5f3ff 75%, #f0f8ff 100%) !important;
   }
   
   /* Force dark styling for game page cards */
