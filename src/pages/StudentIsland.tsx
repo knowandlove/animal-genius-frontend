@@ -51,7 +51,12 @@ interface IslandPageData {
 }
 
 export default function StudentIsland() {
+  console.log('[STUDENT ISLAND] Component rendering');
+  console.log('[STUDENT ISLAND] Current URL:', window.location.href);
+  console.log('[STUDENT ISLAND] Auth token exists:', !!localStorage.getItem('authToken'));
+  
   const { passportCode } = useParams();
+  console.log('[STUDENT ISLAND] Passport code from URL:', passportCode);
   const queryClient = useQueryClient();
   const [showInventory, setShowInventory] = useState(false);
   const [showStore, setShowStore] = useState(false);

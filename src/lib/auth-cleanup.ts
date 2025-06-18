@@ -76,9 +76,18 @@ function isValidJWT(token: string): boolean {
 const authState = performAuthCleanup();
 console.log('Auth cleanup complete. Valid auth state:', authState);
 
-// If we cleared auth state, reload the page to ensure clean state
-if (!authState && window.location.pathname !== '/login' && window.location.pathname !== '/register') {
-  console.log('Auth state was cleared, redirecting to login...');
+// Check if we're on a student/public page that doesn't require auth
+const isPublicPage = 
+  window.location.pathname.startsWith('/island/') ||
+  window.location.pathname.startsWith('/q/') ||
+  window.location.pathname.startsWith('/game/') ||
+  window.location.pathname === '/login' ||
+  window.location.pathname === '/register' ||
+  window.location.pathname === '/';
+
+// If we cleared auth state and we're not on a public page, redirect to login
+if (!authState && !isPublicPage) {
+  console.log('Auth state was cleared on protected page, redirecting to login...');
   setTimeout(() => {
     window.location.href = '/login';
   }, 500);

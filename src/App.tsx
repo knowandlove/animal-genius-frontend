@@ -48,6 +48,9 @@ import "@/lib/auth-cleanup";
 function Router() {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  console.log('[ROUTER] Current path:', window.location.pathname);
+  console.log('[ROUTER] Token state:', !!token);
 
   useEffect(() => {
     // Check and clean up authentication state first
