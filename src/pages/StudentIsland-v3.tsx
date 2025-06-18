@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import LayeredAvatar from "@/components/avatar-v2/LayeredAvatar";
-import { Coins, Home, ShoppingBag, Package, Sparkles, X, Wand2 } from "lucide-react";
+import { Coins, Home, ShoppingBag, Package, Sparkles, X, Wand2, Shirt } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { StudentIsland } from "@shared/currency-types";
 import { getItemById } from "@shared/currency-types";
@@ -26,6 +26,7 @@ import IslandRoom from "@/components/island/IslandRoom-v2";
 import IslandInventory from "@/components/island/IslandInventory-v2";
 import DragDropContext from "@/components/island/drag-drop/DragDropContext";
 import WelcomeAnimation from "@/components/island/WelcomeAnimation";
+import AvatarCustomizer from "@/components/island/AvatarCustomizer";
 import { AnimatePresence } from "framer-motion";
 
 export default function StudentIsland() {
@@ -37,6 +38,7 @@ export default function StudentIsland() {
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const [purchaseMessage, setPurchaseMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [showCustomizer, setShowCustomizer] = useState(false);
 
   // Island store
   const { 
@@ -132,6 +134,11 @@ export default function StudentIsland() {
       apiRequest('POST', `/api/island/${passportCode}/equip`, { slot, itemId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/island/${passportCode}`] });
+      setPurchaseMessage({ 
+        type: 'success', 
+        message: 'Avatar updated!' 
+      });
+      setTimeout(() => setPurchaseMessage(null), 3000);
     },
     onError: (error: any) => {
       setPurchaseMessage({ 
@@ -330,6 +337,15 @@ export default function StudentIsland() {
           <div className="mt-6 flex justify-center gap-4">
             <Button
               size="lg"
+              onClick={() => setShowCustomizer(true)}
+              className="flex items-center gap-2"
+              variant="outline"
+            >
+              <Shirt className="w-5 h-5" />
+              Customize Avatar
+            </Button>
+            <Button
+              size="lg"
               onClick={() => setShowStore(true)}
               disabled={!storeStatus?.isOpen}
               className="flex items-center gap-2"
@@ -344,6 +360,17 @@ export default function StudentIsland() {
             </Button>
           </div>
         </div>
+
+        {/* Avatar Customizer */}
+        {showCustomizer && (
+          <AvatarCustomizer
+            animalType={island.animalType}
+            ownedItems={island.avatarData?.owned || []}
+            equippedItems={island.avatarData?.equipped || {}}
+            onEquip={handleEquipItem}
+            onClose={() => setShowCustomizer(false)}
+          />
+        )}
 
         {/* Store Modal */}
         <Dialog open={showStore} onOpenChange={setShowStore}>
