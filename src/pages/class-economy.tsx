@@ -149,6 +149,8 @@ export default function ClassEconomy() {
       return await apiRequest('GET', `/api/classes/${classId}/purchase-requests`);
     },
     enabled: !!classId,
+    refetchInterval: 5000, // Poll every 5 seconds for new requests
+    refetchIntervalInBackground: true, // Keep polling even when tab is not focused
   });
 
   // Get transaction history for selected student
@@ -248,6 +250,11 @@ export default function ClassEconomy() {
       queryClient.invalidateQueries({
         queryKey: [`/api/classes/${classId}/economy`],
       });
+      // Also invalidate all student island caches to force refresh
+      queryClient.invalidateQueries({
+        queryKey: [`/api/island-page-data/`],
+        exact: false,
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -275,6 +282,11 @@ export default function ClassEconomy() {
       refetchRequests();
       queryClient.invalidateQueries({
         queryKey: [`/api/classes/${classId}/economy`],
+      });
+      // Also invalidate all student island caches to force refresh
+      queryClient.invalidateQueries({
+        queryKey: [`/api/island-page-data/`],
+        exact: false,
       });
     },
     onError: (error: Error) => {

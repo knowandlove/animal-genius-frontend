@@ -76,6 +76,8 @@ export default function StudentIsland() {
     queryKey: [`/api/island-page-data/${passportCode}`],
     queryFn: () => apiRequest('GET', `/api/island-page-data/${passportCode}`),
     enabled: !!passportCode,
+    refetchInterval: 10000, // Poll every 10 seconds for updates
+    refetchIntervalInBackground: true, // Keep polling even when tab is not focused
   });
 
   // Extract data from consolidated response
