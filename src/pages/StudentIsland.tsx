@@ -74,7 +74,13 @@ export default function StudentIsland() {
   // Fetch all student island page data in one request
   const { data: pageData, isLoading, error } = useQuery<IslandPageData>({
     queryKey: [`/api/island-page-data/${passportCode}`],
-    queryFn: () => apiRequest('GET', `/api/island-page-data/${passportCode}`),
+    queryFn: async () => {
+      console.log('[DEBUG] Fetching island page data...');
+      const data = await apiRequest('GET', `/api/island-page-data/${passportCode}`);
+      console.log('[DEBUG] Received pageData:', data);
+      console.log('[DEBUG] avatarData from server:', data?.island?.avatarData);
+      return data;
+    },
     enabled: !!passportCode,
     refetchInterval: 10000, // Poll every 10 seconds for updates
     refetchIntervalInBackground: true, // Keep polling even when tab is not focused
@@ -335,6 +341,16 @@ export default function StudentIsland() {
                 Your Cozy Den
               </CardTitle>
               <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    console.log('[DEBUG] Force refetching data...');
+                    queryClient.invalidateQueries({ queryKey: [`/api/island-page-data/${passportCode}`] });
+                  }}
+                >
+                  🔄 Force Refresh
+                </Button>
                 {ui.lastSaved && (
                   <span className="text-xs text-muted-foreground">
                     Last saved: {new Date(ui.lastSaved).toLocaleTimeString()}
