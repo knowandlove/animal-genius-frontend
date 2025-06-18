@@ -29,6 +29,7 @@ interface ClassInfo {
 
 export default function StudentQuiz() {
   const [, params] = useRoute('/q/:classCode');
+  const [, setLocation] = useLocation();
   const classCode = params?.classCode;
   
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -145,7 +146,7 @@ export default function StudentQuiz() {
       
       return apiRequest('POST', '/api/quiz-submissions', submissionData);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Invalidate relevant caches so teachers see new results immediately
       queryClient.invalidateQueries({ queryKey: ["/api/classes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/submissions"] });
@@ -160,6 +161,13 @@ export default function StudentQuiz() {
         title: "Quiz completed!",
         description: "Your results have been saved successfully.",
       });
+
+      // Redirect to results page with the submission ID
+      if (data && data.id) {
+        setTimeout(() => {
+          setLocation(`/results/${data.id}`);
+        }, 1000); // Small delay to show the success message
+      }
     },
     onError: (error: Error) => {
       toast({
