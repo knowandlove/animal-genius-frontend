@@ -317,8 +317,8 @@ export default function IslandRoomSticker() {
               <LayeredAvatar
                 animalType={displayAvatar.type}
                 items={displayAvatar.equipped}
-                width={240}
-                height={240}
+                width={320}
+                height={320}
                 animated={displayAvatar.animation !== 'idle'}
               />
             </motion.div>
