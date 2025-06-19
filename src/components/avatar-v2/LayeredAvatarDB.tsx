@@ -201,7 +201,7 @@ function LayeredAvatarDB({
       const imagePath = `/avatars/items/${folder}/${itemId}.png`;
       
       if (dbPosition) {
-        layers.push({
+        const layerConfig = {
           id: `${slot}-${itemId}`,
           ...baseConfig,
           src: imagePath,
@@ -211,7 +211,9 @@ function LayeredAvatarDB({
           },
           scale: dbPosition.scale,
           rotation: dbPosition.rotation,
-        });
+        };
+        console.log(`Adding layer for ${itemId} with position:`, layerConfig);
+        layers.push(layerConfig);
       } else {
         // Fallback to default center position
         layers.push({
@@ -253,7 +255,7 @@ function LayeredAvatarDB({
           ...layer.position,
           transform: `
             translate(-50%, -50%) 
-            scale(${isBaseLayer ? (animalConfig.baseScale || 1) : ((layer.scale || 1) * animalItemScale)}) 
+            scale(${isBaseLayer ? (animalConfig.baseScale || 1) : (layer.scale || 1)}) 
             rotate(${layer.rotation || 0}deg)
           `,
           transformOrigin: 'center',
@@ -266,6 +268,15 @@ function LayeredAvatarDB({
             maxHeight: '75%',
           } : {}),
         };
+        
+        if (!isBaseLayer) {
+          console.log(`Applying style to ${layer.id}:`, {
+            position: layer.position,
+            scale: layer.scale,
+            rotation: layer.rotation,
+            finalTransform: style.transform
+          });
+        }
 
         if (layer.src) {
           return (
