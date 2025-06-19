@@ -164,7 +164,21 @@ export const useIslandStore = create<IslandStore>()(
     // Actions
     initializeFromServerData: (data) => {
       const equipped = data.avatarData?.equipped || {};
-      const placedItems = data.roomData?.furniture || [];
+      const rawPlacedItems = data.roomData?.furniture || [];
+      
+      // Convert any old grid positions to percentages
+      const placedItems = rawPlacedItems.map((item: any) => {
+        if (item.x <= 3 && item.y <= 3) {
+          // Convert from old grid system (0-3) to percentage (0-100)
+          return {
+            ...item,
+            x: (item.x / 3) * 80 + 10,
+            y: (item.y / 3) * 80 + 10,
+            zIndex: Math.floor(((item.y / 3) * 80 + 10) * 10)
+          };
+        }
+        return item;
+      });
       
       set({
         passportCode: data.passportCode,
@@ -395,9 +409,23 @@ export const useIslandStore = create<IslandStore>()(
       // When entering a new mode, sync the draft with current state
       if (mode === 'room' && mode !== state.ui.inventoryMode) {
         // Entering room edit mode - sync draft with current room
+        // Convert any old grid positions to percentages
+        const convertedItems = state.room.placedItems.map(item => {
+          if (item.x <= 3 && item.y <= 3) {
+            // Convert from old grid system (0-3) to percentage (0-100)
+            return {
+              ...item,
+              x: (item.x / 3) * 80 + 10,
+              y: (item.y / 3) * 80 + 10,
+              zIndex: Math.floor(((item.y / 3) * 80 + 10) * 10)
+            };
+          }
+          return item;
+        });
+        
         set({
           draftRoom: {
-            placedItems: [...state.room.placedItems],
+            placedItems: convertedItems,
           },
         });
       } else if (mode === 'avatar' && mode !== state.ui.inventoryMode) {

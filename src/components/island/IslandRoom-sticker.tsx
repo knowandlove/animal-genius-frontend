@@ -45,15 +45,16 @@ export default function IslandRoomSticker() {
     (a.zIndex || 0) - (b.zIndex || 0)
   );
 
-  const handleItemMouseDown = (e: React.MouseEvent, item: any) => {
+  const handleItemMouseDown = (e: React.MouseEvent, item: any, displayX: number, displayY: number) => {
     if (!isEditingRoom || !roomRef.current) return;
     
     e.preventDefault();
     e.stopPropagation();
     
     const rect = roomRef.current.getBoundingClientRect();
-    const itemX = (item.x / 100) * rect.width;
-    const itemY = (item.y / 100) * rect.height;
+    // Use the actual displayed position, not the stored position
+    const itemX = (displayX / 100) * rect.width;
+    const itemY = (displayY / 100) * rect.height;
     const offsetX = e.clientX - rect.left - itemX;
     const offsetY = e.clientY - rect.top - itemY;
     
@@ -71,7 +72,7 @@ export default function IslandRoomSticker() {
     startDragging({
       itemId: item.itemId,
       fromInventory: false,
-      originalPosition: { x: item.x, y: item.y }
+      originalPosition: { x: displayX, y: displayY }
     });
   };
 
@@ -256,7 +257,7 @@ export default function IslandRoomSticker() {
               }}
               whileHover={{ scale: scale * 1.05 }}
               whileDrag={{ scale: scale * 1.1, opacity: 0.8 }}
-              onMouseDown={(e) => handleItemMouseDown(e, item)}
+              onMouseDown={(e) => handleItemMouseDown(e, item, xPos, yPos)}
               animate={{
                 scale: dragState?.itemId === item.id ? scale * 1.1 : scale,
                 opacity: dragState?.itemId === item.id ? 0.6 : 1,
