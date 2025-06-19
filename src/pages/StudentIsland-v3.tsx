@@ -333,10 +333,11 @@ export default function StudentIsland() {
                 <CardContent>
                   {/* Show avatar preview in avatar mode, room in all other modes */}
                   {inventoryMode === 'avatar' ? (
-                    <div className="flex items-center justify-center h-[600px] bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg">
+                    <div className="flex items-center justify-center h-[600px] bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg overflow-hidden">
                       <motion.div
                         initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
+                        animate={{ scale: 2, opacity: 1, y: 50 }}
+                        exit={{ scale: 0.8, opacity: 0 }}
                         transition={{ duration: 0.3 }}
                       >
                         <LayeredAvatar

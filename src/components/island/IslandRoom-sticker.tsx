@@ -177,31 +177,36 @@ export default function IslandRoomSticker() {
 
 
   return (
-    <div 
-      ref={roomRef}
-      className="relative w-full h-[600px] overflow-hidden rounded-lg shadow-inner"
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onDrop={handleDrop}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
+    <motion.div
+      className="relative w-full overflow-hidden rounded-lg shadow-inner bg-gray-100"
+      initial={{ scale: 1.2 }}
+      animate={{ scale: isEditingRoom ? 0.85 : 1 }}
+      transition={{ duration: 0.3 }}
+      style={{ aspectRatio: '16/9' }} // Widescreen aspect ratio for rooms
     >
-      {/* Room Background */}
       <div 
-        className="absolute inset-0 z-0"
-        style={{
-          backgroundColor: '#8B6F47', // Wood color
-          backgroundImage: `url(/rooms/${room.theme}-room.jpg)`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
+        ref={roomRef}
+        className="absolute inset-0 w-full h-full"
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
       >
+        {/* Room Background */}
+        <div 
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundColor: '#f5f5f5', // Neutral gray background
+            backgroundImage: room.theme !== 'blank' ? `url(/rooms/${room.theme}-room.jpg)` : 'none',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+        </div>
 
-
-      </div>
-
-      {/* Instructions (visible in room editing mode) */}
+        {/* Instructions (visible in room editing mode) */}
       {isEditingRoom && (
         <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg text-sm z-50">
           <p className="font-semibold mb-1">🏠 Room Decoration Mode</p>
@@ -290,35 +295,34 @@ export default function IslandRoomSticker() {
         })}
       </div>
 
-      {/* Avatar (hidden in room editing mode) */}
-      {!isEditingRoom && (
-        <motion.div
-          className="absolute pointer-events-none"
-          style={{
-            left: `${displayAvatar.position.x}px`,
-            top: `${displayAvatar.position.y}px`,
-            transform: 'translate(-50%, -50%)',
-            zIndex: Math.floor((displayAvatar.position.y / 600) * 100), // Dynamic z-index
-          }}
-          animate={{
-            x: [0, 0, 0],
-            y: displayAvatar.animation === 'idle' ? [0, -5, 0] : 0
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        >
-          <LayeredAvatar
-            animalType={displayAvatar.type}
-            items={displayAvatar.equipped}
-            width={420}
-            height={420}
-            animated={displayAvatar.animation !== 'idle'}
-          />
-        </motion.div>
-      )}
+          {!isEditingRoom && (
+            <motion.div
+              className="absolute pointer-events-none"
+              style={{
+                left: `${displayAvatar.position.x}%`,
+                top: `${displayAvatar.position.y}%`,
+                transform: 'translate(-50%, -50%)',
+                zIndex: Math.floor((displayAvatar.position.y) * 10), // Dynamic z-index
+              }}
+              animate={{
+                x: [0, 0, 0],
+                y: displayAvatar.animation === 'idle' ? [0, -5, 0] : 0
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            >
+              <LayeredAvatar
+                animalType={displayAvatar.type}
+                items={displayAvatar.equipped}
+                width={240}
+                height={240}
+                animated={displayAvatar.animation !== 'idle'}
+              />
+            </motion.div>
+          )}
 
       {/* Trash Zone */}
       <AnimatePresence>
@@ -355,6 +359,7 @@ export default function IslandRoomSticker() {
           </div>
         </>
       )}
-    </div>
+      </div>
+    </motion.div>
   );
 }

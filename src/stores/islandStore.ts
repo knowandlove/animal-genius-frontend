@@ -6,7 +6,7 @@ import { apiRequest } from '@/lib/queryClient';
 // Types for our Animal Crossing-style island
 export type AnimalType = string; // e.g., 'dolphin', 'elephant', etc.
 export type ItemId = string;
-export type RoomTheme = 'wood' | 'modern' | 'cozy' | 'space' | 'underwater';
+export type RoomTheme = 'wood' | 'modern' | 'cozy' | 'space' | 'underwater' | 'blank';
 
 export const ROOM_ITEM_LIMIT = 50; // Maximum items allowed in a room for performance
 
@@ -131,7 +131,7 @@ export const useIslandStore = create<IslandStore>()(
     avatar: {
       type: 'dolphin',
       equipped: {},
-      position: { x: 400, y: 190 }, // Center of room
+      position: { x: 50, y: 50 }, // Center as percentage
       animation: 'idle',
     },
     
@@ -189,7 +189,7 @@ export const useIslandStore = create<IslandStore>()(
         avatar: {
           type: data.animalType.toLowerCase(),
           equipped: equipped,
-          position: { x: 400, y: 190 }, // Always use centered position for now
+          position: { x: 50, y: 50 }, // Center as percentage
           animation: 'idle',
         },
         room: {
