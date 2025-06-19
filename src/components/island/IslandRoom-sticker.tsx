@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { useIslandStore } from '@/stores/islandStore';
+import { useIslandStore, ROOM_ITEM_LIMIT } from '@/stores/islandStore';
 import { cn } from '@/lib/utils';
 import LayeredAvatar from '@/components/avatar-v2/LayeredAvatar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -206,9 +206,16 @@ export default function IslandRoomSticker() {
         <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg text-sm z-50">
           <p className="font-semibold mb-1">🏠 Room Decoration Mode</p>
           <p className="text-xs opacity-90">Drag items from inventory to place anywhere</p>
-
           <p className="text-xs opacity-90">Drag placed items to move them</p>
           <p className="text-xs opacity-90">Drag to trash can to delete</p>
+          <div className="mt-2 pt-2 border-t border-white/20">
+            <p className="text-xs font-semibold">
+              Items placed: {sortedItems.length} / {ROOM_ITEM_LIMIT}
+              {sortedItems.length >= ROOM_ITEM_LIMIT - 5 && (
+                <span className="text-yellow-300 ml-1">(Almost full!)</span>
+              )}
+            </p>
+          </div>
         </div>
       )}
 

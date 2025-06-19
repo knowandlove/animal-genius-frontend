@@ -8,6 +8,8 @@ export type AnimalType = string; // e.g., 'dolphin', 'elephant', etc.
 export type ItemId = string;
 export type RoomTheme = 'wood' | 'modern' | 'cozy' | 'space' | 'underwater';
 
+export const ROOM_ITEM_LIMIT = 50; // Maximum items allowed in a room for performance
+
 export interface PlacedItem {
   id: string;
   itemId: ItemId;
@@ -253,6 +255,20 @@ export const useIslandStore = create<IslandStore>()(
     
     placeItem: (itemId, x, y) => {
       console.log('placeItem called with:', { itemId, x, y });
+      
+      const state = get();
+      
+      // Check if we've hit the room item limit
+      const currentItemCount = state.ui.inventoryMode === 'room' 
+        ? state.draftRoom.placedItems.length 
+        : state.room.placedItems.length;
+        
+      if (currentItemCount >= ROOM_ITEM_LIMIT) {
+        console.warn(`Room item limit reached (${ROOM_ITEM_LIMIT} items)`);
+        // You could also trigger a toast notification here
+        alert(`Room is full! Maximum ${ROOM_ITEM_LIMIT} items allowed. Remove some items to place more.`);
+        return;
+      }
       
       // Calculate z-index based on Y position (0-100 range)
       // Higher Y = higher z-index (closer to viewer)

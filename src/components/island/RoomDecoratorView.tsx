@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
-import { Package, Sparkles, Sofa, Palette, Home } from 'lucide-react';
+import { Package, Sparkles, Sofa, Palette, Home, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useIslandStore } from '@/stores/islandStore';
+import { useIslandStore, ROOM_ITEM_LIMIT } from '@/stores/islandStore';
 import { cn } from '@/lib/utils';
 import DraggableItemSticker from './drag-drop/DraggableItemSticker';
 
@@ -83,6 +83,26 @@ export default function RoomDecoratorView() {
     <div className="h-full flex flex-col">
       {/* Instructions / Item Details */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Home className="w-4 h-4 text-blue-700" />
+            <span className="text-sm font-semibold text-blue-900">
+              Room Items: {draftRoom.placedItems.length} / {ROOM_ITEM_LIMIT}
+            </span>
+          </div>
+          {draftRoom.placedItems.length >= ROOM_ITEM_LIMIT && (
+            <Badge variant="destructive" className="text-xs">
+              <AlertCircle className="w-3 h-3 mr-1" />
+              Room Full!
+            </Badge>
+          )}
+          {draftRoom.placedItems.length >= ROOM_ITEM_LIMIT - 5 && 
+           draftRoom.placedItems.length < ROOM_ITEM_LIMIT && (
+            <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-700">
+              Almost Full
+            </Badge>
+          )}
+        </div>
         {selectedItemDetails ? (
           <div>
             <div className="flex items-start justify-between">
