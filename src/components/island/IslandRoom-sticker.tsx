@@ -51,6 +51,9 @@ export default function IslandRoomSticker() {
     y: item.y
   })));
   console.log('IslandRoom - Is editing room?', isEditingRoom);
+  
+  // Log the actual items array
+  console.log('IslandRoom - Full items array:', JSON.stringify(sortedItems, null, 2));
 
   const handleItemMouseDown = (e: React.MouseEvent, item: any) => {
     if (!isEditingRoom || !roomRef.current) return;
@@ -185,56 +188,70 @@ export default function IslandRoomSticker() {
       )}
 
       {/* Placed Items */}
-      {sortedItems.map((item) => (
-        <motion.div
-          key={item.id}
-          className={cn(
-            "absolute cursor-move",
-            isEditingRoom && "hover:brightness-110 transition-all",
-            dragState?.itemId === item.id && "cursor-grabbing"
-          )}
-          style={{
-            left: `${item.x}%`,
-            top: `${item.y}%`,
-            transform: `translate(-50%, -50%)`,
-            zIndex: item.zIndex || Math.floor(item.y),
-          }}
-          onMouseDown={(e) => handleItemMouseDown(e, item)}
-          initial={{ scale: 0, opacity: 0, rotate: -180 }}
-          animate={{ 
-            opacity: 1, 
-            rotate: 0,
-            filter: dragState?.itemId === item.id ? 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' : 'none'
-          }}
-          exit={{ scale: 0, opacity: 0, rotate: 180 }}
-          transition={{ 
-            type: "spring",
-            stiffness: 260,
-            damping: 20
-          }}
-          whileHover={isEditingRoom ? { 
-            scale: 1.05,
-            filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'
-          } : {}}
-        >
-          {/* Item Visual */}
-          <div className="bg-white/90 backdrop-blur rounded-lg p-4 shadow-lg select-none">
-            <span className="text-4xl">
-              {getItemIcon(item.itemId)}
-            </span>
-          </div>
-          
-          {/* Hover indicator */}
-          {isEditingRoom && !dragState && (
-            <motion.div 
-              className="absolute inset-0 rounded-lg border-2 border-blue-400 opacity-0"
-              whileHover={{ opacity: 1 }}
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-            />
-          )}
-        </motion.div>
-      ))}
+      {sortedItems.map((item) => {
+        // Handle both old grid system (0-3) and new percentage system (0-100)
+        const isOldGrid = item.x <= 3 && item.y <= 3;
+        const xPos = isOldGrid ? (item.x / 3) * 80 + 10 : item.x; // Convert 0-3 to 10-90%
+        const yPos = isOldGrid ? (item.y / 3) * 80 + 10 : item.y; // Convert 0-3 to 10-90%
+        
+        return (
+          <motion.div
+            key={item.id}
+            className={cn(
+              "absolute cursor-move",
+              isEditingRoom && "hover:brightness-110 transition-all",
+              dragState?.itemId === item.id && "cursor-grabbing"
+            )}
+            style={{
+              left: `${xPos}%`,
+              top: `${yPos}%`,
+              transform: `translate(-50%, -50%)`,
+              zIndex: item.zIndex || Math.floor(yPos),
+            }}
+            onMouseDown={(e) => handleItemMouseDown(e, item)}
+            initial={{ scale: 0, opacity: 0, rotate: -180 }}
+            animate={{ 
+              opacity: 1, 
+              rotate: 0,
+              filter: dragState?.itemId === item.id ? 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' : 'none'
+            }}
+            exit={{ scale: 0, opacity: 0, rotate: 180 }}
+            transition={{ 
+              type: "spring",
+              stiffness: 260,
+              damping: 20
+            }}
+            whileHover={isEditingRoom ? { 
+              scale: 1.05,
+              filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'
+            } : {}}
+          >
+            {/* Item Visual */}
+            <div className="bg-white/90 backdrop-blur rounded-lg p-4 shadow-lg select-none">
+              <span className="text-4xl">
+                {getItemIcon(item.itemId)}
+              </span>
+            </div>
+            
+            {/* Debug info */}
+            {isEditingRoom && (
+              <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-xs bg-black/70 text-white px-2 py-1 rounded whitespace-nowrap">
+                {item.itemId} ({Math.round(xPos)}, {Math.round(yPos)})
+              </div>
+            )}
+            
+            {/* Hover indicator */}
+            {isEditingRoom && !dragState && (
+              <motion.div 
+                className="absolute inset-0 rounded-lg border-2 border-blue-400 opacity-0"
+                whileHover={{ opacity: 1 }}
+                initial={{ scale: 0.9 }}
+                animate={{ scale: 1 }}
+              />
+            )}
+          </motion.div>
+        );
+      })}
 
       {/* Avatar (hidden in room editing mode) */}
       {!isEditingRoom && (
