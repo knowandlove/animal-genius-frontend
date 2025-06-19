@@ -282,7 +282,6 @@ export const useIslandStore = create<IslandStore>()(
         zIndex,
       };
       
-      const state = get();
       console.log('Current state before placement:', {
         inventoryMode: state.ui.inventoryMode,
         draftRoom: state.draftRoom,
