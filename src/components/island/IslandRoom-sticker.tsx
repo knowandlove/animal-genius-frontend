@@ -41,6 +41,10 @@ export default function IslandRoomSticker() {
   const sortedItems = [...displayRoom.placedItems].sort((a, b) => 
     (a.zIndex || 0) - (b.zIndex || 0)
   );
+  
+  console.log('IslandRoom - Display room:', displayRoom);
+  console.log('IslandRoom - Sorted items to render:', sortedItems);
+  console.log('IslandRoom - Is editing room?', isEditingRoom);
 
   const handleItemMouseDown = (e: React.MouseEvent, item: any) => {
     if (!isEditingRoom || !roomRef.current) return;

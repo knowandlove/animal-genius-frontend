@@ -370,6 +370,23 @@ export const useIslandStore = create<IslandStore>()(
     setInventoryMode: (mode) => {
       const state = get();
       
+      // When entering a new mode, sync the draft with current state
+      if (mode === 'room' && mode !== state.ui.inventoryMode) {
+        // Entering room edit mode - sync draft with current room
+        set({
+          draftRoom: {
+            placedItems: [...state.room.placedItems],
+          },
+        });
+      } else if (mode === 'avatar' && mode !== state.ui.inventoryMode) {
+        // Entering avatar edit mode - sync draft with current avatar
+        set({
+          draftAvatar: {
+            equipped: { ...state.avatar.equipped },
+          },
+        });
+      }
+      
       // Check for unsaved changes when switching modes
       if (state.ui.inventoryMode && state.ui.inventoryMode !== mode) {
         const hasChanges = 

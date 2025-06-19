@@ -68,6 +68,13 @@ export default function DraggableItemSticker({
       console.log('Placing item via click:', item.id);
       // Place in center of room
       placeItem(item.id, 50, 50);
+      
+      // Check the store state after placing
+      setTimeout(() => {
+        const state = useIslandStore.getState();
+        console.log('Draft room after placement:', state.draftRoom.placedItems);
+        console.log('Inventory after placement:', state.inventory.items);
+      }, 100);
     }
   };
 
