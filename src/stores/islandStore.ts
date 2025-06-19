@@ -13,7 +13,6 @@ export interface PlacedItem {
   itemId: ItemId;
   x: number; // Percentage of room width (0-100)
   y: number; // Percentage of room height (0-100)
-  scale?: number; // Auto-calculated based on Y position
   zIndex?: number; // Auto-calculated based on Y position
   rotation?: 0 | 90 | 180 | 270;
 }
@@ -233,9 +232,7 @@ export const useIslandStore = create<IslandStore>()(
     },
     
     placeItem: (itemId, x, y) => {
-      // Calculate scale and z-index based on Y position
-      // Items higher up (lower Y) are smaller and behind
-      const scale = 0.7 + (y / 100) * 0.5; // Scale from 0.7 to 1.2
+      // Calculate z-index based on Y position
       const zIndex = Math.floor(y); // Higher Y = higher z-index
       
       const newPlacedItem: PlacedItem = {
@@ -243,7 +240,6 @@ export const useIslandStore = create<IslandStore>()(
         itemId,
         x,
         y,
-        scale,
         zIndex,
       };
       
@@ -471,8 +467,7 @@ export const useIslandStore = create<IslandStore>()(
     },
     
     moveItem: (placedItemId, x, y) => {
-      // Calculate scale and z-index based on Y position
-      const scale = 0.7 + (y / 100) * 0.5; // Scale from 0.7 to 1.2
+      // Calculate z-index based on Y position
       const zIndex = Math.floor(y); // Higher Y = higher z-index
       
       const state = get();
@@ -483,7 +478,7 @@ export const useIslandStore = create<IslandStore>()(
           draftRoom: {
             placedItems: state.draftRoom.placedItems.map(item =>
               item.id === placedItemId
-                ? { ...item, x, y, scale, zIndex }
+                ? { ...item, x, y, zIndex }
                 : item
             ),
           },
@@ -495,7 +490,7 @@ export const useIslandStore = create<IslandStore>()(
             ...state.room,
             placedItems: state.room.placedItems.map(item =>
               item.id === placedItemId
-                ? { ...item, x, y, scale, zIndex }
+                ? { ...item, x, y, zIndex }
                 : item
             ),
           },

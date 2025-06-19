@@ -181,13 +181,12 @@ export default function IslandRoomSticker() {
           style={{
             left: `${item.x}%`,
             top: `${item.y}%`,
-            transform: `translate(-50%, -50%) scale(${item.scale || 1})`,
+            transform: `translate(-50%, -50%)`,
             zIndex: item.zIndex || Math.floor(item.y),
           }}
           onMouseDown={(e) => handleItemMouseDown(e, item)}
           initial={{ scale: 0, opacity: 0, rotate: -180 }}
           animate={{ 
-            scale: item.scale || 1, 
             opacity: 1, 
             rotate: 0,
             filter: dragState?.itemId === item.id ? 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' : 'none'
@@ -199,7 +198,7 @@ export default function IslandRoomSticker() {
             damping: 20
           }}
           whileHover={isEditingRoom ? { 
-            scale: (item.scale || 1) * 1.05,
+            scale: 1.05,
             filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'
           } : {}}
         >
