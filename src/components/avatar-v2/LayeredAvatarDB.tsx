@@ -97,12 +97,21 @@ function LayeredAvatarDB({
   const [isHovered, setIsHovered] = useState(false);
   const [useAvatarImage, setUseAvatarImage] = useState(true);
 
+  console.log('LayeredAvatarDB rendering with:', {
+    animalType,
+    items,
+    width,
+    height
+  });
+
   // Fetch item positions from database
   const { data: itemPositions } = useQuery({
     queryKey: ['/api/item-positions'],
     queryFn: () => apiRequest('GET', '/api/item-positions'),
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
+
+  console.log('Fetched item positions:', itemPositions);
 
   const handleClick = () => {
     onClick?.();
@@ -129,22 +138,43 @@ function LayeredAvatarDB({
 
   // Get position from database or use default
   const getItemPosition = (itemId: string, animalType: string) => {
-    if (!itemPositions) return null;
+    if (!itemPositions) {
+      console.log('No item positions loaded yet');
+      return null;
+    }
     
     // Find position for this item and animal
+    // Handle different naming conventions (e.g., "Border Collie" vs "border-collie")
+    const normalizedAnimal = animalType.toLowerCase().replace(/\s+/g, '-');
     const position = itemPositions.find(
-      (pos: any) => pos.item_id === itemId && pos.animal_type === animalType.toLowerCase()
+      (pos: any) => {
+        // Try exact match first
+        if (pos.item_id === itemId && pos.animal_type === normalizedAnimal) {
+          return true;
+        }
+        // Also try without dashes (for backward compatibility)
+        if (pos.item_id === itemId && pos.animal_type === animalType.toLowerCase()) {
+          return true;
+        }
+        return false;
+      }
     );
     
+    console.log(`Looking for position: item=${itemId}, animal=${normalizedAnimal} (original: ${animalType})`);
+    console.log('Found position:', position);
+    
     if (position) {
-      return {
+      const result = {
         x: position.position_x || 50,
         y: position.position_y || 50,
         scale: (position.scale || 50) / 100,
         rotation: position.rotation || 0
       };
+      console.log('Returning position:', result);
+      return result;
     }
     
+    console.log('No position found, using default');
     return null;
   };
 

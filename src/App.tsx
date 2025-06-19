@@ -44,6 +44,7 @@ const MakeAdmin = lazy(() => import("@/pages/admin/make-admin"));
 const DiagnosticCheck = lazy(() => import("@/pages/admin/diagnostic-check"));
 const DebugAuth = lazy(() => import("@/pages/admin/debug-auth"));
 const TestAdmin = lazy(() => import("@/pages/admin/test-admin"));
+const TestPositions = lazy(() => import("@/pages/admin/test-positions"));
 
 // Import the properly configured query client
 import { queryClient } from "@/lib/queryClient";
@@ -161,6 +162,7 @@ function Router() {
             <Route path="/admin/diagnostic" component={DiagnosticCheck} />
             <Route path="/admin/debug-auth" component={DebugAuth} />
             <Route path="/admin/test-admin" component={TestAdmin} />
+            <Route path="/admin/test-positions" component={TestPositions} />
           </>
         ) : (
           <>
