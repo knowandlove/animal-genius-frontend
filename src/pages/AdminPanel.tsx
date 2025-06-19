@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Users, School, BarChart3, Shield, Trash2, Key, Edit, Eye, Activity, Clock, Database, Wifi } from "lucide-react";
+import { Users, School, BarChart3, Shield, Trash2, Key, Edit, Eye, Activity, Clock, Database, Wifi, Palette, Package } from "lucide-react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -275,6 +275,7 @@ export default function AdminPanel() {
           <TabsTrigger value="classes">Classes</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="metrics">Performance</TabsTrigger>
+          <TabsTrigger value="avatar-tools">Avatar Tools</TabsTrigger>
         </TabsList>
 
         <TabsContent value="teachers" className="space-y-4">
@@ -453,6 +454,113 @@ export default function AdminPanel() {
 
         <TabsContent value="metrics" className="space-y-4">
           <MetricsTab />
+        </TabsContent>
+
+        <TabsContent value="avatar-tools" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5" />
+                Avatar & Store Management Tools
+              </CardTitle>
+              <CardDescription>
+                Tools for managing avatar customization and store items
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="border-2 hover:border-primary transition-colors">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Add Store Item
+                    </CardTitle>
+                    <CardDescription>
+                      Add new items to the student store
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button
+                      onClick={() => setLocation("/admin/add-item")}
+                      className="w-full"
+                    >
+                      Open Tool
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-2 hover:border-primary transition-colors">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Palette className="h-4 w-4" />
+                      Animal Sizer
+                    </CardTitle>
+                    <CardDescription>
+                      Adjust the size of animal graphics
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button
+                      onClick={() => setLocation("/admin/animal-sizer")}
+                      className="w-full"
+                    >
+                      Open Tool
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-2 hover:border-primary transition-colors">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Eye className="h-4 w-4" />
+                      Item Positioner
+                    </CardTitle>
+                    <CardDescription>
+                      Position accessories on each animal
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button
+                      onClick={() => setLocation("/admin/item-positioner")}
+                      className="w-full"
+                    >
+                      Open Tool
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-2 hover:border-primary transition-colors">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Database className="h-4 w-4" />
+                      Bulk Position Update
+                    </CardTitle>
+                    <CardDescription>
+                      Update all item positions at once
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button
+                      onClick={() => setLocation("/admin/bulk-update")}
+                      className="w-full"
+                    >
+                      Open Tool
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <h4 className="font-semibold mb-2">How to use these tools:</h4>
+                <ol className="text-sm space-y-1 list-decimal list-inside">
+                  <li>Use <strong>Bulk Position Update</strong> first to set default positions</li>
+                  <li>Use <strong>Animal Sizer</strong> to adjust each animal's scale</li>
+                  <li>Use <strong>Item Positioner</strong> to fine-tune accessory placement</li>
+                  <li>Use <strong>Add Store Item</strong> to add new items to the store</li>
+                </ol>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 

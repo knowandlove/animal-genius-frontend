@@ -136,7 +136,7 @@ export const useIslandStore = create<IslandStore>()(
     avatar: {
       type: 'dolphin',
       equipped: {},
-      position: { x: 200, y: 300 }, // Center of room
+      position: { x: 400, y: 190 }, // Center of room
       animation: 'idle',
     },
     
@@ -200,7 +200,7 @@ export const useIslandStore = create<IslandStore>()(
         avatar: {
           type: data.animalType.toLowerCase(),
           equipped: equipped,
-          position: data.avatarData?.position || { x: 200, y: 300 },
+          position: { x: 400, y: 190 }, // Always use centered position for now
           animation: 'idle',
         },
         room: {

@@ -1,5 +1,6 @@
 import React, { useState, CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
+import { ANIMAL_CONFIGS } from '@/config/animal-sizing';
 
 interface AvatarLayer {
   id: string;
@@ -479,15 +480,21 @@ function LayeredAvatar({
 
   // Determine which image to use for the base animal
   const getAnimalImage = () => {
+    const normalizedAnimal = animalType.toLowerCase().replace(' ', '-');
+    
     if (!useAvatarImage) {
       // Fallback to SVG
-      const svgName = animalType.toLowerCase() === 'border collie' ? 'border_collie' : animalType.toLowerCase();
+      const svgName = normalizedAnimal === 'border-collie' ? 'border_collie' : normalizedAnimal;
       return `/images/${svgName}.svg`;
     }
-    // Try avatar image first
-    return animalType.toLowerCase() === 'border collie' 
-      ? '/avatars/animals/collie.png' 
-      : `/avatars/animals/${animalType.toLowerCase()}.png`;
+    
+    // Special case for border collie -> collie.png
+    if (normalizedAnimal === 'border-collie') {
+      return '/avatars/animals/collie.png';
+    }
+    
+    // For all other animals, use the normalized name
+    return `/avatars/animals/${normalizedAnimal}.png`;
   };
 
   // Build layers array
@@ -509,7 +516,8 @@ function LayeredAvatar({
       const animalKey = animalType.toLowerCase();
       
       // Get the specific adjustment for this animal and item
-      const adjustment = animalAdjustments[animalKey]?.[slot as keyof typeof animalAdjustments[typeof animalKey]]?.[itemId];
+      const normalizedAnimalKey = animalKey.replace('-', ' ');
+      const adjustment = animalAdjustments[normalizedAnimalKey]?.[slot as keyof typeof animalAdjustments[typeof normalizedAnimalKey]]?.[itemId];
       
       // If no specific adjustment exists, use border collie as fallback
       const fallbackAdjustment = animalAdjustments['border collie']?.[slot as keyof typeof animalAdjustments['border collie']]?.[itemId];
@@ -560,12 +568,16 @@ function LayeredAvatar({
           `,
           transformOrigin: 'center',
           transition: animated ? 'all 0.3s ease' : undefined,
-          // Base layer should fill the container
+          // Base layer should fill the container with animal-specific scaling
           ...(isBaseLayer ? {
             width: '75%',
             height: '75%',
             maxWidth: '75%',
             maxHeight: '75%',
+            transform: `
+              translate(-50%, -50%) 
+              scale(${ANIMAL_CONFIGS[animalType.toLowerCase().replace(' ', '-')]?.baseScale || 1})
+            `,
           } : {}),
         };
 

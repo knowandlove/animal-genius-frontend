@@ -248,6 +248,26 @@ export const STORE_CATALOG: StoreItem[] = [
   }
 ];
 
+// Helper function to get the correct folder for an item
+export function getItemFolder(itemId: string): string {
+  // Glasses items
+  if (itemId === 'greenblinds' || itemId === 'hearts') {
+    return 'glasses';
+  }
+  
+  // Check if it's in the store catalog
+  const item = STORE_CATALOG.find(i => i.id === itemId);
+  if (!item) return 'accessories';
+  
+  // Hats
+  if (item.type === 'avatar_hat') {
+    return 'hats';
+  }
+  
+  // Default to accessories
+  return 'accessories';
+}
+
 // Helper functions for store operations
 export function getItemById(itemId: string): StoreItem | undefined {
   return STORE_CATALOG.find(item => item.id === itemId);

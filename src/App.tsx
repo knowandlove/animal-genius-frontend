@@ -36,7 +36,14 @@ const ClassEconomy = lazy(() => import("@/pages/class-economy"));
 const AvatarTest = lazy(() => import("@/pages/avatar-test"));
 const AvatarTestV2 = lazy(() => import("@/pages/avatar-test-v2"));
 const AvatarEditor = lazy(() => import("@/pages/avatar-editor"));
-const ItemPositionMatrix = lazy(() => import("@/pages/admin/item-position-matrix"));
+const AvatarItemPositioner = lazy(() => import("@/pages/admin/avatar-item-positioner"));
+const AddStoreItem = lazy(() => import("@/pages/admin/add-store-item"));
+const AnimalSizer = lazy(() => import("@/pages/admin/animal-sizer"));
+const BulkPositionUpdate = lazy(() => import("@/pages/admin/bulk-position-update"));
+const MakeAdmin = lazy(() => import("@/pages/admin/make-admin"));
+const DiagnosticCheck = lazy(() => import("@/pages/admin/diagnostic-check"));
+const DebugAuth = lazy(() => import("@/pages/admin/debug-auth"));
+const TestAdmin = lazy(() => import("@/pages/admin/test-admin"));
 
 // Import the properly configured query client
 import { queryClient } from "@/lib/queryClient";
@@ -146,7 +153,14 @@ function Router() {
             <Route path="/teacher/game/create" component={GameCreate} />
             <Route path="/teacher/game/:gameId" component={TeacherGameDashboard} />
             <Route path="/colors" component={ColorPreview} />
-            <Route path="/admin/item-positions" component={ItemPositionMatrix} />
+            <Route path="/admin/item-positioner" component={AvatarItemPositioner} />
+            <Route path="/admin/add-item" component={AddStoreItem} />
+            <Route path="/admin/animal-sizer" component={AnimalSizer} />
+            <Route path="/admin/bulk-update" component={BulkPositionUpdate} />
+            <Route path="/admin/make-admin" component={MakeAdmin} />
+            <Route path="/admin/diagnostic" component={DiagnosticCheck} />
+            <Route path="/admin/debug-auth" component={DebugAuth} />
+            <Route path="/admin/test-admin" component={TestAdmin} />
           </>
         ) : (
           <>

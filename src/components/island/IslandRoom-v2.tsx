@@ -133,8 +133,8 @@ export default function IslandRoom() {
           <LayeredAvatar
             animalType={displayAvatar.type}
             items={displayAvatar.equipped}
-            width={150}
-            height={150}
+            width={420}
+            height={420}
             animated={displayAvatar.animation !== 'idle'}
           />
         </motion.div>

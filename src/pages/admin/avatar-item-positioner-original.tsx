@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Input } from '@/components/ui/input';
 import { 
   Select,
   SelectContent,
@@ -13,9 +12,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import LayeredAvatar from '@/components/avatar-v2/LayeredAvatar';
-import { STORE_CATALOG, getItemFolder } from '@shared/currency-types';
-import { ANIMAL_CONFIGS, getItemScaleForAnimal } from '@/config/animal-sizing';
-import { Save, Copy, RotateCw, Download, Upload, Move } from 'lucide-react';
+import { STORE_CATALOG } from '@shared/currency-types';
+import { Save, Copy, RotateCw, Download, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -48,17 +46,13 @@ export default function AvatarItemPositioner() {
   const [selectedAnimal, setSelectedAnimal] = useState<string>('meerkat');
   const [positions, setPositions] = useState<Record<string, Record<string, PositionData>>>({});
   const [currentPosition, setCurrentPosition] = useState<PositionData>({
-    x: 50,
-    y: 50,
-    scale: 0.5,
+    x: 50, // Changed to percentage (50% = center)
+    y: 50, // Changed to percentage (50% = center)
+    scale: 0.5, // Changed to match LayeredAvatar scale
     rotation: 0
   });
-  
-  // Get the base item scale for the current animal
-  const animalItemScale = ANIMAL_CONFIGS[selectedAnimal]?.itemScale || 1;
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [showExport, setShowExport] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
 
   // Load positions from backend when component mounts
   useEffect(() => {
@@ -81,7 +75,7 @@ export default function AvatarItemPositioner() {
   const loadPositions = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/admin/item-positions`, {
+      const response = await fetch('/api/admin/item-positions', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -95,9 +89,9 @@ export default function AvatarItemPositioner() {
           positionMap[pos.item_id] = {};
         }
         positionMap[pos.item_id][pos.animal_type] = {
-          x: pos.position_x || 50,
-          y: pos.position_y || 50,
-          scale: (pos.scale || 50) / 100,
+          x: pos.position_x || 50, // Default to center
+          y: pos.position_y || 50, // Default to center
+          scale: (pos.scale || 50) / 100, // Convert from percentage
           rotation: pos.rotation || 0
         };
       });
@@ -113,7 +107,7 @@ export default function AvatarItemPositioner() {
     setSaveStatus('saving');
     try {
       const token = localStorage.getItem('authToken');
-      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/admin/item-positions`, {
+      await fetch('/api/admin/item-positions', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -124,7 +118,7 @@ export default function AvatarItemPositioner() {
           animal_type: selectedAnimal,
           position_x: currentPosition.x,
           position_y: currentPosition.y,
-          scale: Math.round(currentPosition.scale * 100),
+          scale: Math.round(currentPosition.scale * 100), // Convert to percentage
           rotation: currentPosition.rotation
         })
       });
@@ -170,7 +164,7 @@ export default function AvatarItemPositioner() {
     for (const { animal, position } of updates) {
       try {
         const token = localStorage.getItem('authToken');
-        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/admin/item-positions`, {
+        await fetch('/api/admin/item-positions', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -219,42 +213,9 @@ export default function AvatarItemPositioner() {
 
   const progress = getProgress();
 
-  // Handle drag and drop
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!selectedItem || !selectedAnimal) return;
-    
-    const rect = e.currentTarget.getBoundingClientRect();
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startPosX = currentPosition.x;
-    const startPosY = currentPosition.y;
-    
-    setIsDragging(true);
-    
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      const deltaX = moveEvent.clientX - startX;
-      const deltaY = moveEvent.clientY - startY;
-      
-      // Convert pixel movement to percentage
-      const newX = Math.max(0, Math.min(100, startPosX + (deltaX / rect.width) * 100));
-      const newY = Math.max(0, Math.min(100, startPosY + (deltaY / rect.height) * 100));
-      
-      setCurrentPosition(prev => ({ ...prev, x: newX, y: newY }));
-    };
-    
-    const handleMouseUp = () => {
-      setIsDragging(false);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-    
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <Card>
           <CardHeader>
@@ -277,7 +238,7 @@ export default function AvatarItemPositioner() {
           </CardHeader>
         </Card>
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-6">
           {/* Controls */}
           <Card>
             <CardHeader>
@@ -331,25 +292,12 @@ export default function AvatarItemPositioner() {
                 </Select>
               </div>
 
-              {/* Position Sliders with Input Fields */}
+              {/* Position Sliders */}
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between mb-2">
-                    <Label>Horizontal Position (X)</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        value={Math.round(currentPosition.x)}
-                        onChange={(e) => setCurrentPosition(prev => ({ 
-                          ...prev, 
-                          x: Math.max(0, Math.min(100, parseInt(e.target.value) || 0)) 
-                        }))}
-                        className="w-16 h-8 text-sm"
-                        min={0}
-                        max={100}
-                      />
-                      <span className="text-sm text-muted-foreground">%</span>
-                    </div>
+                    <Label>Horizontal Position</Label>
+                    <span className="text-sm text-muted-foreground">{currentPosition.x}%</span>
                   </div>
                   <Slider
                     value={[currentPosition.x]}
@@ -363,21 +311,8 @@ export default function AvatarItemPositioner() {
 
                 <div>
                   <div className="flex justify-between mb-2">
-                    <Label>Vertical Position (Y)</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        value={Math.round(currentPosition.y)}
-                        onChange={(e) => setCurrentPosition(prev => ({ 
-                          ...prev, 
-                          y: Math.max(0, Math.min(100, parseInt(e.target.value) || 0)) 
-                        }))}
-                        className="w-16 h-8 text-sm"
-                        min={0}
-                        max={100}
-                      />
-                      <span className="text-sm text-muted-foreground">%</span>
-                    </div>
+                    <Label>Vertical Position</Label>
+                    <span className="text-sm text-muted-foreground">{currentPosition.y}%</span>
                   </div>
                   <Slider
                     value={[currentPosition.y]}
@@ -392,21 +327,7 @@ export default function AvatarItemPositioner() {
                 <div>
                   <div className="flex justify-between mb-2">
                     <Label>Scale</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        value={currentPosition.scale.toFixed(2)}
-                        onChange={(e) => setCurrentPosition(prev => ({ 
-                          ...prev, 
-                          scale: Math.max(0.1, Math.min(1.5, parseFloat(e.target.value) || 0.5)) 
-                        }))}
-                        className="w-16 h-8 text-sm"
-                        min={0.1}
-                        max={1.5}
-                        step={0.05}
-                      />
-                      <span className="text-sm text-muted-foreground">x</span>
-                    </div>
+                    <span className="text-sm text-muted-foreground">{currentPosition.scale.toFixed(2)}x</span>
                   </div>
                   <Slider
                     value={[currentPosition.scale * 100]}
@@ -416,28 +337,12 @@ export default function AvatarItemPositioner() {
                     step={5}
                     className="cursor-pointer"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Animal item scale: {animalItemScale}x | Total scale: {(currentPosition.scale * animalItemScale).toFixed(2)}x
-                  </p>
                 </div>
 
                 <div>
                   <div className="flex justify-between mb-2">
                     <Label>Rotation</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        value={currentPosition.rotation}
-                        onChange={(e) => setCurrentPosition(prev => ({ 
-                          ...prev, 
-                          rotation: Math.max(-180, Math.min(180, parseInt(e.target.value) || 0)) 
-                        }))}
-                        className="w-16 h-8 text-sm"
-                        min={-180}
-                        max={180}
-                      />
-                      <span className="text-sm text-muted-foreground">°</span>
-                    </div>
+                    <span className="text-sm text-muted-foreground">{currentPosition.rotation}°</span>
                   </div>
                   <Slider
                     value={[currentPosition.rotation]}
@@ -496,44 +401,23 @@ export default function AvatarItemPositioner() {
           {/* Preview */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Live Preview</CardTitle>
-                <Badge variant="outline" className="flex items-center gap-1">
-                  <Move className="w-3 h-3" />
-                  Drag item to position
-                </Badge>
-              </div>
+              <CardTitle>Live Preview</CardTitle>
             </CardHeader>
             <CardContent>
-              <div 
-                className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl p-8 min-h-[500px] flex items-center justify-center relative"
-                style={{ 
-                  overflow: 'hidden',
-                  cursor: isDragging ? 'grabbing' : 'default'
-                }}
-              >
+              <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl p-12 min-h-[400px] flex items-center justify-center relative overflow-visible">
                 <AnimatePresence mode="wait">
                   {selectedItem && selectedAnimal ? (
-                    <div 
-                      className="relative" 
-                      style={{ 
-                        width: 400, 
-                        height: 400,
-                        position: 'relative'
-                      }}
-                    >
-                      {/* Base animal - centered in container */}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <LayeredAvatar
-                          animalType={selectedAnimal}
-                          items={{}}
-                          width={300}
-                          height={300}
-                          animated={false}
-                        />
-                      </div>
+                    <div className="relative" style={{ width: 300, height: 300 }}>
+                      {/* Base animal */}
+                      <LayeredAvatar
+                        animalType={selectedAnimal}
+                        items={{}}
+                        width={300}
+                        height={300}
+                        animated={false}
+                      />
                       
-                      {/* Item with custom positioning - FIXED */}
+                      {/* Item with custom positioning */}
                       <motion.div
                         key={`${selectedItem}-${selectedAnimal}`}
                         initial={{ opacity: 0 }}
@@ -541,47 +425,31 @@ export default function AvatarItemPositioner() {
                         exit={{ opacity: 0 }}
                         className="absolute"
                         style={{
-                          position: 'absolute',
-                          zIndex: 20, // Ensure it's above the animal
                           top: `${currentPosition.y}%`,
                           left: `${currentPosition.x}%`,
                           transform: `
                             translate(-50%, -50%) 
-                            scale(${currentPosition.scale * animalItemScale}) 
+                            scale(${currentPosition.scale}) 
                             rotate(${currentPosition.rotation}deg)
                           `,
                           transformOrigin: 'center',
-                          cursor: selectedItem ? (isDragging ? 'grabbing' : 'grab') : 'default',
-                          userSelect: 'none',
+                          pointerEvents: 'none',
                         }}
-                        onMouseDown={handleMouseDown}
                       >
                         <img
-                          src={`/avatars/items/${getItemFolder(selectedItem)}/${selectedItem}.png`}
+                          src={`/avatars/items/${
+                            AVATAR_ITEMS.find(i => i.id === selectedItem)?.type.includes('hat') 
+                              ? 'hats' 
+                              : 'accessories'
+                          }/${selectedItem}.png`}
                           alt=""
                           className="block"
-                          draggable={false}
-                          style={{
-                            maxWidth: '200px',
-                            maxHeight: '200px',
-                            width: 'auto',
-                            height: 'auto',
-                          }}
                           onError={(e) => {
-                            console.error(`Failed to load image: ${(e.target as HTMLImageElement).src}`);
                             // Fallback to placeholder
                             (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2NjYyIgLz48dGV4dCB4PSI1MCIgeT0iNTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+';
                           }}
                         />
                       </motion.div>
-
-                      {/* Grid overlay for positioning help */}
-                      {isDragging && (
-                        <div className="absolute inset-0 pointer-events-none">
-                          <div className="absolute top-1/2 left-0 right-0 h-px bg-purple-300 opacity-50" />
-                          <div className="absolute left-1/2 top-0 bottom-0 w-px bg-purple-300 opacity-50" />
-                        </div>
-                      )}
                     </div>
                   ) : (
                     <div className="text-center text-muted-foreground">
