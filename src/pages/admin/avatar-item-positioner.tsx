@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import LayeredAvatar from '@/components/avatar-v2/LayeredAvatar';
+import LayeredAvatarPositioner from '@/components/avatar-v2/LayeredAvatarPositioner';
 import { STORE_CATALOG, getItemFolder } from '@shared/currency-types';
 import { ANIMAL_CONFIGS, getItemScaleForAnimal } from '@/config/animal-sizing';
 import { Save, Copy, RotateCw, Download, Upload, Move } from 'lucide-react';
@@ -416,9 +416,6 @@ export default function AvatarItemPositioner() {
                     step={5}
                     className="cursor-pointer"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Animal item scale: {animalItemScale}x | Total scale: {(currentPosition.scale * animalItemScale).toFixed(2)}x
-                  </p>
                 </div>
 
                 <div>
@@ -522,58 +519,17 @@ export default function AvatarItemPositioner() {
                         position: 'relative'
                       }}
                     >
-                      {/* Base animal - centered in container */}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <LayeredAvatar
+                      {/* Base animal - full size in container */}
+                      <div className="absolute inset-0">
+                        <LayeredAvatarPositioner
                           animalType={selectedAnimal}
-                          items={{}}
-                          width={300}
-                          height={300}
+                          selectedItem={selectedItem}
+                          itemPosition={currentPosition}
+                          width={400}
+                          height={400}
                           animated={false}
                         />
                       </div>
-                      
-                      {/* Item with custom positioning - FIXED */}
-                      <motion.div
-                        key={`${selectedItem}-${selectedAnimal}`}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute"
-                        style={{
-                          position: 'absolute',
-                          zIndex: 20, // Ensure it's above the animal
-                          top: `${currentPosition.y}%`,
-                          left: `${currentPosition.x}%`,
-                          transform: `
-                            translate(-50%, -50%) 
-                            scale(${currentPosition.scale * animalItemScale}) 
-                            rotate(${currentPosition.rotation}deg)
-                          `,
-                          transformOrigin: 'center',
-                          cursor: selectedItem ? (isDragging ? 'grabbing' : 'grab') : 'default',
-                          userSelect: 'none',
-                        }}
-                        onMouseDown={handleMouseDown}
-                      >
-                        <img
-                          src={`/avatars/items/${getItemFolder(selectedItem)}/${selectedItem}.png`}
-                          alt=""
-                          className="block"
-                          draggable={false}
-                          style={{
-                            maxWidth: '200px',
-                            maxHeight: '200px',
-                            width: 'auto',
-                            height: 'auto',
-                          }}
-                          onError={(e) => {
-                            console.error(`Failed to load image: ${(e.target as HTMLImageElement).src}`);
-                            // Fallback to placeholder
-                            (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2NjYyIgLz48dGV4dCB4PSI1MCIgeT0iNTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+';
-                          }}
-                        />
-                      </motion.div>
 
                       {/* Grid overlay for positioning help */}
                       {isDragging && (
