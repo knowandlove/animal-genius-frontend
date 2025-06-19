@@ -131,7 +131,7 @@ export const useIslandStore = create<IslandStore>()(
     avatar: {
       type: 'dolphin',
       equipped: {},
-      position: { x: 25, y: 25 }, // Moved left 15% and up 30%
+      position: { x: 35, y: 35 }, // Adjusted position
       animation: 'idle',
     },
     
@@ -189,7 +189,7 @@ export const useIslandStore = create<IslandStore>()(
         avatar: {
           type: data.animalType.toLowerCase(),
           equipped: equipped,
-          position: { x: 25, y: 25 }, // Moved left 15% and up 30%
+          position: { x: 35, y: 35 }, // Adjusted position
           animation: 'idle',
         },
         room: {
