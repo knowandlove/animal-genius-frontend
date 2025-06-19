@@ -61,6 +61,13 @@ export default function DraggableItemSticker({
   };
   
   const handleClick = (e: React.MouseEvent) => {
+    console.log('DraggableItemSticker clicked!', {
+      item: item.id,
+      isSelected,
+      inventoryMode,
+      canBePlaced
+    });
+    
     onClick();
     
     // If item is selected and we're in room mode, place it in center of room

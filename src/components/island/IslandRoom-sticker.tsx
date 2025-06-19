@@ -44,6 +44,12 @@ export default function IslandRoomSticker() {
   
   console.log('IslandRoom - Display room:', displayRoom);
   console.log('IslandRoom - Sorted items to render:', sortedItems);
+  console.log('IslandRoom - Item details:', sortedItems.map(item => ({
+    id: item.id,
+    itemId: item.itemId,
+    x: item.x,
+    y: item.y
+  })));
   console.log('IslandRoom - Is editing room?', isEditingRoom);
 
   const handleItemMouseDown = (e: React.MouseEvent, item: any) => {
