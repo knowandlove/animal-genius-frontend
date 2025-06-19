@@ -195,70 +195,51 @@ export default function IslandRoomSticker() {
       )}
 
       {/* Placed Items */}
-      {sortedItems.map((item) => {
-        // Handle both old grid system (0-3) and new percentage system (0-100)
-        const isOldGrid = item.x <= 3 && item.y <= 3;
-        const xPos = isOldGrid ? (item.x / 3) * 80 + 10 : item.x; // Convert 0-3 to 10-90%
-        const yPos = isOldGrid ? (item.y / 3) * 80 + 10 : item.y; // Convert 0-3 to 10-90%
+      <div className="absolute inset-0 z-10" style={{ position: 'relative' }}>
+        {/* Debug: Show container bounds */}
+        <div className="absolute inset-0 border-2 border-red-500 opacity-30 pointer-events-none" />
         
-        return (
-          <motion.div
-            key={item.id}
-            className={cn(
-              "absolute cursor-move",
-              isEditingRoom && "hover:brightness-110 transition-all",
-              dragState?.itemId === item.id && "cursor-grabbing"
-            )}
-            style={{
-              left: `${xPos}%`,
-              top: `${yPos}%`,
-              transform: `translate(-50%, -50%)`,
-              zIndex: (item.zIndex || Math.floor(yPos)) + 10, // Add 10 to ensure above background
-            }}
-            onMouseDown={(e) => handleItemMouseDown(e, item)}
-            initial={{ scale: 0, opacity: 0, rotate: -180 }}
-            animate={{ 
-              opacity: 1, 
-              rotate: 0,
-              filter: dragState?.itemId === item.id ? 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' : 'none'
-            }}
-            exit={{ scale: 0, opacity: 0, rotate: 180 }}
-            transition={{ 
-              type: "spring",
-              stiffness: 260,
-              damping: 20
-            }}
-            whileHover={isEditingRoom ? { 
-              scale: 1.05,
-              filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.2))'
-            } : {}}
-          >
-            {/* Item Visual */}
-            <div className="bg-white/90 backdrop-blur rounded-lg p-4 shadow-lg select-none">
-              <span className="text-4xl">
-                {getItemIcon(item.itemId)}
-              </span>
-            </div>
-            
-            {/* Debug info */}
-            {isEditingRoom && (
-              <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-xs bg-black/70 text-white px-2 py-1 rounded whitespace-nowrap">
-                {item.itemId} ({Math.round(xPos)}, {Math.round(yPos)})
+        {sortedItems.length === 0 && (
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white bg-black/70 p-4 rounded">
+            No items to display
+          </div>
+        )}
+        
+        {sortedItems.map((item, index) => {
+          // Handle both old grid system (0-3) and new percentage system (0-100)
+          const isOldGrid = item.x <= 3 && item.y <= 3;
+          const xPos = isOldGrid ? (item.x / 3) * 80 + 10 : item.x;
+          const yPos = isOldGrid ? (item.y / 3) * 80 + 10 : item.y;
+          
+          console.log(`Rendering item ${index}:`, {
+            itemId: item.itemId,
+            position: { x: xPos, y: yPos },
+            icon: getItemIcon(item.itemId)
+          });
+          
+          return (
+            <div
+              key={item.id}
+              className="absolute bg-blue-500 border-2 border-white"
+              style={{
+                left: `${xPos}%`,
+                top: `${yPos}%`,
+                transform: 'translate(-50%, -50%)',
+                zIndex: 100 + index, // Very high z-index
+                width: '80px',
+                height: '80px',
+              }}
+            >
+              {/* Debug info always visible */}
+              <div className="text-white text-xs p-1">
+                {item.itemId}
+                <br />
+                ({Math.round(xPos)}, {Math.round(yPos)})
               </div>
-            )}
-            
-            {/* Hover indicator */}
-            {isEditingRoom && !dragState && (
-              <motion.div 
-                className="absolute inset-0 rounded-lg border-2 border-blue-400 opacity-0"
-                whileHover={{ opacity: 1 }}
-                initial={{ scale: 0.9 }}
-                animate={{ scale: 1 }}
-              />
-            )}
-          </motion.div>
-        );
-      })}
+            </div>
+          );
+        })}
+      </div>
 
       {/* Avatar (hidden in room editing mode) */}
       {!isEditingRoom && (
