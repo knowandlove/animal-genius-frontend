@@ -41,19 +41,6 @@ export default function IslandRoomSticker() {
   const sortedItems = [...displayRoom.placedItems].sort((a, b) => 
     (a.zIndex || 0) - (b.zIndex || 0)
   );
-  
-  console.log('IslandRoom - Display room:', displayRoom);
-  console.log('IslandRoom - Sorted items to render:', sortedItems);
-  console.log('IslandRoom - Item details:', sortedItems.map(item => ({
-    id: item.id,
-    itemId: item.itemId,
-    x: item.x,
-    y: item.y
-  })));
-  console.log('IslandRoom - Is editing room?', isEditingRoom);
-  
-  // Log the actual items array
-  console.log('IslandRoom - Full items array:', JSON.stringify(sortedItems, null, 2));
 
   const handleItemMouseDown = (e: React.MouseEvent, item: any) => {
     if (!isEditingRoom || !roomRef.current) return;
@@ -195,47 +182,38 @@ export default function IslandRoomSticker() {
       )}
 
       {/* Placed Items */}
-      <div className="absolute inset-0 z-10" style={{ position: 'relative' }}>
-        {/* Debug: Show container bounds */}
-        <div className="absolute inset-0 border-2 border-red-500 opacity-30 pointer-events-none" />
-        
-        {sortedItems.length === 0 && (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white bg-black/70 p-4 rounded">
-            No items to display
-          </div>
-        )}
-        
+      <div className="absolute inset-0 z-10">
         {sortedItems.map((item, index) => {
           // Handle both old grid system (0-3) and new percentage system (0-100)
           const isOldGrid = item.x <= 3 && item.y <= 3;
           const xPos = isOldGrid ? (item.x / 3) * 80 + 10 : item.x;
           const yPos = isOldGrid ? (item.y / 3) * 80 + 10 : item.y;
           
-          console.log(`Rendering item ${index}:`, {
-            itemId: item.itemId,
-            position: { x: xPos, y: yPos },
-            icon: getItemIcon(item.itemId)
-          });
-          
           return (
             <div
               key={item.id}
-              className="absolute bg-blue-500 border-2 border-white"
+              className="absolute cursor-move hover:scale-105 transition-transform"
               style={{
                 left: `${xPos}%`,
                 top: `${yPos}%`,
                 transform: 'translate(-50%, -50%)',
-                zIndex: 100 + index, // Very high z-index
-                width: '80px',
-                height: '80px',
+                zIndex: 20 + index,
               }}
+              onMouseDown={(e) => handleItemMouseDown(e, item)}
             >
-              {/* Debug info always visible */}
-              <div className="text-white text-xs p-1">
-                {item.itemId}
-                <br />
-                ({Math.round(xPos)}, {Math.round(yPos)})
+              {/* Item Visual */}
+              <div className="bg-white/90 backdrop-blur rounded-lg p-3 shadow-lg select-none border-2 border-gray-200">
+                <span className="text-3xl block">
+                  {getItemIcon(item.itemId)}
+                </span>
               </div>
+              
+              {/* Item label */}
+              {isEditingRoom && (
+                <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs bg-black/70 text-white px-2 py-1 rounded whitespace-nowrap">
+                  {item.itemId}
+                </div>
+              )}
             </div>
           );
         })}

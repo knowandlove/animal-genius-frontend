@@ -24,17 +24,10 @@ export default function DraggableItemSticker({
   
   // Determine if this item can be placed in the room
   const canBePlaced = item.type === 'room_furniture' || item.type === 'room_decoration';
-  
-  console.log('Item:', item.id, 'Type:', item.type, 'Can be placed:', canBePlaced);
 
   const handleDragStart = (e: React.DragEvent) => {
-    console.log('DragStart triggered for:', item.id);
-    console.log('Can be placed:', canBePlaced);
-    console.log('Disabled:', disabled);
-    
     if (!canBePlaced || disabled) {
       e.preventDefault();
-      console.log('Drag prevented');
       return;
     }
     
@@ -52,8 +45,6 @@ export default function DraggableItemSticker({
       itemId: item.id,
       fromInventory: true,
     });
-    
-    console.log('Drag started successfully');
   };
   
   const handleDragEnd = () => {
@@ -61,30 +52,15 @@ export default function DraggableItemSticker({
   };
   
   const handleClick = (e: React.MouseEvent) => {
-    console.log('DraggableItemSticker clicked!', {
-      item: item.id,
-      isSelected,
-      inventoryMode,
-      canBePlaced
-    });
-    
     onClick();
     
     // If item is selected and we're in room mode, place it in center of room
     if (isSelected && inventoryMode === 'room' && canBePlaced) {
-      console.log('Placing item via click:', item.id);
       // Add some randomization so items don't stack
       const randomOffset = () => Math.random() * 20 - 10; // -10 to +10
       const x = 50 + randomOffset();
       const y = 50 + randomOffset();
       placeItem(item.id, x, y);
-      
-      // Check the store state after placing
-      setTimeout(() => {
-        const state = useIslandStore.getState();
-        console.log('Draft room after placement:', state.draftRoom.placedItems);
-        console.log('Inventory after placement:', state.inventory.items);
-      }, 100);
     }
   };
 

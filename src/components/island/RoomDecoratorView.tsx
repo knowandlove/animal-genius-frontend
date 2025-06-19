@@ -16,9 +16,6 @@ export default function RoomDecoratorView() {
   const roomItems = inventory.items.filter(item => 
     item.type === 'room_decoration' || item.type === 'room_furniture'
   );
-  
-  console.log('Inventory items:', inventory.items);
-  console.log('Room items:', roomItems);
 
   // Categorize items
   const furnitureItems = roomItems.filter(item => 
