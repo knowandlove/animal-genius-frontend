@@ -48,16 +48,19 @@ export default function IslandRoomSticker() {
   const handleItemMouseDown = (e: React.MouseEvent, item: any) => {
     if (!isEditingRoom || !roomRef.current) return;
     
+    e.preventDefault();
+    e.stopPropagation();
+    
     const rect = roomRef.current.getBoundingClientRect();
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const offsetX = startX - rect.left - (item.x / 100) * rect.width;
-    const offsetY = startY - rect.top - (item.y / 100) * rect.height;
+    const itemX = (item.x / 100) * rect.width;
+    const itemY = (item.y / 100) * rect.height;
+    const offsetX = e.clientX - rect.left - itemX;
+    const offsetY = e.clientY - rect.top - itemY;
     
     setDragState({
       itemId: item.id,
-      startX,
-      startY,
+      startX: e.clientX,
+      startY: e.clientY,
       offsetX,
       offsetY,
     });
@@ -165,24 +168,12 @@ export default function IslandRoomSticker() {
     return '📦';
   };
 
-  // Calculate scale based on Y position for depth effect
+  // No scaling - all items same size
   const getScaleFromY = (yPercent: number): number => {
-    // Y ranges from 0 (top) to 100 (bottom)
-    // Scale from 0.6 (top) to 1.2 (bottom)
-    const minScale = 0.6;
-    const maxScale = 1.2;
-    return minScale + (yPercent / 100) * (maxScale - minScale);
+    return 1; // Always return scale of 1
   };
 
-  // Calculate shadow based on Y position for depth effect
-  const getShadowFromY = (yPercent: number): string => {
-    // Smaller, sharper shadows at top (far away)
-    // Larger, softer shadows at bottom (close)
-    const blur = 4 + (yPercent / 100) * 16; // 4px to 20px
-    const spread = 1 + (yPercent / 100) * 3; // 1px to 4px
-    const opacity = 0.1 + (yPercent / 100) * 0.2; // 0.1 to 0.3
-    return `0 ${spread}px ${blur}px rgba(0, 0, 0, ${opacity})`;
-  };
+
 
   return (
     <div 
@@ -205,51 +196,8 @@ export default function IslandRoomSticker() {
           backgroundPosition: 'center',
         }}
       >
-        {/* Floor gradient for depth */}
-        <div 
-          className="absolute inset-0"
-          style={{
-            background: 'linear-gradient(to bottom, transparent 0%, transparent 40%, rgba(0,0,0,0.05) 60%, rgba(0,0,0,0.1) 100%)',
-          }}
-        />
-        {/* Perspective grid overlay for depth visualization (only in edit mode) */}
-        {isEditingRoom && (
-          <svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 100 100" preserveAspectRatio="none">
-            {/* Horizontal lines that get closer together towards the top (horizon) */}
-            {[...Array(10)].map((_, i) => {
-              // Exponential spacing for perspective effect
-              const y = Math.pow(i / 9, 1.5) * 100;
-              return (
-                <line
-                  key={`h-${i}`}
-                  x1="0"
-                  y1={y}
-                  x2="100"
-                  y2={y}
-                  stroke="white"
-                  strokeWidth="0.2"
-                />
-              );
-            })}
-            {/* Vertical lines that converge towards center */}
-            {[...Array(11)].map((_, i) => {
-              const x = (i / 10) * 100;
-              // Lines converge to a vanishing point at top center
-              const topX = 50 + (x - 50) * 0.3;
-              return (
-                <line
-                  key={`v-${i}`}
-                  x1={x}
-                  y1="100"
-                  x2={topX}
-                  y2="0"
-                  stroke="white"
-                  strokeWidth="0.2"
-                />
-              );
-            })}
-          </svg>
-        )}
+
+
       </div>
 
       {/* Instructions (visible in room editing mode) */}
@@ -257,7 +205,7 @@ export default function IslandRoomSticker() {
         <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg text-sm z-50">
           <p className="font-semibold mb-1">🏠 Room Decoration Mode</p>
           <p className="text-xs opacity-90">Drag items from inventory to place anywhere</p>
-          <p className="text-xs opacity-90">Items scale with depth (higher = smaller)</p>
+
           <p className="text-xs opacity-90">Drag placed items to move them</p>
           <p className="text-xs opacity-90">Drag to trash can to delete</p>
         </div>
@@ -277,12 +225,9 @@ export default function IslandRoomSticker() {
           animate={{ opacity: 0.5 }}
         >
           <div 
-            className="bg-blue-200/50 backdrop-blur rounded-lg p-3 border-2 border-blue-400 border-dashed"
-            style={{ 
-              boxShadow: getShadowFromY(dropPreview.y),
-            }}
+            className="bg-blue-200/50 backdrop-blur rounded-lg p-3 border-2 border-blue-400 border-dashed shadow-lg"
           >
-            <span className="text-3xl block" style={{ fontSize: `${2 * getScaleFromY(dropPreview.y)}rem` }}>
+            <span className="text-3xl block">
               {getItemIcon(ui.draggedItem.itemId)}
             </span>
           </div>
@@ -319,12 +264,9 @@ export default function IslandRoomSticker() {
             >
               {/* Item Visual */}
               <div 
-                className="bg-white/90 backdrop-blur rounded-lg p-3 select-none border-2 border-gray-200"
-                style={{ 
-                  boxShadow: getShadowFromY(yPos),
-                }}
+                className="bg-white/90 backdrop-blur rounded-lg p-3 select-none border-2 border-gray-200 shadow-lg"
               >
-                <span className="text-3xl block" style={{ fontSize: `${2 * scale}rem` }}>
+                <span className="text-3xl block">
                   {getItemIcon(item.itemId)}
                 </span>
               </div>
