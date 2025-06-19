@@ -95,19 +95,19 @@ export default function RoomDecoratorView() {
 
         <div className="flex-1 overflow-y-auto">
           <TabsContent value="furniture" className="mt-0">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {renderItemGrid(furnitureItems)}
             </div>
           </TabsContent>
 
           <TabsContent value="walls" className="mt-0">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {renderItemGrid(wallItems)}
             </div>
           </TabsContent>
 
           <TabsContent value="floors" className="mt-0">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {renderItemGrid(floorItems)}
             </div>
           </TabsContent>

@@ -25,18 +25,18 @@ export default function UnifiedInventoryPanel() {
 
   return (
     <Card className="h-full">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2 pt-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">
+          <CardTitle className="text-base">
             {inventoryMode === 'avatar' ? '👗 Customize Avatar' : '🏠 Room Decorations'}
           </CardTitle>
           <Button
             size="icon"
             variant="ghost"
             onClick={handleClose}
-            className="h-8 w-8"
+            className="h-7 w-7"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3 h-3" />
           </Button>
         </div>
       </CardHeader>

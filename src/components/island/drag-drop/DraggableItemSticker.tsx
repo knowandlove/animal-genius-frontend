@@ -88,7 +88,7 @@ export default function DraggableItemSticker({
   return (
     <div
       className={cn(
-        "relative p-3 border rounded-lg transition-all select-none group",
+        "relative p-2 border rounded-lg transition-all select-none group",
         "hover:border-primary hover:shadow-md",
         isSelected && "border-primary bg-primary/5 ring-2 ring-primary/20",
         !canBePlaced && disabled && "opacity-50",
@@ -101,24 +101,24 @@ export default function DraggableItemSticker({
     >
       {/* Click to place hint */}
       {canBePlaced && !disabled && isSelected && (
-        <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
-          Click again to place!
+        <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full z-10">
+          Click again!
         </div>
       )}
       
       {/* Item Icon/Preview */}
-      <div className="aspect-square bg-gray-100 rounded mb-1 flex items-center justify-center pointer-events-none">
+      <div className="aspect-square bg-gray-100 rounded flex items-center justify-center pointer-events-none">
         <span className="text-2xl">
           {getItemIcon(item)}
         </span>
       </div>
 
       {/* Item Name */}
-      <p className="text-xs font-medium truncate">{item.name}</p>
+      <p className="text-xs font-medium truncate mt-1">{item.name}</p>
 
       {/* Quantity Badge */}
       {item.quantity && item.quantity > 1 && (
-        <Badge variant="secondary" className="absolute top-1 right-1 text-xs px-1">
+        <Badge variant="secondary" className="absolute top-1 right-1 text-xs px-1 scale-75">
           {item.quantity}x
         </Badge>
       )}
@@ -127,26 +127,10 @@ export default function DraggableItemSticker({
       {item.rarity && item.rarity !== 'common' && (
         <Badge 
           variant={item.rarity === 'rare' ? 'default' : 'destructive'}
-          className="absolute bottom-1 right-1 text-xs px-1 py-0"
+          className="absolute bottom-1 right-1 text-xs px-1 py-0 scale-75"
         >
           {item.rarity === 'rare' ? '★' : '⭐'}
         </Badge>
-      )}
-
-      {/* Drag Indicator */}
-      {canBePlaced && !disabled && (
-        <div className="absolute top-1 left-1 opacity-0 hover:opacity-30 transition-opacity">
-          <div className="flex flex-col gap-0.5">
-            <div className="flex gap-0.5">
-              <div className="w-1 h-1 bg-gray-400 rounded-full" />
-              <div className="w-1 h-1 bg-gray-400 rounded-full" />
-            </div>
-            <div className="flex gap-0.5">
-              <div className="w-1 h-1 bg-gray-400 rounded-full" />
-              <div className="w-1 h-1 bg-gray-400 rounded-full" />
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
