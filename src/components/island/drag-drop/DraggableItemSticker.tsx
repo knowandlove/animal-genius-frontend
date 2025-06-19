@@ -99,13 +99,6 @@ export default function DraggableItemSticker({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      {/* Click to place hint */}
-      {canBePlaced && !disabled && isSelected && (
-        <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full z-10">
-          Click again!
-        </div>
-      )}
-      
       {/* Item Icon/Preview */}
       <div className="aspect-square bg-gray-100 rounded flex items-center justify-center pointer-events-none">
         <span className="text-2xl">

@@ -31,6 +31,9 @@ export default function RoomDecoratorView() {
     ['rug', 'carpet', 'mat', 'fuzzy'].some(keyword => item.id.includes(keyword)) ||
     ['plant', 'potted'].some(keyword => item.id.includes(keyword))
   );
+  
+  // Find selected item details
+  const selectedItemDetails = roomItems.find(i => i.id === selectedItem);
 
   const getRarityBadge = (item: any) => {
     if (item.rarity === 'rare') {
@@ -42,38 +45,72 @@ export default function RoomDecoratorView() {
     return null;
   };
 
-  const renderItemGrid = (items: any[]) => {
-    if (items.length === 0) {
-      return (
-        <div className="col-span-4 text-center py-8">
-          <Package className="w-12 h-12 mx-auto text-gray-300 mb-2" />
-          <p className="text-sm text-muted-foreground">
-            No items in this category yet
-          </p>
-        </div>
-      );
+  const renderItemGrid = (items: any[], categoryType: string) => {
+    // Create a 4x5 grid (20 slots total)
+    const GRID_SIZE = 20;
+    const gridItems = [];
+    
+    // Fill with actual items
+    for (let i = 0; i < GRID_SIZE; i++) {
+      if (i < items.length) {
+        gridItems.push(
+          <DraggableItemSticker
+            key={items[i].id}
+            item={items[i]}
+            isSelected={selectedItem === items[i].id}
+            onClick={() => selectInventoryItem(
+              selectedItem === items[i].id ? undefined : items[i].id
+            )}
+          />
+        );
+      } else {
+        // Empty slot
+        gridItems.push(
+          <div
+            key={`empty-${categoryType}-${i}`}
+            className="aspect-square border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center"
+          >
+            <span className="text-gray-300 text-xs">Empty</span>
+          </div>
+        );
+      }
     }
-
-    return items.map((item) => (
-      <DraggableItemSticker
-        key={item.id}
-        item={item}
-        isSelected={selectedItem === item.id}
-        onClick={() => selectInventoryItem(
-          selectedItem === item.id ? undefined : item.id
-        )}
-      />
-    ));
+    
+    return gridItems;
   };
 
   return (
     <div className="h-full flex flex-col">
-      {/* Instructions */}
+      {/* Instructions / Item Details */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-        <p className="text-sm text-blue-800">
-          <strong>How to decorate:</strong> Drag items from below and drop them in your room. 
-          Click placed items to remove them.
-        </p>
+        {selectedItemDetails ? (
+          <div>
+            <div className="flex items-start justify-between">
+              <div>
+                <h4 className="font-semibold text-sm text-blue-900">{selectedItemDetails.name}</h4>
+                <p className="text-xs text-blue-800 mt-1">
+                  {selectedItemDetails.description}
+                </p>
+              </div>
+              <div className={cn(
+                "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs",
+                selectedItemDetails.rarity === 'rare' ? 'bg-purple-100 text-purple-700' :
+                selectedItemDetails.rarity === 'legendary' ? 'bg-yellow-100 text-yellow-700' :
+                'bg-gray-100 text-gray-700'
+              )}>
+                {selectedItemDetails.rarity === 'legendary' && <Sparkles className="w-3 h-3" />}
+                {selectedItemDetails.rarity || 'common'}
+              </div>
+            </div>
+            <p className="text-xs text-blue-700 mt-2">
+              <strong>Tip:</strong> Drag to room or click again to place!
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-blue-800">
+            <strong>How to decorate:</strong> Click an item to select it, then drag to place in your room.
+          </p>
+        )}
       </div>
 
       {/* Tabs for different categories */}
@@ -96,62 +133,23 @@ export default function RoomDecoratorView() {
         <div className="flex-1 overflow-y-auto">
           <TabsContent value="furniture" className="mt-0">
             <div className="grid grid-cols-4 gap-2">
-              {renderItemGrid(furnitureItems)}
+              {renderItemGrid(furnitureItems, 'furniture')}
             </div>
           </TabsContent>
 
           <TabsContent value="walls" className="mt-0">
             <div className="grid grid-cols-4 gap-2">
-              {renderItemGrid(wallItems)}
+              {renderItemGrid(wallItems, 'walls')}
             </div>
           </TabsContent>
 
           <TabsContent value="floors" className="mt-0">
             <div className="grid grid-cols-4 gap-2">
-              {renderItemGrid(floorItems)}
+              {renderItemGrid(floorItems, 'floors')}
             </div>
           </TabsContent>
         </div>
       </Tabs>
-
-      {/* Selected Item Details */}
-      {selectedItem && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-secondary/20 rounded-lg p-3 mt-4"
-        >
-          {(() => {
-            const item = roomItems.find(i => i.id === selectedItem);
-            if (!item) return null;
-            
-            return (
-              <>
-                <h4 className="font-semibold text-sm">{item.name}</h4>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {item.description}
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  <div className={cn(
-                    "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs",
-                    item.rarity === 'rare' ? 'bg-purple-100 text-purple-700' :
-                    item.rarity === 'legendary' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-gray-100 text-gray-700'
-                  )}>
-                    {item.rarity === 'legendary' && <Sparkles className="w-3 h-3" />}
-                    {item.rarity || 'common'}
-                  </div>
-                  {item.quantity && item.quantity > 1 && (
-                    <Badge variant="secondary" className="text-xs">
-                      {item.quantity}x owned
-                    </Badge>
-                  )}
-                </div>
-              </>
-            );
-          })()}
-        </motion.div>
-      )}
     </div>
   );
 }
