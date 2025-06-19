@@ -19,13 +19,22 @@ export default function DraggableItemSticker({
 }: DraggableItemStickerProps) {
   const startDragging = useIslandStore((state) => state.startDragging);
   const stopDragging = useIslandStore((state) => state.stopDragging);
+  const placeItem = useIslandStore((state) => state.placeItem);
+  const inventoryMode = useIslandStore((state) => state.ui.inventoryMode);
   
   // Determine if this item can be placed in the room
-  const canBePlaced = item.type.includes('furniture') || item.type.includes('decoration');
+  const canBePlaced = item.type === 'room_furniture' || item.type === 'room_decoration';
+  
+  console.log('Item:', item.id, 'Type:', item.type, 'Can be placed:', canBePlaced);
 
   const handleDragStart = (e: React.DragEvent) => {
+    console.log('DragStart triggered for:', item.id);
+    console.log('Can be placed:', canBePlaced);
+    console.log('Disabled:', disabled);
+    
     if (!canBePlaced || disabled) {
       e.preventDefault();
+      console.log('Drag prevented');
       return;
     }
     
@@ -33,15 +42,33 @@ export default function DraggableItemSticker({
     e.dataTransfer.effectAllowed = 'copy';
     e.dataTransfer.setData('text/plain', item.id);
     
+    // Create a custom drag image
+    const dragImage = new Image();
+    dragImage.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1" height="1"%3E%3C/svg%3E';
+    e.dataTransfer.setDragImage(dragImage, 0, 0);
+    
     // Start dragging in store
     startDragging({
       itemId: item.id,
       fromInventory: true,
     });
+    
+    console.log('Drag started successfully');
   };
   
   const handleDragEnd = () => {
     stopDragging();
+  };
+  
+  const handleClick = (e: React.MouseEvent) => {
+    onClick();
+    
+    // If item is selected and we're in room mode, place it in center of room
+    if (isSelected && inventoryMode === 'room' && canBePlaced) {
+      console.log('Placing item via click:', item.id);
+      // Place in center of room
+      placeItem(item.id, 50, 50);
+    }
   };
 
   const getItemIcon = (item: InventoryItem) => {
@@ -74,15 +101,15 @@ export default function DraggableItemSticker({
         !canBePlaced && disabled && "opacity-50",
         canBePlaced && !disabled && "cursor-grab active:cursor-grabbing hover:transform hover:scale-105"
       )}
-      onClick={onClick}
+      onClick={handleClick}
       draggable={canBePlaced && !disabled}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      {/* Draggable Badge */}
-      {canBePlaced && !disabled && (
-        <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-          Drag me!
+      {/* Click to place hint */}
+      {canBePlaced && !disabled && isSelected && (
+        <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
+          Click again to place!
         </div>
       )}
       
@@ -99,7 +126,7 @@ export default function DraggableItemSticker({
       {/* Quantity Badge */}
       {item.quantity && item.quantity > 1 && (
         <Badge variant="secondary" className="absolute top-1 right-1 text-xs px-1">
-          {item.quantity}
+          {item.quantity}x
         </Badge>
       )}
 
