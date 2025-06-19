@@ -116,7 +116,6 @@ export default function IslandRoomSticker() {
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     
     // Place the item from inventory
-    // Note: placeItem function in store will handle inventory removal
     const { placeItem } = useIslandStore.getState();
     placeItem(ui.draggedItem.itemId, x, y);
     
@@ -125,6 +124,7 @@ export default function IslandRoomSticker() {
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
   };
 
   const getItemIcon = (itemId: string) => {

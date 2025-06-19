@@ -23,7 +23,6 @@ import {
 import { cn } from "@/lib/utils";
 import { useIslandStore } from "@/stores/islandStore";
 import IslandRoomSticker from "@/components/island/IslandRoom-sticker";
-import DragDropContext from "@/components/island/drag-drop/DragDropContext";
 import WelcomeAnimation from "@/components/island/WelcomeAnimation";
 import EditorControls from "@/components/island/EditorControls";
 import UnifiedInventoryPanel from "@/components/island/UnifiedInventoryPanel";
@@ -251,7 +250,6 @@ export default function StudentIsland() {
         )}
       </AnimatePresence>
       
-      <DragDropContext>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
         {/* Header */}
         <div className="bg-white/80 backdrop-blur-sm shadow-sm">
@@ -541,7 +539,6 @@ export default function StudentIsland() {
           </DialogContent>
         </Dialog>
       </div>
-      </DragDropContext>
     </>
   );
 }
