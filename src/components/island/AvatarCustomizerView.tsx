@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIslandStore } from '@/stores/islandStore';
 import { cn } from '@/lib/utils';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, HardHat, Glasses, Gem } from 'lucide-react';
 
 export default function AvatarCustomizerView() {
   const inventory = useIslandStore((state) => state.inventory);
@@ -149,7 +149,7 @@ export default function AvatarCustomizerView() {
       <Tabs defaultValue="hat" className="flex-1 flex flex-col">
         <TabsList className="grid w-full grid-cols-3 mb-4">
           <TabsTrigger value="hat" className="flex items-center gap-1 relative">
-            <span className="text-lg">🎩</span>
+            <HardHat className="w-4 h-4" />
             <span className="hidden sm:inline">Hats</span>
             {equippedSlots.hat && (
               <div className="absolute -top-1 -right-1 bg-purple-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
@@ -158,7 +158,7 @@ export default function AvatarCustomizerView() {
             )}
           </TabsTrigger>
           <TabsTrigger value="glasses" className="flex items-center gap-1 relative">
-            <span className="text-lg">👓</span>
+            <Glasses className="w-4 h-4" />
             <span className="hidden sm:inline">Glasses</span>
             {equippedSlots.glasses && (
               <div className="absolute -top-1 -right-1 bg-purple-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
@@ -167,7 +167,7 @@ export default function AvatarCustomizerView() {
             )}
           </TabsTrigger>
           <TabsTrigger value="accessory" className="flex items-center gap-1 relative">
-            <span className="text-lg">💎</span>
+            <Gem className="w-4 h-4" />
             <span className="hidden sm:inline">Accessories</span>
             {equippedSlots.accessory && (
               <div className="absolute -top-1 -right-1 bg-purple-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
@@ -181,7 +181,7 @@ export default function AvatarCustomizerView() {
           <TabsContent value="hat" className="mt-0">
             {categorizedItems.hat.length === 0 && !draftAvatar.equipped.hat ? (
               <div className="text-center py-8 text-gray-500">
-                <div className="text-4xl mb-2">🎩</div>
+                <HardHat className="w-12 h-12 mx-auto mb-2 text-gray-400" />
                 <p className="text-sm">No hats owned yet!</p>
                 <p className="text-xs mt-1">Visit the store to get some.</p>
               </div>
@@ -195,7 +195,7 @@ export default function AvatarCustomizerView() {
           <TabsContent value="glasses" className="mt-0">
             {categorizedItems.glasses.length === 0 && !draftAvatar.equipped.glasses ? (
               <div className="text-center py-8 text-gray-500">
-                <div className="text-4xl mb-2">👓</div>
+                <Glasses className="w-12 h-12 mx-auto mb-2 text-gray-400" />
                 <p className="text-sm">No glasses owned yet!</p>
                 <p className="text-xs mt-1">Visit the store to get some.</p>
               </div>
@@ -209,7 +209,7 @@ export default function AvatarCustomizerView() {
           <TabsContent value="accessory" className="mt-0">
             {categorizedItems.accessory.length === 0 && !draftAvatar.equipped.accessory ? (
               <div className="text-center py-8 text-gray-500">
-                <div className="text-4xl mb-2">💎</div>
+                <Gem className="w-12 h-12 mx-auto mb-2 text-gray-400" />
                 <p className="text-sm">No accessories owned yet!</p>
                 <p className="text-xs mt-1">Visit the store to get some.</p>
               </div>
