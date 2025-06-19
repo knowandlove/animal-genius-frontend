@@ -193,6 +193,12 @@ export const useIslandStore = create<IslandStore>()(
           placedItems: [...placedItems],
         },
       });
+      
+      console.log('Island store initialized:', {
+        room: get().room,
+        draftRoom: get().draftRoom,
+        inventory: get().inventory
+      });
     },
     
     setBalance: (balance) => set({ balance }),
@@ -232,6 +238,8 @@ export const useIslandStore = create<IslandStore>()(
     },
     
     placeItem: (itemId, x, y) => {
+      console.log('placeItem called with:', { itemId, x, y });
+      
       // Calculate z-index based on Y position
       const zIndex = Math.floor(y); // Higher Y = higher z-index
       
@@ -244,12 +252,20 @@ export const useIslandStore = create<IslandStore>()(
       };
       
       const state = get();
+      console.log('Current state before placement:', {
+        inventoryMode: state.ui.inventoryMode,
+        draftRoom: state.draftRoom,
+        room: state.room
+      });
       
       // If in room edit mode, update draft room
       if (state.ui.inventoryMode === 'room') {
+        const newDraftItems = [...state.draftRoom.placedItems, newPlacedItem];
+        console.log('Adding to draft room. New items array:', newDraftItems);
+        
         set({
           draftRoom: {
-            placedItems: [...state.draftRoom.placedItems, newPlacedItem],
+            placedItems: newDraftItems,
           },
           inventory: {
             ...state.inventory,
@@ -259,6 +275,11 @@ export const useIslandStore = create<IslandStore>()(
                 : item
             ).filter(item => !item.quantity || item.quantity > 0),
           },
+        });
+        
+        console.log('State after placement:', {
+          draftRoom: get().draftRoom,
+          inventory: get().inventory
         });
       } else {
         // Otherwise update main room state
