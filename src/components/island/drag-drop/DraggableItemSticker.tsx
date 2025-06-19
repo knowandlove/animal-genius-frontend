@@ -73,8 +73,11 @@ export default function DraggableItemSticker({
     // If item is selected and we're in room mode, place it in center of room
     if (isSelected && inventoryMode === 'room' && canBePlaced) {
       console.log('Placing item via click:', item.id);
-      // Place in center of room
-      placeItem(item.id, 50, 50);
+      // Add some randomization so items don't stack
+      const randomOffset = () => Math.random() * 20 - 10; // -10 to +10
+      const x = 50 + randomOffset();
+      const y = 50 + randomOffset();
+      placeItem(item.id, x, y);
       
       // Check the store state after placing
       setTimeout(() => {

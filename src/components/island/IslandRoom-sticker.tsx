@@ -170,12 +170,19 @@ export default function IslandRoomSticker() {
     >
       {/* Room Background */}
       <div 
-        className="absolute inset-0 bg-cover bg-center"
+        className="absolute inset-0 z-0"
         style={{
-          backgroundImage: `url(/rooms/${room.theme}-room.jpg)`,
-          backgroundColor: '#8B6F47' // Fallback wood color
+          backgroundColor: '#8B6F47', // Wood color
+          backgroundImage: `url(/rooms/${room.theme}-room.jpg), linear-gradient(to bottom, #8B6F47, #6B5537)`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
         }}
-      />
+      >
+        {/* Grid pattern overlay for visual feedback */}
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: 'repeating-linear-gradient(0deg, rgba(255,255,255,0.1) 0, rgba(255,255,255,0.1) 1px, transparent 1px, transparent 40px), repeating-linear-gradient(90deg, rgba(255,255,255,0.1) 0, rgba(255,255,255,0.1) 1px, transparent 1px, transparent 40px)'
+        }} />
+      </div>
 
       {/* Instructions (visible in room editing mode) */}
       {isEditingRoom && (
@@ -206,7 +213,7 @@ export default function IslandRoomSticker() {
               left: `${xPos}%`,
               top: `${yPos}%`,
               transform: `translate(-50%, -50%)`,
-              zIndex: item.zIndex || Math.floor(yPos),
+              zIndex: (item.zIndex || Math.floor(yPos)) + 10, // Add 10 to ensure above background
             }}
             onMouseDown={(e) => handleItemMouseDown(e, item)}
             initial={{ scale: 0, opacity: 0, rotate: -180 }}
