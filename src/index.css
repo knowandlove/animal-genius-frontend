@@ -336,4 +336,9 @@
   .game-accent-text {
     color: hsl(var(--game-accent));
   }
+  
+  /* Animation utilities */
+  .animation-delay-1000 {
+    animation-delay: 1000ms;
+  }
 }

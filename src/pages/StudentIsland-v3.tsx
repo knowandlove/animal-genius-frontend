@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useIslandStore } from "@/stores/islandStore";
-import IslandRoom from "@/components/island/IslandRoom-v2";
+import IslandRoomSticker from "@/components/island/IslandRoom-sticker";
 import DragDropContext from "@/components/island/drag-drop/DragDropContext";
 import WelcomeAnimation from "@/components/island/WelcomeAnimation";
 import EditorControls from "@/components/island/EditorControls";
@@ -329,7 +329,7 @@ export default function StudentIsland() {
                       </motion.div>
                     </div>
                   ) : (
-                    <IslandRoom />
+                    <IslandRoomSticker />
                   )}
                 </CardContent>
               </Card>

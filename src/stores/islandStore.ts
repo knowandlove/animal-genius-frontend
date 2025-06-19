@@ -11,20 +11,15 @@ export type RoomTheme = 'wood' | 'modern' | 'cozy' | 'space' | 'underwater';
 export interface PlacedItem {
   id: string;
   itemId: ItemId;
-  x: number; // 0-3 for 4x4 grid
-  y: number; // 0-3 for 4x4 grid
+  x: number; // Percentage of room width (0-100)
+  y: number; // Percentage of room height (0-100)
+  scale?: number; // Auto-calculated based on Y position
+  zIndex?: number; // Auto-calculated based on Y position
   rotation?: 0 | 90 | 180 | 270;
 }
 
-export interface Hotspot {
-  id: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  accepts: 'furniture' | 'decoration' | 'any';
-  occupied?: boolean;
-}
+// Hotspots no longer needed for sticker-style placement
+// export interface Hotspot {...}
 
 export interface InventoryItem extends StoreItem {
   quantity?: number;
@@ -67,7 +62,6 @@ export interface IslandStore {
   room: {
     theme: RoomTheme;
     placedItems: PlacedItem[];
-    hotspots: Hotspot[];
   };
   
   // Inventory
@@ -82,7 +76,6 @@ export interface IslandStore {
     mode: 'normal' | 'placing' | 'inventory' | 'customizing';
     inventoryMode: InventoryMode;
     draggedItem?: DraggedItem;
-    highlightedHotspots: string[];
     showTutorial: boolean;
     lastSaved: Date | null;
     isSaving: boolean;
@@ -107,6 +100,7 @@ export interface IslandStore {
   setAvatarAnimation: (animation: AvatarAnimation) => void;
   moveAvatar: (x: number, y: number) => void;
   placeItem: (itemId: ItemId, x: number, y: number) => void;
+  moveItem: (placedItemId: string, x: number, y: number) => void;
   removeItem: (placedItemId: string) => void;
   setInventoryFilter: (filter: IslandStore['inventory']['filter']) => void;
   selectInventoryItem: (itemId: ItemId | undefined) => void;
@@ -118,7 +112,7 @@ export interface IslandStore {
   discardDraftChanges: () => void;
   startDragging: (item: DraggedItem) => void;
   stopDragging: () => void;
-  highlightHotspots: (hotspotIds: string[]) => void;
+  // highlightHotspots removed for sticker-style
   saveToServer: () => Promise<void>;
   addToInventory: (item: StoreItem) => void;
   removeFromInventory: (itemId: ItemId) => void;
@@ -143,25 +137,6 @@ export const useIslandStore = create<IslandStore>()(
     room: {
       theme: 'wood',
       placedItems: [],
-      hotspots: [
-        // Default hotspots for a 4x4 grid room
-        { id: 'floor-0-0', x: 0, y: 0, width: 1, height: 1, accepts: 'any' },
-        { id: 'floor-0-1', x: 0, y: 1, width: 1, height: 1, accepts: 'any' },
-        { id: 'floor-0-2', x: 0, y: 2, width: 1, height: 1, accepts: 'any' },
-        { id: 'floor-0-3', x: 0, y: 3, width: 1, height: 1, accepts: 'any' },
-        { id: 'floor-1-0', x: 1, y: 0, width: 1, height: 1, accepts: 'any' },
-        { id: 'floor-1-1', x: 1, y: 1, width: 1, height: 1, accepts: 'any' },
-        { id: 'floor-1-2', x: 1, y: 2, width: 1, height: 1, accepts: 'any' },
-        { id: 'floor-1-3', x: 1, y: 3, width: 1, height: 1, accepts: 'any' },
-        { id: 'floor-2-0', x: 2, y: 0, width: 1, height: 1, accepts: 'any' },
-        { id: 'floor-2-1', x: 2, y: 1, width: 1, height: 1, accepts: 'any' },
-        { id: 'floor-2-2', x: 2, y: 2, width: 1, height: 1, accepts: 'any' },
-        { id: 'floor-2-3', x: 2, y: 3, width: 1, height: 1, accepts: 'any' },
-        { id: 'floor-3-0', x: 3, y: 0, width: 1, height: 1, accepts: 'any' },
-        { id: 'floor-3-1', x: 3, y: 1, width: 1, height: 1, accepts: 'any' },
-        { id: 'floor-3-2', x: 3, y: 2, width: 1, height: 1, accepts: 'any' },
-        { id: 'floor-3-3', x: 3, y: 3, width: 1, height: 1, accepts: 'any' },
-      ],
     },
     
     inventory: {
@@ -174,7 +149,6 @@ export const useIslandStore = create<IslandStore>()(
       mode: 'normal',
       inventoryMode: null,
       draggedItem: undefined,
-      highlightedHotspots: [],
       showTutorial: true,
       lastSaved: null,
       isSaving: false,
@@ -206,7 +180,6 @@ export const useIslandStore = create<IslandStore>()(
         room: {
           theme: data.roomData?.theme || 'wood',
           placedItems: placedItems,
-          hotspots: get().room.hotspots, // Keep default hotspots
         },
         inventory: {
           items: data.inventoryItems || [],
@@ -260,38 +233,99 @@ export const useIslandStore = create<IslandStore>()(
     },
     
     placeItem: (itemId, x, y) => {
+      // Calculate scale and z-index based on Y position
+      // Items higher up (lower Y) are smaller and behind
+      const scale = 0.7 + (y / 100) * 0.5; // Scale from 0.7 to 1.2
+      const zIndex = Math.floor(y); // Higher Y = higher z-index
+      
       const newPlacedItem: PlacedItem = {
         id: `placed-${Date.now()}`,
         itemId,
         x,
         y,
+        scale,
+        zIndex,
       };
       
-      set((state) => ({
-        room: {
-          ...state.room,
-          placedItems: [...state.room.placedItems, newPlacedItem],
-        },
-        inventory: {
-          ...state.inventory,
-          items: state.inventory.items.map(item =>
-            item.id === itemId && item.quantity
-              ? { ...item, quantity: item.quantity - 1 }
-              : item
-          ).filter(item => !item.quantity || item.quantity > 0),
-        },
-      }));
+      const state = get();
+      
+      // If in room edit mode, update draft room
+      if (state.ui.inventoryMode === 'room') {
+        set({
+          draftRoom: {
+            placedItems: [...state.draftRoom.placedItems, newPlacedItem],
+          },
+          inventory: {
+            ...state.inventory,
+            items: state.inventory.items.map(item =>
+              item.id === itemId && item.quantity
+                ? { ...item, quantity: item.quantity - 1 }
+                : item
+            ).filter(item => !item.quantity || item.quantity > 0),
+          },
+        });
+      } else {
+        // Otherwise update main room state
+        set({
+          room: {
+            ...state.room,
+            placedItems: [...state.room.placedItems, newPlacedItem],
+          },
+          inventory: {
+            ...state.inventory,
+            items: state.inventory.items.map(item =>
+              item.id === itemId && item.quantity
+                ? { ...item, quantity: item.quantity - 1 }
+                : item
+            ).filter(item => !item.quantity || item.quantity > 0),
+          },
+        });
+      }
     },
     
     removeItem: (placedItemId) => {
-      set((state) => {
-        const removedItem = state.room.placedItems.find(item => item.id === placedItemId);
-        if (!removedItem) return state;
-        
-        // Add item back to inventory
-        const existingItem = state.inventory.items.find(item => item.id === removedItem.itemId);
-        
-        return {
+      const state = get();
+      
+      // Find the item in either draft or main room
+      const placedItems = state.ui.inventoryMode === 'room' 
+        ? state.draftRoom.placedItems 
+        : state.room.placedItems;
+      
+      const removedItem = placedItems.find(item => item.id === placedItemId);
+      if (!removedItem) return;
+      
+      // Add item back to inventory
+      const existingItem = state.inventory.items.find(item => item.id === removedItem.itemId);
+      
+      if (state.ui.inventoryMode === 'room') {
+        // Update draft room
+        set({
+          draftRoom: {
+            placedItems: state.draftRoom.placedItems.filter(item => item.id !== placedItemId),
+          },
+          inventory: {
+            ...state.inventory,
+            items: existingItem
+              ? state.inventory.items.map(item =>
+                  item.id === removedItem.itemId
+                    ? { ...item, quantity: (item.quantity || 1) + 1 }
+                    : item
+                )
+              : [...state.inventory.items, { 
+                  id: removedItem.itemId, 
+                  name: 'Returned Item',
+                  type: 'room_furniture' as const,
+                  cost: 0,
+                  description: 'Item returned from room',
+                  rarity: 'common' as const,
+                  quantity: 1,
+                  obtainedAt: new Date()
+                }],
+          },
+        });
+      } else {
+        // Update main room
+        set({
           room: {
             ...state.room,
             placedItems: state.room.placedItems.filter(item => item.id !== placedItemId),
@@ -310,11 +344,13 @@ export const useIslandStore = create<IslandStore>()(
                   type: 'room_furniture' as const,
                   cost: 0,
                   description: 'Item returned from room',
-                  quantity: 1 
+                  rarity: 'common' as const,
+                  quantity: 1,
+                  obtainedAt: new Date()
                 }],
           },
-        };
-      });
+        });
+      }
     },
     
     setInventoryFilter: (filter) => {
@@ -430,14 +466,41 @@ export const useIslandStore = create<IslandStore>()(
     
     stopDragging: () => {
       set((state) => ({
-        ui: { ...state.ui, draggedItem: undefined, highlightedHotspots: [] },
+        ui: { ...state.ui, draggedItem: undefined },
       }));
     },
     
-    highlightHotspots: (hotspotIds) => {
-      set((state) => ({
-        ui: { ...state.ui, highlightedHotspots: hotspotIds },
-      }));
+    moveItem: (placedItemId, x, y) => {
+      // Calculate scale and z-index based on Y position
+      const scale = 0.7 + (y / 100) * 0.5; // Scale from 0.7 to 1.2
+      const zIndex = Math.floor(y); // Higher Y = higher z-index
+      
+      const state = get();
+      
+      // If in room edit mode, update draft room
+      if (state.ui.inventoryMode === 'room') {
+        set({
+          draftRoom: {
+            placedItems: state.draftRoom.placedItems.map(item =>
+              item.id === placedItemId
+                ? { ...item, x, y, scale, zIndex }
+                : item
+            ),
+          },
+        });
+      } else {
+        // Otherwise update main room state
+        set({
+          room: {
+            ...state.room,
+            placedItems: state.room.placedItems.map(item =>
+              item.id === placedItemId
+                ? { ...item, x, y, scale, zIndex }
+                : item
+            ),
+          },
+        });
+      }
     },
     
     saveToServer: async () => {

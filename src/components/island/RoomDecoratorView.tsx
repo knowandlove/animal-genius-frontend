@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion';
-import { Package, Sparkles } from 'lucide-react';
+import { Package, Sparkles, Sofa, Palette, Home } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIslandStore } from '@/stores/islandStore';
 import { cn } from '@/lib/utils';
-import DraggableItem from './drag-drop/DraggableItem';
+import DraggableItemSticker from './drag-drop/DraggableItemSticker';
 
 export default function RoomDecoratorView() {
   const inventory = useIslandStore((state) => state.inventory);
@@ -16,75 +17,102 @@ export default function RoomDecoratorView() {
     item.type === 'room_decoration' || item.type === 'room_furniture'
   );
 
-  // Group by rarity
-  const itemsByRarity = {
-    common: roomItems.filter(item => item.rarity === 'common'),
-    rare: roomItems.filter(item => item.rarity === 'rare'),
-    legendary: roomItems.filter(item => item.rarity === 'legendary'),
+  // Categorize items
+  const furnitureItems = roomItems.filter(item => 
+    item.type === 'room_furniture' || 
+    ['chair', 'table', 'lamp', 'clock'].some(keyword => item.id.includes(keyword))
+  );
+  
+  const wallItems = roomItems.filter(item => 
+    ['poster', 'picture', 'painting', 'wall'].some(keyword => item.id.includes(keyword))
+  );
+  
+  const floorItems = roomItems.filter(item => 
+    ['rug', 'carpet', 'mat', 'fuzzy'].some(keyword => item.id.includes(keyword)) ||
+    ['plant', 'potted'].some(keyword => item.id.includes(keyword))
+  );
+
+  const getRarityBadge = (item: any) => {
+    if (item.rarity === 'rare') {
+      return <Badge className="absolute top-1 right-1 text-xs px-1 bg-purple-500">★</Badge>;
+    }
+    if (item.rarity === 'legendary') {
+      return <Badge className="absolute top-1 right-1 text-xs px-1 bg-yellow-500">⭐</Badge>;
+    }
+    return null;
   };
 
-  const getRarityColor = (rarity: string) => {
-    switch (rarity) {
-      case 'rare': return 'border-purple-400 bg-purple-50';
-      case 'legendary': return 'border-yellow-400 bg-yellow-50';
-      default: return 'border-gray-300 bg-gray-50';
+  const renderItemGrid = (items: any[]) => {
+    if (items.length === 0) {
+      return (
+        <div className="col-span-4 text-center py-8">
+          <Package className="w-12 h-12 mx-auto text-gray-300 mb-2" />
+          <p className="text-sm text-muted-foreground">
+            No items in this category yet
+          </p>
+        </div>
+      );
     }
+
+    return items.map((item) => (
+      <DraggableItemSticker
+        key={item.id}
+        item={item}
+        isSelected={selectedItem === item.id}
+        onClick={() => selectInventoryItem(
+          selectedItem === item.id ? undefined : item.id
+        )}
+      />
+    ));
   };
 
   return (
-    <div className="space-y-4">
+    <div className="h-full flex flex-col">
       {/* Instructions */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
         <p className="text-sm text-blue-800">
           <strong>How to decorate:</strong> Drag items from below and drop them in your room. 
           Click placed items to remove them.
         </p>
       </div>
 
-      {/* Inventory Items */}
-      {roomItems.length === 0 ? (
-        <div className="text-center py-12">
-          <Package className="w-16 h-16 mx-auto text-gray-300 mb-3" />
-          <p className="text-muted-foreground">
-            No room decorations owned yet.
-          </p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Visit the store to buy furniture!
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {(['common', 'rare', 'legendary'] as const).map((rarity) => {
-            const items = itemsByRarity[rarity];
-            if (items.length === 0) return null;
+      {/* Tabs for different categories */}
+      <Tabs defaultValue="furniture" className="flex-1 flex flex-col">
+        <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsTrigger value="furniture" className="flex items-center gap-1">
+            <Sofa className="w-4 h-4" />
+            <span className="hidden sm:inline">Furniture</span>
+          </TabsTrigger>
+          <TabsTrigger value="walls" className="flex items-center gap-1">
+            <Palette className="w-4 h-4" />
+            <span className="hidden sm:inline">Walls</span>
+          </TabsTrigger>
+          <TabsTrigger value="floors" className="flex items-center gap-1">
+            <Home className="w-4 h-4" />
+            <span className="hidden sm:inline">Floors</span>
+          </TabsTrigger>
+        </TabsList>
 
-            return (
-              <div key={rarity}>
-                <h3 className="font-semibold text-sm uppercase text-gray-600 mb-2 flex items-center gap-2">
-                  {rarity === 'legendary' && <Sparkles className="w-4 h-4 text-yellow-500" />}
-                  {rarity} Items
-                  <Badge variant="secondary" className="text-xs">
-                    {items.length}
-                  </Badge>
-                </h3>
-                
-                <div className="grid grid-cols-2 gap-2">
-                  {items.map((item) => (
-                    <DraggableItem
-                      key={item.id}
-                      item={item}
-                      isSelected={selectedItem === item.id}
-                      onClick={() => selectInventoryItem(
-                        selectedItem === item.id ? undefined : item.id
-                      )}
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+        <div className="flex-1 overflow-y-auto">
+          <TabsContent value="furniture" className="mt-0">
+            <div className="grid grid-cols-2 gap-2">
+              {renderItemGrid(furnitureItems)}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="walls" className="mt-0">
+            <div className="grid grid-cols-2 gap-2">
+              {renderItemGrid(wallItems)}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="floors" className="mt-0">
+            <div className="grid grid-cols-2 gap-2">
+              {renderItemGrid(floorItems)}
+            </div>
+          </TabsContent>
         </div>
-      )}
+      </Tabs>
 
       {/* Selected Item Details */}
       {selectedItem && (
@@ -103,12 +131,21 @@ export default function RoomDecoratorView() {
                 <p className="text-xs text-muted-foreground mt-1">
                   {item.description}
                 </p>
-                <div className={cn(
-                  "inline-flex items-center gap-1 mt-2 px-2 py-1 rounded-full text-xs",
-                  getRarityColor(item.rarity || 'common')
-                )}>
-                  {item.rarity === 'legendary' && <Sparkles className="w-3 h-3" />}
-                  {item.rarity || 'common'}
+                <div className="flex items-center gap-2 mt-2">
+                  <div className={cn(
+                    "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs",
+                    item.rarity === 'rare' ? 'bg-purple-100 text-purple-700' :
+                    item.rarity === 'legendary' ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-gray-100 text-gray-700'
+                  )}>
+                    {item.rarity === 'legendary' && <Sparkles className="w-3 h-3" />}
+                    {item.rarity || 'common'}
+                  </div>
+                  {item.quantity && item.quantity > 1 && (
+                    <Badge variant="secondary" className="text-xs">
+                      {item.quantity}x owned
+                    </Badge>
+                  )}
                 </div>
               </>
             );
