@@ -240,8 +240,9 @@ export const useIslandStore = create<IslandStore>()(
     placeItem: (itemId, x, y) => {
       console.log('placeItem called with:', { itemId, x, y });
       
-      // Calculate z-index based on Y position
-      const zIndex = Math.floor(y); // Higher Y = higher z-index
+      // Calculate z-index based on Y position (0-100 range)
+      // Higher Y = higher z-index (closer to viewer)
+      const zIndex = Math.floor(y * 10); // Multiply by 10 for more granularity
       
       const newPlacedItem: PlacedItem = {
         id: `placed-${Date.now()}`,
@@ -505,8 +506,9 @@ export const useIslandStore = create<IslandStore>()(
     },
     
     moveItem: (placedItemId, x, y) => {
-      // Calculate z-index based on Y position
-      const zIndex = Math.floor(y); // Higher Y = higher z-index
+      // Calculate z-index based on Y position (0-100 range)
+      // Higher Y = higher z-index (closer to viewer)
+      const zIndex = Math.floor(y * 10); // Multiply by 10 for more granularity
       
       const state = get();
       

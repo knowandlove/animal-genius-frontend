@@ -11,6 +11,8 @@ interface DragState {
   startY: number;
   offsetX: number;
   offsetY: number;
+  currentX?: number;
+  currentY?: number;
 }
 
 export default function IslandRoomSticker() {
@@ -18,6 +20,7 @@ export default function IslandRoomSticker() {
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [showTrash, setShowTrash] = useState(false);
   const [overTrash, setOverTrash] = useState(false);
+  const [dropPreview, setDropPreview] = useState<{ x: number; y: number } | null>(null);
   
   const { 
     avatar, 
@@ -80,6 +83,9 @@ export default function IslandRoomSticker() {
     const constrainedX = Math.max(5, Math.min(95, x));
     const constrainedY = Math.max(5, Math.min(95, y));
     
+    // Update drag state with current position for preview
+    setDragState(prev => prev ? { ...prev, currentX: constrainedX, currentY: constrainedY } : null);
+    
     moveItem(dragState.itemId, constrainedX, constrainedY);
     
     // Check if over trash
@@ -109,6 +115,8 @@ export default function IslandRoomSticker() {
   // Handle drag from inventory
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    setDropPreview(null); // Clear preview
+    
     if (!roomRef.current || !ui.draggedItem?.fromInventory) return;
     
     const rect = roomRef.current.getBoundingClientRect();
@@ -125,6 +133,18 @@ export default function IslandRoomSticker() {
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
+    
+    // Show drop preview when dragging from inventory
+    if (roomRef.current && ui.draggedItem?.fromInventory) {
+      const rect = roomRef.current.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      setDropPreview({ x, y });
+    }
+  };
+  
+  const handleDragLeave = () => {
+    setDropPreview(null);
   };
 
   const getItemIcon = (itemId: string) => {
@@ -145,6 +165,25 @@ export default function IslandRoomSticker() {
     return '📦';
   };
 
+  // Calculate scale based on Y position for depth effect
+  const getScaleFromY = (yPercent: number): number => {
+    // Y ranges from 0 (top) to 100 (bottom)
+    // Scale from 0.6 (top) to 1.2 (bottom)
+    const minScale = 0.6;
+    const maxScale = 1.2;
+    return minScale + (yPercent / 100) * (maxScale - minScale);
+  };
+
+  // Calculate shadow based on Y position for depth effect
+  const getShadowFromY = (yPercent: number): string => {
+    // Smaller, sharper shadows at top (far away)
+    // Larger, softer shadows at bottom (close)
+    const blur = 4 + (yPercent / 100) * 16; // 4px to 20px
+    const spread = 1 + (yPercent / 100) * 3; // 1px to 4px
+    const opacity = 0.1 + (yPercent / 100) * 0.2; // 0.1 to 0.3
+    return `0 ${spread}px ${blur}px rgba(0, 0, 0, ${opacity})`;
+  };
+
   return (
     <div 
       ref={roomRef}
@@ -154,21 +193,63 @@ export default function IslandRoomSticker() {
       onMouseLeave={handleMouseUp}
       onDrop={handleDrop}
       onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
     >
       {/* Room Background */}
       <div 
         className="absolute inset-0 z-0"
         style={{
           backgroundColor: '#8B6F47', // Wood color
-          backgroundImage: `url(/rooms/${room.theme}-room.jpg), linear-gradient(to bottom, #8B6F47, #6B5537)`,
+          backgroundImage: `url(/rooms/${room.theme}-room.jpg)`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
       >
-        {/* Grid pattern overlay for visual feedback */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: 'repeating-linear-gradient(0deg, rgba(255,255,255,0.1) 0, rgba(255,255,255,0.1) 1px, transparent 1px, transparent 40px), repeating-linear-gradient(90deg, rgba(255,255,255,0.1) 0, rgba(255,255,255,0.1) 1px, transparent 1px, transparent 40px)'
-        }} />
+        {/* Floor gradient for depth */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(to bottom, transparent 0%, transparent 40%, rgba(0,0,0,0.05) 60%, rgba(0,0,0,0.1) 100%)',
+          }}
+        />
+        {/* Perspective grid overlay for depth visualization (only in edit mode) */}
+        {isEditingRoom && (
+          <svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 100 100" preserveAspectRatio="none">
+            {/* Horizontal lines that get closer together towards the top (horizon) */}
+            {[...Array(10)].map((_, i) => {
+              // Exponential spacing for perspective effect
+              const y = Math.pow(i / 9, 1.5) * 100;
+              return (
+                <line
+                  key={`h-${i}`}
+                  x1="0"
+                  y1={y}
+                  x2="100"
+                  y2={y}
+                  stroke="white"
+                  strokeWidth="0.2"
+                />
+              );
+            })}
+            {/* Vertical lines that converge towards center */}
+            {[...Array(11)].map((_, i) => {
+              const x = (i / 10) * 100;
+              // Lines converge to a vanishing point at top center
+              const topX = 50 + (x - 50) * 0.3;
+              return (
+                <line
+                  key={`v-${i}`}
+                  x1={x}
+                  y1="100"
+                  x2={topX}
+                  y2="0"
+                  stroke="white"
+                  strokeWidth="0.2"
+                />
+              );
+            })}
+          </svg>
+        )}
       </div>
 
       {/* Instructions (visible in room editing mode) */}
@@ -176,9 +257,36 @@ export default function IslandRoomSticker() {
         <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg text-sm z-50">
           <p className="font-semibold mb-1">🏠 Room Decoration Mode</p>
           <p className="text-xs opacity-90">Drag items from inventory to place anywhere</p>
+          <p className="text-xs opacity-90">Items scale with depth (higher = smaller)</p>
           <p className="text-xs opacity-90">Drag placed items to move them</p>
           <p className="text-xs opacity-90">Drag to trash can to delete</p>
         </div>
+      )}
+
+      {/* Drop Preview (when dragging from inventory) */}
+      {dropPreview && ui.draggedItem?.fromInventory && (
+        <motion.div
+          className="absolute pointer-events-none"
+          style={{
+            left: `${dropPreview.x}%`,
+            top: `${dropPreview.y}%`,
+            transform: `translate(-50%, -50%) scale(${getScaleFromY(dropPreview.y)})`,
+            zIndex: Math.floor(dropPreview.y * 10),
+          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.5 }}
+        >
+          <div 
+            className="bg-blue-200/50 backdrop-blur rounded-lg p-3 border-2 border-blue-400 border-dashed"
+            style={{ 
+              boxShadow: getShadowFromY(dropPreview.y),
+            }}
+          >
+            <span className="text-3xl block" style={{ fontSize: `${2 * getScaleFromY(dropPreview.y)}rem` }}>
+              {getItemIcon(ui.draggedItem.itemId)}
+            </span>
+          </div>
+        </motion.div>
       )}
 
       {/* Placed Items */}
@@ -189,21 +297,34 @@ export default function IslandRoomSticker() {
           const xPos = isOldGrid ? (item.x / 3) * 80 + 10 : item.x;
           const yPos = isOldGrid ? (item.y / 3) * 80 + 10 : item.y;
           
+          const scale = getScaleFromY(yPos);
+          
           return (
-            <div
+            <motion.div
               key={item.id}
-              className="absolute cursor-move hover:scale-105 transition-transform"
+              className="absolute cursor-move transition-transform"
               style={{
                 left: `${xPos}%`,
                 top: `${yPos}%`,
-                transform: 'translate(-50%, -50%)',
-                zIndex: 20 + index,
+                transform: `translate(-50%, -50%) scale(${scale})`,
+                zIndex: Math.floor(yPos * 10), // Z-index based on Y position with more granularity
               }}
+              whileHover={{ scale: scale * 1.05 }}
+              whileDrag={{ scale: scale * 1.1, opacity: 0.8 }}
               onMouseDown={(e) => handleItemMouseDown(e, item)}
+              animate={{
+                scale: dragState?.itemId === item.id ? scale * 1.1 : scale,
+                opacity: dragState?.itemId === item.id ? 0.6 : 1,
+              }}
             >
               {/* Item Visual */}
-              <div className="bg-white/90 backdrop-blur rounded-lg p-3 shadow-lg select-none border-2 border-gray-200">
-                <span className="text-3xl block">
+              <div 
+                className="bg-white/90 backdrop-blur rounded-lg p-3 select-none border-2 border-gray-200"
+                style={{ 
+                  boxShadow: getShadowFromY(yPos),
+                }}
+              >
+                <span className="text-3xl block" style={{ fontSize: `${2 * scale}rem` }}>
                   {getItemIcon(item.itemId)}
                 </span>
               </div>
@@ -214,7 +335,7 @@ export default function IslandRoomSticker() {
                   {item.itemId}
                 </div>
               )}
-            </div>
+            </motion.div>
           );
         })}
       </div>
