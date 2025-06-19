@@ -68,6 +68,28 @@ export default function StudentIsland() {
         });
       }
       
+      // TEMPORARY: Add some test room items for development
+      if (process.env.NODE_ENV === 'development') {
+        const testItems = [
+          'cozy_chair',
+          'wooden_table', 
+          'potted_plant',
+          'wall_clock',
+          'rug_circle'
+        ];
+        
+        testItems.forEach(itemId => {
+          const item = getItemById(itemId);
+          if (item && !inventoryItems.find(i => i.id === itemId)) {
+            inventoryItems.push({
+              ...item,
+              quantity: 1,
+              obtainedAt: new Date()
+            });
+          }
+        });
+      }
+      
       initializeFromServerData({
         ...islandData,
         inventoryItems

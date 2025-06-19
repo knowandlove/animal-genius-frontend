@@ -128,15 +128,20 @@ export default function IslandRoomSticker() {
   };
 
   const getItemIcon = (itemId: string) => {
-    if (itemId.includes('chair')) return '🪑';
-    if (itemId.includes('table')) return '🪵';
-    if (itemId.includes('lamp')) return '💡';
-    if (itemId.includes('plant')) return '🪴';
-    if (itemId.includes('poster')) return '🖼️';
-    if (itemId.includes('rug')) return '🟫';
-    if (itemId.includes('clock')) return '🕐';
-    if (itemId.includes('potted')) return '🪴';
-    if (itemId.includes('fuzzy')) return '🟫';
+    // Convert underscores to check for keywords
+    const normalizedId = itemId.replace(/_/g, '');
+    
+    if (normalizedId.includes('chair') || itemId === 'cozy_chair' || itemId === 'gaming_chair') return '🪑';
+    if (normalizedId.includes('table') || itemId === 'wooden_table') return '🪵';
+    if (normalizedId.includes('lamp') || itemId === 'floor_lamp') return '💡';
+    if (normalizedId.includes('plant') || itemId === 'potted_plant') return '🪴';
+    if (normalizedId.includes('poster')) return '🖼️';
+    if (normalizedId.includes('rug') || itemId === 'rug_circle') return '🟫';
+    if (normalizedId.includes('clock') || itemId === 'wall_clock') return '🕐';
+    if (normalizedId.includes('bookshelf')) return '📚';
+    if (normalizedId.includes('bean') || itemId === 'bean_bag') return '🛋️';
+    if (normalizedId.includes('treasure') || itemId === 'treasure_chest') return '💎';
+    if (normalizedId.includes('fuzzy')) return '🟫';
     return '📦';
   };
 

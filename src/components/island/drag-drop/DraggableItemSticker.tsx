@@ -45,13 +45,19 @@ export default function DraggableItemSticker({
   };
 
   const getItemIcon = (item: InventoryItem) => {
-    if (item.id.includes('chair')) return '🪑';
-    if (item.id.includes('table')) return '🪵';
-    if (item.id.includes('lamp')) return '💡';
-    if (item.id.includes('plant') || item.id.includes('potted')) return '🪴';
-    if (item.id.includes('poster')) return '🖼️';
-    if (item.id.includes('rug') || item.id.includes('fuzzy')) return '🟫';
-    if (item.id.includes('clock')) return '🕐';
+    // Convert underscores to check for keywords
+    const normalizedId = item.id.replace(/_/g, '');
+    
+    if (normalizedId.includes('chair') || item.id === 'cozy_chair' || item.id === 'gaming_chair') return '🪑';
+    if (normalizedId.includes('table') || item.id === 'wooden_table') return '🪵';
+    if (normalizedId.includes('lamp') || item.id === 'floor_lamp') return '💡';
+    if (normalizedId.includes('plant') || item.id === 'potted_plant') return '🪴';
+    if (normalizedId.includes('poster')) return '🖼️';
+    if (normalizedId.includes('rug') || item.id === 'rug_circle') return '🟫';
+    if (normalizedId.includes('clock') || item.id === 'wall_clock') return '🕐';
+    if (normalizedId.includes('bookshelf')) return '📚';
+    if (normalizedId.includes('bean') || item.id === 'bean_bag') return '🛋️';
+    if (normalizedId.includes('treasure') || item.id === 'treasure_chest') return '💎';
     if (item.type.includes('furniture')) return '🪑';
     if (item.type.includes('decoration')) return '🪴';
     if (item.type.includes('hat')) return '🎩';
@@ -62,17 +68,24 @@ export default function DraggableItemSticker({
   return (
     <div
       className={cn(
-        "relative p-3 border rounded-lg transition-all select-none",
+        "relative p-3 border rounded-lg transition-all select-none group",
         "hover:border-primary hover:shadow-md",
-        isSelected && "border-primary bg-primary/5",
+        isSelected && "border-primary bg-primary/5 ring-2 ring-primary/20",
         !canBePlaced && disabled && "opacity-50",
-        canBePlaced && !disabled && "cursor-grab active:cursor-grabbing"
+        canBePlaced && !disabled && "cursor-grab active:cursor-grabbing hover:transform hover:scale-105"
       )}
       onClick={onClick}
       draggable={canBePlaced && !disabled}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
+      {/* Draggable Badge */}
+      {canBePlaced && !disabled && (
+        <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+          Drag me!
+        </div>
+      )}
+      
       {/* Item Icon/Preview */}
       <div className="aspect-square bg-gray-100 rounded mb-1 flex items-center justify-center pointer-events-none">
         <span className="text-2xl">
