@@ -160,6 +160,16 @@
 }
 
 @layer utilities {
+  /* Fix for dialog appearing behind content */
+  [data-radix-portal] {
+    z-index: 999999 !important;
+  }
+  
+  [role="dialog"] {
+    z-index: 999999 !important;
+  }
+
+
   .animal-gradient {
     background: linear-gradient(135deg, #85B2C8 0%, #729BAF 100%);
   }

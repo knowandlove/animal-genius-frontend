@@ -28,7 +28,7 @@ const NotFound = lazy(() => import("@/pages/not-found"));
 const GameJoin = lazy(() => import("@/pages/game-join"));
 const GameLobby = lazy(() => import("@/pages/game-lobby"));
 const GamePlay = lazy(() => import("@/pages/game-play"));
-const StudentIsland = lazy(() => import("@/pages/StudentIsland-v3"));
+const StudentIsland = lazy(() => import("@/pages/StudentIsland-v4"));
 const GameCreate = lazy(() => import("@/pages/teacher/game-create"));
 const TeacherGameDashboard = lazy(() => import("@/pages/teacher/game-dashboard"));
 const ColorPreview = lazy(() => import("@/pages/color-preview"));
@@ -38,6 +38,7 @@ const AvatarTestV2 = lazy(() => import("@/pages/avatar-test-v2"));
 const AvatarEditor = lazy(() => import("@/pages/avatar-editor"));
 const AvatarItemPositioner = lazy(() => import("@/pages/admin/avatar-item-positioner"));
 const AddStoreItem = lazy(() => import("@/pages/admin/add-store-item"));
+const StoreManagement = lazy(() => import("@/pages/admin/store-management"));
 const AnimalSizer = lazy(() => import("@/pages/admin/animal-sizer"));
 const BulkPositionUpdate = lazy(() => import("@/pages/admin/bulk-position-update"));
 const MakeAdmin = lazy(() => import("@/pages/admin/make-admin"));
@@ -156,6 +157,7 @@ function Router() {
             <Route path="/colors" component={ColorPreview} />
             <Route path="/admin/item-positioner" component={AvatarItemPositioner} />
             <Route path="/admin/add-item" component={AddStoreItem} />
+            <Route path="/admin/store" component={StoreManagement} />
             <Route path="/admin/animal-sizer" component={AnimalSizer} />
             <Route path="/admin/bulk-update" component={BulkPositionUpdate} />
             <Route path="/admin/make-admin" component={MakeAdmin} />

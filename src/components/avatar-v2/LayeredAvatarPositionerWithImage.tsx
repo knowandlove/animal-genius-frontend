@@ -1,7 +1,6 @@
-import React, { useState, CSSProperties, useEffect } from 'react';
+import React, { useState, CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 import { ANIMAL_CONFIGS } from '@/config/animal-sizing';
-import { getItemFolder } from '@shared/currency-types';
 
 interface AvatarLayer {
   id: string;
@@ -18,11 +17,12 @@ interface AvatarLayer {
   rotation?: number;
 }
 
-interface LayeredAvatarPositionerProps {
+interface LayeredAvatarPositionerWithImageProps {
   animalType: string;
   width?: number;
   height?: number;
   selectedItem?: string;
+  selectedItemImageUrl?: string;
   itemPosition?: {
     x: number;
     y: number;
@@ -44,53 +44,15 @@ const animalEmojis: Record<string, string> = {
   panda: '🐼',
 };
 
-// Default positioning (used when no position provided)
-const defaultItemConfigs: Record<string, Partial<AvatarLayer>> = {
-  // Hats
-  explorer: {
-    src: '/avatars/items/hats/explorer.png',
-    emoji: '🎩',
-    zIndex: 10,
-  },
-  safari: {
-    src: '/avatars/items/hats/safari.png',
-    emoji: '👒',
-    zIndex: 10,
-  },
-  
-  // Glasses
-  greenblinds: {
-    src: '/avatars/items/glasses/greenblinds.png',
-    emoji: '🕶️',
-    zIndex: 8,
-  },
-  hearts: {
-    src: '/avatars/items/glasses/hearts.png',
-    emoji: '😍',
-    zIndex: 8,
-  },
-  
-  // Accessories
-  bow_tie: {
-    src: '/avatars/items/accessories/bow_tie.png',
-    emoji: '🎀',
-    zIndex: 7,
-  },
-  necklace: {
-    src: '/avatars/items/accessories/necklace.png',
-    emoji: '📿',
-    zIndex: 7,
-  },
-};
-
-function LayeredAvatarPositioner({
+function LayeredAvatarPositionerWithImage({
   animalType,
   width = 300,
   height = 300,
   selectedItem,
+  selectedItemImageUrl,
   itemPosition,
   animated = true,
-}: LayeredAvatarPositionerProps) {
+}: LayeredAvatarPositionerWithImageProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [useAvatarImage, setUseAvatarImage] = useState(true);
 
@@ -126,35 +88,23 @@ function LayeredAvatarPositioner({
   ];
 
   // Add selected item as layer with manual position
-  if (selectedItem && itemPosition) {
-    // Check if it's a legacy item with config
-    const baseConfig = defaultItemConfigs[selectedItem] || {};
-    
-    // Determine the image path
-    let imagePath: string;
-    if (defaultItemConfigs[selectedItem]) {
-      // Legacy item - use old path structure
-      const folder = getItemFolder(selectedItem);
-      imagePath = `/avatars/items/${folder}/${selectedItem}.png`;
-    } else {
-      // New database item - assume it's in uploads folder
-      // The store management system saves images with the item ID
-      imagePath = `/uploads/store-items/${selectedItem}.png`;
-      // If it starts with /uploads/, add the backend URL
-      if (!imagePath.startsWith('http')) {
-        imagePath = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${imagePath}`;
-      }
+  if (selectedItem && itemPosition && selectedItemImageUrl) {
+    // Process the image URL - if it's relative, make it absolute
+    let imagePath = selectedItemImageUrl;
+    if (!imagePath.startsWith('http') && !imagePath.startsWith('/')) {
+      imagePath = '/' + imagePath;
     }
     
-    // Determine z-index based on item type if not in config
-    let zIndex = baseConfig.zIndex || 10; // Default to 10 for hats
+    // If it's a backend URL without domain, add the API URL
+    if (imagePath.startsWith('/uploads/')) {
+      imagePath = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${imagePath}`;
+    }
     
     layers.push({
       id: `item-${selectedItem}`,
-      ...baseConfig,
       src: imagePath,
-      emoji: baseConfig.emoji || '🎩', // Default emoji
-      zIndex: zIndex,
+      emoji: '🎩', // Default emoji for items
+      zIndex: 10,
       position: { 
         top: `${itemPosition.y}%`, 
         left: `${itemPosition.x}%` 
@@ -209,11 +159,10 @@ function LayeredAvatarPositioner({
               style={style}
               draggable={false}
               onError={(e) => {
+                console.error(`Failed to load image: ${(e.target as HTMLImageElement).src}`);
                 if (isBaseLayer && useAvatarImage) {
                   // Fallback to SVG for base animal
                   setUseAvatarImage(false);
-                } else {
-                  console.error(`Failed to load image: ${(e.target as HTMLImageElement).src}`);
                 }
               }}
             />
@@ -238,4 +187,4 @@ function LayeredAvatarPositioner({
   );
 }
 
-export default React.memo(LayeredAvatarPositioner);
+export default React.memo(LayeredAvatarPositionerWithImage);

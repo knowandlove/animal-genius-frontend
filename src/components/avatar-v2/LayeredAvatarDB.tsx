@@ -32,6 +32,7 @@ interface LayeredAvatarDBProps {
   onClick?: () => void;
   className?: string;
   animated?: boolean;
+  storeCatalog?: any[]; // Add store catalog for item lookups
 }
 
 // Emoji fallbacks for when images aren't loaded yet
@@ -102,6 +103,13 @@ function LayeredAvatarDB({
     items,
     width,
     height
+  });
+
+  // Fetch store items from database
+  const { data: storeItems } = useQuery({
+    queryKey: ['/api/store/catalog'],
+    queryFn: () => apiRequest('GET', '/api/store/catalog'),
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
   // Fetch item positions from database
@@ -192,42 +200,72 @@ function LayeredAvatarDB({
 
   // Add equipped items as layers with database positions
   Object.entries(items).forEach(([slot, itemId]) => {
-    if (itemId && defaultItemConfigs[itemId]) {
-      const baseConfig = defaultItemConfigs[itemId];
-      const dbPosition = getItemPosition(itemId, animalType);
-      
-      // Get image path using the helper function
+    if (!itemId) return;
+    
+    // Check if it's a legacy item with config
+    const baseConfig = defaultItemConfigs[itemId];
+    const dbPosition = getItemPosition(itemId, animalType);
+    
+    // Try to find the item in the store catalog
+    const storeItem = storeItems?.find((item: any) => item.id === itemId);
+    
+    // Determine the image path
+    let imagePath: string;
+    if (baseConfig) {
+      // Legacy item - use old path structure
       const folder = getItemFolder(itemId);
-      const imagePath = `/avatars/items/${folder}/${itemId}.png`;
-      
-      if (dbPosition) {
-        const layerConfig = {
-          id: `${slot}-${itemId}`,
-          ...baseConfig,
-          src: imagePath,
-          position: { 
-            top: `${dbPosition.y}%`, 
-            left: `${dbPosition.x}%` 
-          },
-          scale: dbPosition.scale,
-          rotation: dbPosition.rotation,
-        };
-        console.log(`Adding layer for ${itemId} with position:`, layerConfig);
-        layers.push(layerConfig);
-      } else {
-        // Fallback to default center position
-        layers.push({
-          id: `${slot}-${itemId}`,
-          ...baseConfig,
-          src: imagePath,
-          position: { 
-            top: '50%', 
-            left: '50%' 
-          },
-          scale: 0.5,
-          rotation: 0,
-        });
+      imagePath = `/avatars/items/${folder}/${itemId}.png`;
+    } else if (storeItem?.imageUrl) {
+      // New database item with imageUrl
+      imagePath = storeItem.imageUrl;
+      // If it's a relative URL, make it absolute
+      if (!imagePath.startsWith('http') && !imagePath.startsWith('/')) {
+        imagePath = '/' + imagePath;
       }
+      // If it's a backend URL without domain, add the API URL
+      if (imagePath.startsWith('/uploads/')) {
+        imagePath = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${imagePath}`;
+      }
+    } else {
+      // Fallback - assume it's in uploads folder
+      imagePath = `/uploads/store-items/${itemId}.png`;
+      if (!imagePath.startsWith('http')) {
+        imagePath = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${imagePath}`;
+      }
+    }
+    
+    // Determine z-index based on slot
+    const zIndex = slot === 'hat' ? 10 : slot === 'glasses' ? 8 : 7;
+    
+    if (dbPosition) {
+      const layerConfig = {
+        id: `${slot}-${itemId}`,
+        src: imagePath,
+        emoji: baseConfig?.emoji || '🎩',
+        zIndex: zIndex,
+        position: { 
+          top: `${dbPosition.y}%`, 
+          left: `${dbPosition.x}%` 
+        },
+        scale: dbPosition.scale,
+        rotation: dbPosition.rotation,
+      };
+      console.log(`Adding layer for ${itemId} with position:`, layerConfig);
+      layers.push(layerConfig);
+    } else {
+      // Fallback to default center position
+      layers.push({
+        id: `${slot}-${itemId}`,
+        src: imagePath,
+        emoji: baseConfig?.emoji || '🎩',
+        zIndex: zIndex,
+        position: { 
+          top: '50%', 
+          left: '50%' 
+        },
+        scale: 0.5,
+        rotation: 0,
+      });
     }
   });
 
@@ -279,7 +317,7 @@ function LayeredAvatarDB({
         }
 
         if (layer.src) {
-          return (
+          const imgElement = (
             <img
               key={layer.id}
               src={layer.src}
@@ -297,6 +335,21 @@ function LayeredAvatarDB({
               }}
             />
           );
+          
+          if (!isBaseLayer) {
+            console.log(`Rendering ${layer.id} with HTML:`, {
+              src: layer.src,
+              style: {
+                position: style.position,
+                top: style.top,
+                left: style.left,
+                transform: style.transform,
+                zIndex: style.zIndex
+              }
+            });
+          }
+          
+          return imgElement;
         } else if (layer.emoji) {
           return (
             <span

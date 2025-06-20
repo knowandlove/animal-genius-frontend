@@ -194,35 +194,35 @@ export default function IslandRoomSticker() {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
       >
-        {/* Room Background */}
-        <div 
-          className="absolute inset-0 z-0"
-          style={{
-            backgroundColor: '#f5f5f5', // Neutral gray background
-            backgroundImage: room.theme !== 'blank' ? `url(/rooms/${room.theme}-room.jpg)` : 'none',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        >
+        {/* Room Background - Customizable */}
+        <div className="absolute inset-0 z-0">
+          {/* Wall */}
+          <div 
+            className="absolute inset-0 h-[70%]"
+            style={{
+              backgroundColor: displayRoom.wallColor || '#f5ddd9',
+              backgroundImage: displayRoom.wallPattern ? `url(/patterns/${displayRoom.wallPattern})` : 'none',
+              backgroundSize: displayRoom.wallPattern ? '100px 100px' : 'auto',
+            }}
+          />
+          {/* Floor */}
+          <div 
+            className="absolute bottom-0 left-0 right-0 h-[30%]"
+            style={{
+              backgroundColor: displayRoom.floorColor || '#d4875f',
+              backgroundImage: displayRoom.floorPattern ? `url(/patterns/${displayRoom.floorPattern})` : 'none',
+              backgroundSize: displayRoom.floorPattern ? '100px 100px' : 'auto',
+            }}
+          />
         </div>
-
-        {/* Instructions (visible in room editing mode) */}
-      {isEditingRoom && (
-        <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg text-sm z-50">
-          <p className="font-semibold mb-1">🏠 Room Decoration Mode</p>
-          <p className="text-xs opacity-90">Drag items from inventory to place anywhere</p>
-          <p className="text-xs opacity-90">Drag placed items to move them</p>
-          <p className="text-xs opacity-90">Drag to trash can to delete</p>
-          <div className="mt-2 pt-2 border-t border-white/20">
-            <p className="text-xs font-semibold">
-              Items placed: {sortedItems.length} / {ROOM_ITEM_LIMIT}
-              {sortedItems.length >= ROOM_ITEM_LIMIT - 5 && (
-                <span className="text-yellow-300 ml-1">(Almost full!)</span>
-              )}
-            </p>
-          </div>
-        </div>
-      )}
+        
+        {/* Room Structure - Shelves and Baseboard */}
+        <img 
+          src="/rooms/shelves-and-trim.png" 
+          alt="Room shelves"
+          className="absolute inset-0 w-full h-full z-5 pointer-events-none"
+          style={{ objectFit: 'cover' }}
+        />
 
       {/* Drop Preview (when dragging from inventory) */}
       {dropPreview && ui.draggedItem?.fromInventory && (

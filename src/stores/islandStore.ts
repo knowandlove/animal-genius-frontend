@@ -62,6 +62,10 @@ export interface IslandStore {
   // Room state
   room: {
     theme: RoomTheme;
+    wallColor?: string;
+    floorColor?: string;
+    wallPattern?: string;
+    floorPattern?: string;
     placedItems: PlacedItem[];
   };
   
@@ -91,6 +95,10 @@ export interface IslandStore {
     };
   };
   draftRoom: {
+    wallColor?: string;
+    floorColor?: string;
+    wallPattern?: string;
+    floorPattern?: string;
     placedItems: PlacedItem[];
   };
   
@@ -109,6 +117,8 @@ export interface IslandStore {
   setInventoryMode: (mode: InventoryMode) => void;
   updateDraftAvatar: (slot: string, itemId: ItemId | null) => void;
   updateDraftRoom: (placedItems: PlacedItem[]) => void;
+  updateRoomColors: (wallColor?: string, floorColor?: string) => void;
+  updateRoomPatterns: (wallPattern?: string, floorPattern?: string) => void;
   saveDraftChanges: () => Promise<void>;
   discardDraftChanges: () => void;
   startDragging: (item: DraggedItem) => void;
@@ -137,6 +147,8 @@ export const useIslandStore = create<IslandStore>()(
     
     room: {
       theme: 'wood',
+      wallColor: '#f5ddd9',
+      floorColor: '#d4875f',
       placedItems: [],
     },
     
@@ -160,6 +172,8 @@ export const useIslandStore = create<IslandStore>()(
     },
     
     draftRoom: {
+      wallColor: '#f5ddd9',
+      floorColor: '#d4875f',
       placedItems: [],
     },
     
@@ -194,6 +208,10 @@ export const useIslandStore = create<IslandStore>()(
         },
         room: {
           theme: data.roomData?.theme || 'wood',
+          wallColor: data.roomData?.wallColor || '#f5ddd9',
+          floorColor: data.roomData?.floorColor || '#d4875f',
+          wallPattern: data.roomData?.wallPattern,
+          floorPattern: data.roomData?.floorPattern,
           placedItems: placedItems,
         },
         inventory: {
@@ -206,6 +224,10 @@ export const useIslandStore = create<IslandStore>()(
           equipped: { ...equipped },
         },
         draftRoom: {
+          wallColor: data.roomData?.wallColor || '#f5ddd9',
+          floorColor: data.roomData?.floorColor || '#d4875f',
+          wallPattern: data.roomData?.wallPattern,
+          floorPattern: data.roomData?.floorPattern,
           placedItems: [...placedItems],
         },
       });
@@ -295,6 +317,7 @@ export const useIslandStore = create<IslandStore>()(
         
         set({
           draftRoom: {
+            ...state.draftRoom,  // Preserve existing colors and patterns
             placedItems: newDraftItems,
           },
           inventory: {
@@ -348,6 +371,7 @@ export const useIslandStore = create<IslandStore>()(
         // Update draft room
         set({
           draftRoom: {
+            ...state.draftRoom,  // Preserve existing colors and patterns
             placedItems: state.draftRoom.placedItems.filter(item => item.id !== placedItemId),
           },
           inventory: {
@@ -440,6 +464,10 @@ export const useIslandStore = create<IslandStore>()(
         
         set({
           draftRoom: {
+            wallColor: state.room.wallColor,
+            floorColor: state.room.floorColor,
+            wallPattern: state.room.wallPattern,
+            floorPattern: state.room.floorPattern,
             placedItems: convertedItems,
           },
         });
@@ -487,9 +515,32 @@ export const useIslandStore = create<IslandStore>()(
     },
     
     updateDraftRoom: (placedItems) => {
-      set({
-        draftRoom: { placedItems },
-      });
+      set((state) => ({
+        draftRoom: {
+          ...state.draftRoom,  // Preserve existing colors and patterns
+          placedItems,
+        },
+      }));
+    },
+    
+    updateRoomColors: (wallColor, floorColor) => {
+      set((state) => ({
+        draftRoom: {
+          ...state.draftRoom,
+          ...(wallColor !== undefined && { wallColor }),
+          ...(floorColor !== undefined && { floorColor }),
+        },
+      }));
+    },
+    
+    updateRoomPatterns: (wallPattern, floorPattern) => {
+      set((state) => ({
+        draftRoom: {
+          ...state.draftRoom,
+          ...(wallPattern !== undefined && { wallPattern }),
+          ...(floorPattern !== undefined && { floorPattern }),
+        },
+      }));
     },
     
     saveDraftChanges: async () => {
@@ -508,6 +559,10 @@ export const useIslandStore = create<IslandStore>()(
         set({
           room: {
             ...state.room,
+            wallColor: state.draftRoom.wallColor,
+            floorColor: state.draftRoom.floorColor,
+            wallPattern: state.draftRoom.wallPattern,
+            floorPattern: state.draftRoom.floorPattern,
             placedItems: [...state.draftRoom.placedItems],
           },
         });
@@ -531,6 +586,10 @@ export const useIslandStore = create<IslandStore>()(
           equipped: { ...state.avatar.equipped },
         },
         draftRoom: {
+          wallColor: state.room.wallColor,
+          floorColor: state.room.floorColor,
+          wallPattern: state.room.wallPattern,
+          floorPattern: state.room.floorPattern,
           placedItems: [...state.room.placedItems],
         },
       });
@@ -559,6 +618,7 @@ export const useIslandStore = create<IslandStore>()(
       if (state.ui.inventoryMode === 'room') {
         set({
           draftRoom: {
+            ...state.draftRoom,  // Preserve existing colors and patterns
             placedItems: state.draftRoom.placedItems.map(item =>
               item.id === placedItemId
                 ? { ...item, x, y, zIndex }
@@ -597,6 +657,10 @@ export const useIslandStore = create<IslandStore>()(
           },
           roomData: {
             theme: state.room.theme,
+            wallColor: state.room.wallColor,
+            floorColor: state.room.floorColor,
+            wallPattern: state.room.wallPattern,
+            floorPattern: state.room.floorPattern,
             furniture: state.room.placedItems,
           },
         });

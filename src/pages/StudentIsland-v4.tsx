@@ -8,8 +8,6 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 import LayeredAvatarDB from "@/components/avatar-v2/LayeredAvatarDB";
 import { Coins, Home, ShoppingBag, Package, Sparkles, X, Wand2, Shirt } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import type { StudentIsland } from "@shared/currency-types";
-import { useOwnedItems } from "@/hooks/useOwnedItems";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -29,11 +27,53 @@ import UnifiedInventoryPanel from "@/components/island/UnifiedInventoryPanel";
 import { AnimatePresence, motion } from "framer-motion";
 import StoreModal from "@/components/island/StoreModal";
 
+interface StoreItem {
+  id: string;
+  name: string;
+  type: string;
+  cost: number;
+  description?: string;
+  rarity?: string;
+  imageUrl?: string;
+}
+
+interface PageData {
+  island: {
+    id: number;
+    passportCode: string;
+    studentName: string;
+    gradeLevel: string;
+    animalType: string;
+    personalityType: string;
+    animalGenius: string;
+    learningStyle: string;
+    currencyBalance: number;
+    avatarData: any;
+    roomData: any;
+    className: string;
+    classId: number;
+    completedAt: string;
+  };
+  wallet: {
+    total: number;
+    pending: number;
+    available: number;
+  };
+  storeStatus: {
+    isOpen: boolean;
+    message: string;
+    classId: number;
+    className: string;
+  };
+  storeCatalog: StoreItem[];
+  purchaseRequests: any[];
+}
+
 export default function StudentIsland() {
   const { passportCode } = useParams();
   const queryClient = useQueryClient();
   const [showStore, setShowStore] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<StoreItem | null>(null);
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const [purchaseMessage, setPurchaseMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showWelcome, setShowWelcome] = useState(false);
@@ -45,28 +85,59 @@ export default function StudentIsland() {
   const draftAvatar = useIslandStore((state) => state.draftAvatar);
   const draftRoom = useIslandStore((state) => state.draftRoom);
 
-  // Fetch student island data
-  const { data: islandData, isLoading, error } = useQuery({
-    queryKey: [`/api/island/${passportCode}`],
-    queryFn: () => apiRequest('GET', `/api/island/${passportCode}`),
+  // Fetch all island data in one request
+  const { data: pageData, isLoading, error } = useQuery<PageData>({
+    queryKey: [`/api/island-page-data/${passportCode}`],
+    queryFn: () => apiRequest('GET', `/api/island-page-data/${passportCode}`),
     enabled: !!passportCode,
   });
-  
-  // Fetch details for owned items
-  const { data: ownedItemDetails } = useOwnedItems(islandData?.avatarData?.owned);
 
   // Initialize island store when data loads
   useEffect(() => {
-    if (islandData && ownedItemDetails) {
-      // Convert owned items to inventory format
-      const inventoryItems = ownedItemDetails.map((item: any) => ({
-        ...item,
-        quantity: 1,
-        obtainedAt: new Date()
-      }));
+    if (pageData) {
+      const { island, storeCatalog, purchaseRequests } = pageData;
+      
+      // Create a map of store items for quick lookup
+      const itemMap = new Map<string, StoreItem>();
+      storeCatalog.forEach(item => {
+        itemMap.set(item.id, item);
+      });
+      
+      // Convert owned items to inventory format using the store catalog
+      const inventoryItems: any[] = [];
+      if (island.avatarData?.owned) {
+        island.avatarData.owned.forEach((itemId: string) => {
+          const item = itemMap.get(itemId);
+          if (item) {
+            inventoryItems.push({
+              ...item,
+              quantity: 1,
+              obtainedAt: new Date()
+            });
+          }
+        });
+      }
+      
+      // Add approved purchase requests that aren't in owned yet (in case of sync issues)
+      const approvedItems = purchaseRequests
+        .filter(req => req.status === 'approved')
+        .map(req => req.itemId);
+      
+      approvedItems.forEach(itemId => {
+        if (!island.avatarData?.owned?.includes(itemId)) {
+          const item = itemMap.get(itemId);
+          if (item && !inventoryItems.find(i => i.id === itemId)) {
+            inventoryItems.push({
+              ...item,
+              quantity: 1,
+              obtainedAt: new Date()
+            });
+          }
+        }
+      });
       
       initializeFromServerData({
-        ...islandData,
+        ...island,
         inventoryItems
       });
       
@@ -76,27 +147,7 @@ export default function StudentIsland() {
         setShowWelcome(true);
       }
     }
-  }, [islandData, ownedItemDetails, passportCode, initializeFromServerData]);
-
-  // Fetch store status
-  const { data: storeStatus } = useQuery({
-    queryKey: [`/api/island/${passportCode}/store`],
-    queryFn: () => apiRequest('GET', `/api/island/${passportCode}/store`),
-    enabled: !!passportCode,
-  });
-
-  // Fetch store catalog (using non-paginated endpoint for now)
-  const { data: storeCatalog } = useQuery({
-    queryKey: ['/api/store/catalog'],
-    queryFn: () => apiRequest('GET', '/api/store/catalog'),
-  });
-
-  // Fetch purchase requests
-  const { data: purchaseRequests } = useQuery({
-    queryKey: [`/api/island/${passportCode}/purchases`],
-    queryFn: () => apiRequest('GET', `/api/island/${passportCode}/purchases`),
-    enabled: !!passportCode,
-  });
+  }, [pageData, passportCode, initializeFromServerData]);
 
   // Purchase mutation
   const purchaseMutation = useMutation({
@@ -105,7 +156,8 @@ export default function StudentIsland() {
     onSuccess: (data) => {
       setPurchaseMessage({ type: 'success', message: data.message });
       setShowPurchaseDialog(false);
-      queryClient.invalidateQueries({ queryKey: [`/api/island/${passportCode}/purchases`] });
+      // Refetch all data to get updated purchase requests
+      queryClient.invalidateQueries({ queryKey: [`/api/island-page-data/${passportCode}`] });
       setTimeout(() => setPurchaseMessage(null), 5000);
     },
     onError: (error: any) => {
@@ -123,7 +175,7 @@ export default function StudentIsland() {
     mutationFn: ({ slot, itemId }: { slot: string; itemId: string | null }) => 
       apiRequest('POST', `/api/island/${passportCode}/equip`, { slot, itemId }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/island/${passportCode}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/island-page-data/${passportCode}`] });
       setPurchaseMessage({ 
         type: 'success', 
         message: 'Avatar updated!' 
@@ -143,7 +195,7 @@ export default function StudentIsland() {
     equipMutation.mutate({ slot, itemId });
   };
 
-  const handlePurchaseClick = (item: any) => {
+  const handlePurchaseClick = (item: StoreItem) => {
     setSelectedItem(item);
     setShowPurchaseDialog(true);
   };
@@ -154,51 +206,46 @@ export default function StudentIsland() {
     }
   };
 
-  // Calculate available balance (total - pending)
-  const totalPendingCost = useMemo(() => {
-    if (!purchaseRequests) return 0;
-    return purchaseRequests
-      .filter((req: any) => req.status === 'pending')
-      .reduce((sum: number, req: any) => sum + req.cost, 0);
-  }, [purchaseRequests]);
-  
-  const availableBalance = (islandData?.currencyBalance || 0) - totalPendingCost;
-
   // Check if item has pending request
   const hasPendingRequest = (itemId: string) => {
-    return purchaseRequests?.some(
+    return pageData?.purchaseRequests?.some(
       (req: any) => req.itemId === itemId && req.status === 'pending'
     );
   };
 
-  // Categorize owned items based on actual item data from DB
+  // Categorize owned items
   const categorizedItems = useMemo(() => {
-    if (!ownedItemDetails) return { hats: [], glasses: [], accessories: [] };
+    if (!pageData?.island.avatarData?.owned || !pageData?.storeCatalog) {
+      return { hats: [], glasses: [], accessories: [] };
+    }
     
     const items = {
-      hats: [] as any[],
-      glasses: [] as any[],
-      accessories: [] as any[]
+      hats: [] as StoreItem[],
+      glasses: [] as StoreItem[],
+      accessories: [] as StoreItem[]
     };
     
-    ownedItemDetails.forEach((item: any) => {
-      if (item.itemType === 'avatar_hat') {
+    // Create item map for quick lookup
+    const itemMap = new Map<string, StoreItem>();
+    pageData.storeCatalog.forEach(item => {
+      itemMap.set(item.id, item);
+    });
+    
+    pageData.island.avatarData.owned.forEach((itemId: string) => {
+      const item = itemMap.get(itemId);
+      if (!item) return;
+      
+      if (item.type === 'avatar_hat') {
         items.hats.push(item);
-      } else if (item.itemType === 'avatar_accessory') {
-        // Check if it's glasses based on name pattern
-        if (item.name?.toLowerCase().includes('glass') || 
-            item.name?.toLowerCase().includes('blind') || 
-            item.name?.toLowerCase().includes('shade') ||
-            item.id?.includes('heart')) {
-          items.glasses.push(item);
-        } else {
-          items.accessories.push(item);
-        }
+      } else if (item.type === 'avatar_accessory' && (itemId.includes('blind') || itemId.includes('heart') || itemId.includes('glass'))) {
+        items.glasses.push(item);
+      } else if (item.type === 'avatar_accessory') {
+        items.accessories.push(item);
       }
     });
     
     return items;
-  }, [ownedItemDetails]);
+  }, [pageData]);
 
   if (isLoading) {
     return (
@@ -213,7 +260,7 @@ export default function StudentIsland() {
     );
   }
 
-  if (error || !islandData) {
+  if (error || !pageData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-pink-50">
         <Card className="p-8 max-w-md">
@@ -232,16 +279,16 @@ export default function StudentIsland() {
     );
   }
 
-  const island = islandData as StudentIsland;
+  const { island, wallet, storeStatus, storeCatalog } = pageData;
 
   return (
     <>
       <AnimatePresence>
-        {showWelcome && islandData && (
+        {showWelcome && island && (
           <WelcomeAnimation
-            studentName={islandData.studentName}
-            animalType={islandData.animalType}
-            passportCode={islandData.passportCode}
+            studentName={island.studentName}
+            animalType={island.animalType}
+            passportCode={island.passportCode}
             onComplete={() => {
               setShowWelcome(false);
               localStorage.setItem(`island-welcomed-${passportCode}`, 'true');
@@ -265,9 +312,9 @@ export default function StudentIsland() {
               </div>
               <div className="flex items-center gap-2 bg-yellow-100 rounded-full px-4 py-2">
                 <Coins className="w-5 h-5 text-yellow-600" />
-                <span className="font-bold text-lg">{island.currencyBalance}</span>
-                {totalPendingCost > 0 && (
-                  <span className="text-xs text-yellow-700">({availableBalance} available)</span>
+                <span className="font-bold text-lg">{wallet.total}</span>
+                {wallet.pending > 0 && (
+                  <span className="text-xs text-yellow-700">({wallet.available} available)</span>
                 )}
               </div>
             </div>
@@ -381,8 +428,8 @@ export default function StudentIsland() {
           open={showStore}
           onOpenChange={setShowStore}
           storeStatus={storeStatus}
-          storeCatalog={storeCatalog || []}
-          availableBalance={availableBalance}
+          storeCatalog={storeCatalog}
+          availableBalance={wallet.available}
           hasPendingRequest={hasPendingRequest}
           onPurchaseClick={handlePurchaseClick}
         />
@@ -404,7 +451,7 @@ export default function StudentIsland() {
                     <p className="text-sm text-muted-foreground">{selectedItem.description}</p>
                   </div>
                   <Badge variant={selectedItem.rarity === 'rare' ? 'default' : 'outline'}>
-                    {selectedItem.rarity}
+                    {selectedItem.rarity || 'common'}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between pt-2 border-t">
@@ -413,9 +460,9 @@ export default function StudentIsland() {
                     <span className="font-semibold text-lg">{selectedItem.cost} coins</span>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Available: {availableBalance} coins
-                    {totalPendingCost > 0 && (
-                      <span className="text-xs"> ({totalPendingCost} pending)</span>
+                    Available: {wallet.available} coins
+                    {wallet.pending > 0 && (
+                      <span className="text-xs"> ({wallet.pending} pending)</span>
                     )}
                   </div>
                 </div>

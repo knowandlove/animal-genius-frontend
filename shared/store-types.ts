@@ -1,14 +1,7 @@
-// Currency System Types and Constants
-// Shared between client and server
+// Store System Types
+// This file contains only the type definitions for the store system
+// The actual store data is now stored in the database
 
-// Transaction types for currency movements
-export type TransactionType = 
-  | 'teacher_gift'      // Teacher manually gives coins
-  | 'quiz_complete'     // Automatic reward for completing quiz
-  | 'achievement'       // Milestone rewards
-  | 'purchase';         // Spending coins in store
-
-// Store item categories
 export type ItemType = 
   | 'avatar_hat'
   | 'avatar_accessory' 
@@ -17,19 +10,23 @@ export type ItemType =
   | 'room_wallpaper'
   | 'room_flooring';
 
-// Purchase request status
+export type ItemRarity = 'common' | 'rare' | 'legendary';
+
 export type PurchaseStatus = 'pending' | 'approved' | 'denied';
 
-// Store catalog interface
+// Store item interface (matches database schema)
 export interface StoreItem {
   id: string;
   name: string;
-  type: ItemType;
+  description: string | null;
+  itemType: ItemType;
   cost: number;
-  description: string;
-  imageUrl?: string;
-  rarity?: 'common' | 'rare' | 'legendary';
-  unlockLevel?: number; // Future feature
+  imageUrl: string | null;
+  rarity: ItemRarity;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Student island data structure
@@ -62,6 +59,8 @@ export interface RoomData {
   furniture: FurnitureItem[];
   wallpaper?: string;
   flooring?: string;
+  wallColor?: string;
+  floorColor?: string;
 }
 
 export interface FurnitureItem {
@@ -98,33 +97,6 @@ export const CURRENCY_CONSTANTS = {
   STARTING_BALANCE: 0,         // Starting currency balance
 } as const;
 
-// Helper function to get the correct folder for an item
-// This is now based on item type from the database
-export function getItemFolder(itemType: ItemType, itemId: string): string {
-  // Special case for legacy glasses items
-  if (itemId === 'greenblinds' || itemId === 'hearts' || itemId === 'sunglasses' || itemId === 'star_glasses') {
-    return 'glasses';
-  }
-  
-  // Based on item type
-  if (itemType === 'avatar_hat') {
-    return 'hats';
-  }
-  
-  // Check if it's glasses based on naming pattern
-  if (itemId.includes('glass') || itemId.includes('blind') || itemId.includes('shade')) {
-    return 'glasses';
-  }
-  
-  // Default to accessories
-  return 'accessories';
-}
-
-// Helper function to check affordability
-export function canAffordItem(balance: number, itemCost: number): boolean {
-  return balance >= itemCost;
-}
-
 // Transaction reason templates
 export const TRANSACTION_REASONS = {
   QUIZ_COMPLETE: 'Quiz completion reward',
@@ -134,3 +106,27 @@ export const TRANSACTION_REASONS = {
   IMPROVEMENT: 'Amazing improvement',
   PURCHASE: 'Store purchase',
 } as const;
+
+// Helper function to get the correct folder for an item
+export function getItemFolder(item: StoreItem): string {
+  switch (item.itemType) {
+    case 'avatar_hat':
+      return 'hats';
+    case 'avatar_accessory':
+      // Special case for glasses
+      if (item.name.toLowerCase().includes('glass') || item.name.toLowerCase().includes('shade')) {
+        return 'glasses';
+      }
+      return 'accessories';
+    case 'room_furniture':
+      return 'furniture';
+    case 'room_decoration':
+      return 'decorations';
+    case 'room_wallpaper':
+      return 'wallpapers';
+    case 'room_flooring':
+      return 'flooring';
+    default:
+      return 'misc';
+  }
+}

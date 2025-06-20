@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Users, School, BarChart3, Shield, Trash2, Key, Edit, Eye, Activity, Clock, Database, Wifi, Palette, Package } from "lucide-react";
+import { Users, School, BarChart3, Shield, Trash2, Key, Edit, Eye, Activity, Clock, Database, Wifi, Palette, Package, Sparkles } from "lucide-react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -461,67 +462,73 @@ export default function AdminPanel() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Palette className="h-5 w-5" />
-                Avatar & Store Management Tools
+                Store & Avatar Management
               </CardTitle>
               <CardDescription>
-                Tools for managing avatar customization and store items
+                Unified tools for managing the store and avatar customization system
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="border-2 hover:border-primary transition-colors">
+                {/* Main Tools */}
+                <Card className="border-2 border-green-500 hover:border-green-600 transition-colors">
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Package className="h-4 w-4" />
-                      Add Store Item
+                      Store Management
+                      <Badge className="bg-green-100 text-green-800">Primary</Badge>
                     </CardTitle>
                     <CardDescription>
-                      Add new items to the student store
+                      Add, edit, and manage all store items
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Button
-                      onClick={() => setLocation("/admin/add-item")}
-                      className="w-full"
+                      onClick={() => setLocation("/admin/store")}
+                      className="w-full bg-green-600 hover:bg-green-700"
                     >
-                      Open Tool
+                      Open Store Manager
                     </Button>
                   </CardContent>
                 </Card>
 
-                <Card className="border-2 hover:border-primary transition-colors">
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Palette className="h-4 w-4" />
-                      Animal Sizer
-                    </CardTitle>
-                    <CardDescription>
-                      Adjust the size of animal graphics
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button
-                      onClick={() => setLocation("/admin/animal-sizer")}
-                      className="w-full"
-                    >
-                      Open Tool
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-2 hover:border-primary transition-colors">
+                <Card className="border-2 border-blue-500 hover:border-blue-600 transition-colors">
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Eye className="h-4 w-4" />
-                      Item Positioner
+                      Avatar Positioning Suite
+                      <Badge className="bg-blue-100 text-blue-800">Primary</Badge>
                     </CardTitle>
                     <CardDescription>
-                      Position accessories on each animal
+                      Position items on animals & manage sizes
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Button
                       onClick={() => setLocation("/admin/item-positioner")}
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                    >
+                      Open Positioning Tools
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Utility Tools */}
+                <Card className="border hover:border-gray-400 transition-colors opacity-75">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Palette className="h-4 w-4" />
+                      Animal Sizer
+                      <Badge variant="secondary">Utility</Badge>
+                    </CardTitle>
+                    <CardDescription>
+                      Fine-tune animal graphic sizes
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button
+                      onClick={() => setLocation("/admin/animal-sizer")}
+                      variant="outline"
                       className="w-full"
                     >
                       Open Tool
@@ -529,19 +536,21 @@ export default function AdminPanel() {
                   </CardContent>
                 </Card>
 
-                <Card className="border-2 hover:border-primary transition-colors">
+                <Card className="border hover:border-gray-400 transition-colors opacity-75">
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Database className="h-4 w-4" />
-                      Bulk Position Update
+                      Bulk Operations
+                      <Badge variant="secondary">Utility</Badge>
                     </CardTitle>
                     <CardDescription>
-                      Update all item positions at once
+                      Batch update positions and settings
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Button
                       onClick={() => setLocation("/admin/bulk-update")}
+                      variant="outline"
                       className="w-full"
                     >
                       Open Tool
@@ -550,15 +559,43 @@ export default function AdminPanel() {
                 </Card>
               </div>
 
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                <h4 className="font-semibold mb-2">How to use these tools:</h4>
-                <ol className="text-sm space-y-1 list-decimal list-inside">
-                  <li>Use <strong>Bulk Position Update</strong> first to set default positions</li>
-                  <li>Use <strong>Animal Sizer</strong> to adjust each animal's scale</li>
-                  <li>Use <strong>Item Positioner</strong> to fine-tune accessory placement</li>
-                  <li>Use <strong>Add Store Item</strong> to add new items to the store</li>
-                </ol>
+              {/* Quick Start Guide */}
+              <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-yellow-600" />
+                  Quick Start Guide
+                </h4>
+                <div className="grid md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="font-medium mb-2">🛍️ Setting up the Store:</p>
+                    <ol className="space-y-1 list-decimal list-inside ml-2">
+                      <li>Open <strong>Store Management</strong></li>
+                      <li>Add items with images and prices</li>
+                      <li>Toggle items active/inactive as needed</li>
+                    </ol>
+                  </div>
+                  <div>
+                    <p className="font-medium mb-2">🎯 Positioning Items:</p>
+                    <ol className="space-y-1 list-decimal list-inside ml-2">
+                      <li>Open <strong>Avatar Positioning Suite</strong></li>
+                      <li>Select an item and animal</li>
+                      <li>Drag to position or use sliders</li>
+                      <li>Use "Copy to All" for universal items</li>
+                    </ol>
+                  </div>
+                </div>
               </div>
+
+              {/* Deprecation Notice */}
+              <Alert className="mt-4 border-orange-200 bg-orange-50">
+                <AlertDescription className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-orange-600" />
+                  <span>
+                    <strong>Note:</strong> The old "Add Store Item" tool has been deprecated. 
+                    Please use the new Store Management system which saves directly to the database.
+                  </span>
+                </AlertDescription>
+              </Alert>
             </CardContent>
           </Card>
         </TabsContent>

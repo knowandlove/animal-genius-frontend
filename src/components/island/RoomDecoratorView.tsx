@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Package, Sparkles, Sofa, Palette, Home, AlertCircle } from 'lucide-react';
+import { Package, Sparkles, Sofa, Palette, Home, AlertCircle, Paintbrush, Box } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIslandStore, ROOM_ITEM_LIMIT } from '@/stores/islandStore';
@@ -11,6 +11,8 @@ export default function RoomDecoratorView() {
   const draftRoom = useIslandStore((state) => state.draftRoom);
   const selectInventoryItem = useIslandStore((state) => state.selectInventoryItem);
   const selectedItem = useIslandStore((state) => state.inventory.selectedItem);
+  const updateRoomColors = useIslandStore((state) => state.updateRoomColors);
+  const updateRoomPatterns = useIslandStore((state) => state.updateRoomPatterns);
 
   // Filter inventory for room items only
   const roomItems = inventory.items.filter(item => 
@@ -20,16 +22,11 @@ export default function RoomDecoratorView() {
   // Categorize items
   const furnitureItems = roomItems.filter(item => 
     item.type === 'room_furniture' || 
-    ['chair', 'table', 'lamp', 'clock'].some(keyword => item.id.includes(keyword))
+    ['chair', 'table', 'sofa', 'desk', 'bed'].some(keyword => item.id.includes(keyword))
   );
   
-  const wallItems = roomItems.filter(item => 
-    ['poster', 'picture', 'painting', 'wall'].some(keyword => item.id.includes(keyword))
-  );
-  
-  const floorItems = roomItems.filter(item => 
-    ['rug', 'carpet', 'mat', 'fuzzy'].some(keyword => item.id.includes(keyword)) ||
-    ['plant', 'potted'].some(keyword => item.id.includes(keyword))
+  const objectItems = roomItems.filter(item => 
+    !furnitureItems.includes(item) // Everything else that's not furniture
   );
   
   // Find selected item details
@@ -140,13 +137,13 @@ export default function RoomDecoratorView() {
             <Sofa className="w-4 h-4" />
             <span className="hidden sm:inline">Furniture</span>
           </TabsTrigger>
-          <TabsTrigger value="walls" className="flex items-center gap-1">
-            <Palette className="w-4 h-4" />
-            <span className="hidden sm:inline">Walls</span>
+          <TabsTrigger value="objects" className="flex items-center gap-1">
+            <Box className="w-4 h-4" />
+            <span className="hidden sm:inline">Objects</span>
           </TabsTrigger>
-          <TabsTrigger value="floors" className="flex items-center gap-1">
-            <Home className="w-4 h-4" />
-            <span className="hidden sm:inline">Floors</span>
+          <TabsTrigger value="colors" className="flex items-center gap-1">
+            <Paintbrush className="w-4 h-4" />
+            <span className="hidden sm:inline">Colors</span>
           </TabsTrigger>
         </TabsList>
 
@@ -157,15 +154,97 @@ export default function RoomDecoratorView() {
             </div>
           </TabsContent>
 
-          <TabsContent value="walls" className="mt-0">
+          <TabsContent value="objects" className="mt-0">
             <div className="grid grid-cols-4 gap-2">
-              {renderItemGrid(wallItems, 'walls')}
+              {renderItemGrid(objectItems, 'objects')}
             </div>
           </TabsContent>
 
-          <TabsContent value="floors" className="mt-0">
-            <div className="grid grid-cols-4 gap-2">
-              {renderItemGrid(floorItems, 'floors')}
+          <TabsContent value="colors" className="mt-0">
+            <div className="space-y-4">
+              {/* Wall Color */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Wall Color</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={draftRoom.wallColor || '#f5ddd9'}
+                    onChange={(e) => updateRoomColors(e.target.value, undefined)}
+                    className="w-16 h-16 rounded-lg cursor-pointer border-2 border-gray-300"
+                  />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-600 mb-1">Current color</div>
+                    <div className="font-mono text-sm">{draftRoom.wallColor || '#f5ddd9'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floor Color */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">Floor Color</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={draftRoom.floorColor || '#d4875f'}
+                    onChange={(e) => updateRoomColors(undefined, e.target.value)}
+                    className="w-16 h-16 rounded-lg cursor-pointer border-2 border-gray-300"
+                  />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-600 mb-1">Current color</div>
+                    <div className="font-mono text-sm">{draftRoom.floorColor || '#d4875f'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Preset Color Combos */}
+              <div className="mt-6">
+                <label className="text-sm font-medium mb-2 block">Quick Presets</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => updateRoomColors('#f5ddd9', '#d4875f')}
+                    className="p-2 rounded-lg border-2 border-gray-200 hover:border-gray-400 transition-colors"
+                  >
+                    <div className="flex h-12">
+                      <div className="flex-1 bg-[#f5ddd9] rounded-l"></div>
+                      <div className="flex-1 bg-[#d4875f] rounded-r"></div>
+                    </div>
+                    <span className="text-xs mt-1 block">Warm & Cozy</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => updateRoomColors('#e8f4f8', '#a8c5d6')}
+                    className="p-2 rounded-lg border-2 border-gray-200 hover:border-gray-400 transition-colors"
+                  >
+                    <div className="flex h-12">
+                      <div className="flex-1 bg-[#e8f4f8] rounded-l"></div>
+                      <div className="flex-1 bg-[#a8c5d6] rounded-r"></div>
+                    </div>
+                    <span className="text-xs mt-1 block">Ocean Blue</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => updateRoomColors('#f5e6ff', '#d4a6ff')}
+                    className="p-2 rounded-lg border-2 border-gray-200 hover:border-gray-400 transition-colors"
+                  >
+                    <div className="flex h-12">
+                      <div className="flex-1 bg-[#f5e6ff] rounded-l"></div>
+                      <div className="flex-1 bg-[#d4a6ff] rounded-r"></div>
+                    </div>
+                    <span className="text-xs mt-1 block">Purple Dream</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => updateRoomColors('#e8ffe8', '#a6d4a6')}
+                    className="p-2 rounded-lg border-2 border-gray-200 hover:border-gray-400 transition-colors"
+                  >
+                    <div className="flex h-12">
+                      <div className="flex-1 bg-[#e8ffe8] rounded-l"></div>
+                      <div className="flex-1 bg-[#a6d4a6] rounded-r"></div>
+                    </div>
+                    <span className="text-xs mt-1 block">Forest Green</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </TabsContent>
         </div>
