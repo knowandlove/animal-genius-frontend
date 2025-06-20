@@ -1,5 +1,9 @@
 import { isCloudStorageEnabled } from '@/utils/asset-urls';
 
+// Debug logging for animals.ts
+console.log('🦁 Animals.ts loading...');
+console.log('isCloudStorageEnabled():', isCloudStorageEnabled());
+
 export interface AnimalType {
   name: string;
   imagePath: string;
@@ -38,11 +42,15 @@ function getAnimalImagePath(animalName: string): string {
   if (isCloudStorageEnabled()) {
     // For cloud storage, we need to use the exact path as stored
     const cloudFileName = animalName.toLowerCase().replace(' ', '_');
-    return `${baseUrl}${cloudFileName}`;
+    const cloudUrl = `${baseUrl}${cloudFileName}`;
+    console.log(`🌐 Returning cloud URL for ${animalName}:`, cloudUrl);
+    return cloudUrl;
   }
   
   // Otherwise use local storage
-  return `${localBase}${fileName}`;
+  const localUrl = `${localBase}${fileName}`;
+  console.log(`📁 Returning local URL for ${animalName}:`, localUrl);
+  return localUrl;
 }
 
 // Canonical MBTI to Animal mappings

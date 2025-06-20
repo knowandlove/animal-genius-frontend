@@ -7,6 +7,13 @@ const CLOUDFLARE_ZONE = import.meta.env.VITE_CLOUDFLARE_ZONE;
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const USE_CLOUD_STORAGE = import.meta.env.VITE_USE_CLOUD_STORAGE === 'true';
 
+// Debug logging for cloud storage flag
+console.log('🎨 Asset URLs initializing...');
+console.log('VITE_USE_CLOUD_STORAGE:', import.meta.env.VITE_USE_CLOUD_STORAGE);
+console.log('Type:', typeof import.meta.env.VITE_USE_CLOUD_STORAGE);
+console.log('USE_CLOUD_STORAGE (computed):', USE_CLOUD_STORAGE);
+console.log('SUPABASE_URL:', SUPABASE_URL);
+
 export interface Asset {
   bucket: string;
   path: string;

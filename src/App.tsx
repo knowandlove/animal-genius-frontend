@@ -5,6 +5,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { LoadingSpinner } from "@/components/loading-spinner";
 
+// Debug logging for environment variables
+console.log('🚀 App.tsx loading...');
+console.log('VITE_USE_CLOUD_STORAGE:', import.meta.env.VITE_USE_CLOUD_STORAGE);
+console.log('Type:', typeof import.meta.env.VITE_USE_CLOUD_STORAGE);
+console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL);
+console.log('All env vars:', import.meta.env);
+
 // Lazy load all page components
 const Landing = lazy(() => import("@/pages/Landing"));
 const TeacherLogin = lazy(() => import("@/pages/teacher-login"));
