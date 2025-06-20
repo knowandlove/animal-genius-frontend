@@ -1,3 +1,5 @@
+import { isCloudStorageEnabled } from '@/utils/asset-urls';
+
 export interface AnimalType {
   name: string;
   imagePath: string;
@@ -10,6 +12,37 @@ export interface AnimalType {
   habitat: string;
   thinkingStyle: string;
   color: string;
+}
+
+// Helper function to get the correct image path based on cloud storage flag
+function getAnimalImagePath(animalName: string): string {
+  const baseUrl = 'https://zqyvfnbwpagguutzdvpy.supabase.co/storage/v1/object/public/public-assets/animals/';
+  const localBase = '/images/';
+  
+  // Map animal names to their file names
+  const fileMap: Record<string, string> = {
+    'Meerkat': 'meerkat.svg',
+    'Panda': 'panda.png',
+    'Owl': 'owl.png',
+    'Beaver': 'beaver.svg',
+    'Elephant': 'elephant.png',
+    'Otter': 'otter.png',
+    'Parrot': 'parrot.png',
+    'Border Collie': 'collie.png'
+  };
+  
+  const fileName = fileMap[animalName];
+  if (!fileName) return '/images/kal-character.png';
+  
+  // Use cloud storage if enabled
+  if (isCloudStorageEnabled()) {
+    // For cloud storage, we need to use the exact path as stored
+    const cloudFileName = animalName.toLowerCase().replace(' ', '_');
+    return `${baseUrl}${cloudFileName}`;
+  }
+  
+  // Otherwise use local storage
+  return `${localBase}${fileName}`;
 }
 
 // Canonical MBTI to Animal mappings
@@ -35,7 +68,7 @@ export const MBTI_TO_ANIMAL_MAP: Record<string, string> = {
 export const ANIMAL_TYPES: Record<string, AnimalType> = {
   Meerkat: {
     name: "Meerkat",
-    imagePath: "/images/meerkat.svg",
+    imagePath: getAnimalImagePath("Meerkat"),
     personalityTypes: ["ISFP", "INFP"],
     dominantFunction: "Introverted Feeling (Fi)",
     wildcardDichotomy: "S/N",
@@ -56,7 +89,7 @@ export const ANIMAL_TYPES: Record<string, AnimalType> = {
   },
   Panda: {
     name: "Panda",
-    imagePath: "/images/panda.png",
+    imagePath: getAnimalImagePath("Panda"),
     personalityTypes: ["INFJ", "INTJ"],
     dominantFunction: "Introverted Intuition (Ni)",
     wildcardDichotomy: "T/F",
@@ -77,7 +110,7 @@ export const ANIMAL_TYPES: Record<string, AnimalType> = {
   },
   Owl: {
     name: "Owl",
-    imagePath: "/images/owl.png",
+    imagePath: getAnimalImagePath("Owl"),
     personalityTypes: ["ISTP", "INTP"],
     dominantFunction: "Introverted Thinking (Ti)",
     wildcardDichotomy: "S/N",
@@ -98,7 +131,7 @@ export const ANIMAL_TYPES: Record<string, AnimalType> = {
   },
   Beaver: {
     name: "Beaver",
-    imagePath: "/images/beaver.svg",
+    imagePath: getAnimalImagePath("Beaver"),
     personalityTypes: ["ISFJ", "ISTJ"],
     dominantFunction: "Introverted Sensing (Si)",
     wildcardDichotomy: "T/F",
@@ -119,7 +152,7 @@ export const ANIMAL_TYPES: Record<string, AnimalType> = {
   },
   Elephant: {
     name: "Elephant",
-    imagePath: "/images/elephant.png",
+    imagePath: getAnimalImagePath("Elephant"),
     personalityTypes: ["ESFJ", "ENFJ"],
     dominantFunction: "Extraverted Feeling (Fe)",
     wildcardDichotomy: "S/N",
@@ -140,7 +173,7 @@ export const ANIMAL_TYPES: Record<string, AnimalType> = {
   },
   Otter: {
     name: "Otter",
-    imagePath: "/images/otter.png",
+    imagePath: getAnimalImagePath("Otter"),
     personalityTypes: ["ESFP", "ESTP"],
     dominantFunction: "Extraverted Sensing (Se)",
     wildcardDichotomy: "T/F",
@@ -161,7 +194,7 @@ export const ANIMAL_TYPES: Record<string, AnimalType> = {
   },
   Parrot: {
     name: "Parrot",
-    imagePath: "/images/parrot.png",
+    imagePath: getAnimalImagePath("Parrot"),
     personalityTypes: ["ENFP", "ENTP"],
     dominantFunction: "Extraverted Intuition (Ne)",
     wildcardDichotomy: "T/F",
@@ -182,7 +215,7 @@ export const ANIMAL_TYPES: Record<string, AnimalType> = {
   },
   "Border Collie": {
     name: "Border Collie",
-    imagePath: "/images/collie.png",
+    imagePath: getAnimalImagePath("Border Collie"),
     personalityTypes: ["ESTJ", "ENTJ"],
     dominantFunction: "Extraverted Thinking (Te)",
     wildcardDichotomy: "S/N",
