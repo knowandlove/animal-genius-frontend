@@ -37,7 +37,7 @@ const AvatarTest = lazy(() => import("@/pages/avatar-test"));
 const AvatarTestV2 = lazy(() => import("@/pages/avatar-test-v2"));
 const AvatarEditor = lazy(() => import("@/pages/avatar-editor"));
 const AvatarItemPositioner = lazy(() => import("@/pages/admin/avatar-item-positioner"));
-const AddStoreItem = lazy(() => import("@/pages/admin/add-store-item"));
+// const AddStoreItem = lazy(() => import("@/pages/admin/add-store-item")); // Removed - use StoreManagement instead
 const StoreManagement = lazy(() => import("@/pages/admin/store-management"));
 const AnimalSizer = lazy(() => import("@/pages/admin/animal-sizer"));
 const BulkPositionUpdate = lazy(() => import("@/pages/admin/bulk-position-update"));
@@ -156,7 +156,7 @@ function Router() {
             <Route path="/teacher/game/:gameId" component={TeacherGameDashboard} />
             <Route path="/colors" component={ColorPreview} />
             <Route path="/admin/item-positioner" component={AvatarItemPositioner} />
-            <Route path="/admin/add-item" component={AddStoreItem} />
+            {/* <Route path="/admin/add-item" component={AddStoreItem} /> */}
             <Route path="/admin/store" component={StoreManagement} />
             <Route path="/admin/animal-sizer" component={AnimalSizer} />
             <Route path="/admin/bulk-update" component={BulkPositionUpdate} />
