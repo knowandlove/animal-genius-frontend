@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import LayeredAvatarDB from '@/components/avatar-v2/LayeredAvatarDB';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2 } from 'lucide-react';
+import { getAssetUrl } from '@/utils/cloud-assets';
 
 interface DragState {
   itemId: string;
@@ -218,7 +219,7 @@ export default function IslandRoomSticker() {
         
         {/* Room Structure - Shelves and Baseboard */}
         <img 
-          src="/rooms/shelves-and-trim.png" 
+          src={getAssetUrl('/rooms/shelves-and-trim.png')} 
           alt="Room shelves"
           className="absolute inset-0 w-full h-full z-5 pointer-events-none"
           style={{ objectFit: 'cover' }}

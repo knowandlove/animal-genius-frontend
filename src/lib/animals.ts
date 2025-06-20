@@ -1,8 +1,7 @@
-import { isCloudStorageEnabled } from '@/utils/asset-urls';
+import { getAssetUrl } from '@/utils/cloud-assets';
 
 // Debug logging for animals.ts
 console.log('🦁 Animals.ts loading...');
-console.log('isCloudStorageEnabled():', isCloudStorageEnabled());
 
 export interface AnimalType {
   name: string;
@@ -20,9 +19,6 @@ export interface AnimalType {
 
 // Helper function to get the correct image path based on cloud storage flag
 function getAnimalImagePath(animalName: string): string {
-  const baseUrl = 'https://zqyvfnbwpagguutzdvpy.supabase.co/storage/v1/object/public/public-assets/animals/';
-  const localBase = '/images/';
-  
   // Map animal names to their file names
   const fileMap: Record<string, string> = {
     'Meerkat': 'meerkat.svg',
@@ -36,21 +32,11 @@ function getAnimalImagePath(animalName: string): string {
   };
   
   const fileName = fileMap[animalName];
-  if (!fileName) return '/images/kal-character.png';
+  if (!fileName) return getAssetUrl('/images/kal-character.png');
   
-  // Use cloud storage if enabled
-  if (isCloudStorageEnabled()) {
-    // For cloud storage, we need to use the exact path as stored
-    const cloudFileName = animalName.toLowerCase().replace(' ', '_');
-    const cloudUrl = `${baseUrl}${cloudFileName}`;
-    console.log(`🌐 Returning cloud URL for ${animalName}:`, cloudUrl);
-    return cloudUrl;
-  }
-  
-  // Otherwise use local storage
-  const localUrl = `${localBase}${fileName}`;
-  console.log(`📁 Returning local URL for ${animalName}:`, localUrl);
-  return localUrl;
+  // Construct the local path and let getAssetUrl handle the cloud/local logic
+  const localPath = `/images/${fileName}`;
+  return getAssetUrl(localPath);
 }
 
 // Canonical MBTI to Animal mappings
