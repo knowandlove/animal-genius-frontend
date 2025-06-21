@@ -36,15 +36,15 @@ const ASSET_MAPPING = {
   '/images/parrot.png': { bucket: 'public-assets', path: 'animals/head_icons/parrot.png' },
   '/images/parrot.svg': { bucket: 'public-assets', path: 'animals/head_icons/parrot.svg' },
   
-  // Animal FULL BODY images - in public-assets/animals/full-body/
-  '/animals/full-body/beaver.png': { bucket: 'public-assets', path: 'animals/full-body/beaver.png' },
-  '/animals/full-body/border_collie.png': { bucket: 'public-assets', path: 'animals/full-body/border_collie.png' },
-  '/animals/full-body/elephant.png': { bucket: 'public-assets', path: 'animals/full-body/elephant.png' },
-  '/animals/full-body/meerkat.png': { bucket: 'public-assets', path: 'animals/full-body/meerkat.png' },
-  '/animals/full-body/otter.png': { bucket: 'public-assets', path: 'animals/full-body/otter.png' },
-  '/animals/full-body/owl.png': { bucket: 'public-assets', path: 'animals/full-body/owl.png' },
-  '/animals/full-body/panda.png': { bucket: 'public-assets', path: 'animals/full-body/panda.png' },
-  '/animals/full-body/parrot.png': { bucket: 'public-assets', path: 'animals/full-body/parrot.png' },
+  // Animal FULL BODY images - in public-assets/animals/full_body/
+  '/animals/full-body/beaver.png': { bucket: 'public-assets', path: 'animals/full_body/beaver_full.png' },
+  '/animals/full-body/border_collie.png': { bucket: 'public-assets', path: 'animals/full_body/border_collie_full.png' },
+  '/animals/full-body/elephant.png': { bucket: 'public-assets', path: 'animals/full_body/elephant_full.png' },
+  '/animals/full-body/meerkat.png': { bucket: 'public-assets', path: 'animals/full_body/meerkat_full.png' },
+  '/animals/full-body/otter.png': { bucket: 'public-assets', path: 'animals/full_body/otter_full.png' },
+  '/animals/full-body/owl.png': { bucket: 'public-assets', path: 'animals/full_body/owl_full.png' },
+  '/animals/full-body/panda.png': { bucket: 'public-assets', path: 'animals/full_body/panda_full.png' },
+  '/animals/full-body/parrot.png': { bucket: 'public-assets', path: 'animals/full_body/parrot_full.png' },
   
   // UI assets - in public-assets/ui/
   '/rooms/shelves-and-trim.png': { bucket: 'public-assets', path: 'ui/shelves-and-trim.png' },
