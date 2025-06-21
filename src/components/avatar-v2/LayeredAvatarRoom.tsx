@@ -32,6 +32,7 @@ interface LayeredAvatarRoomProps {
   onClick?: () => void;
   className?: string;
   animated?: boolean;
+  animalScale?: number; // New prop to control animal scale
 }
 
 // Emoji fallbacks for when images aren't loaded yet
@@ -55,6 +56,7 @@ function LayeredAvatarRoom({
   onClick,
   className,
   animated = true,
+  animalScale = 1, // Default to full size
 }: LayeredAvatarRoomProps) {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -80,11 +82,13 @@ function LayeredAvatarRoom({
   const getAnimalImage = () => {
     const normalizedAnimal = animalType.toLowerCase().replace(' ', '-');
     
-    // Use full-body images for rooms
+    // Use full-body images for rooms (not the head icons)
     const animalFileName = normalizedAnimal === 'border-collie' ? 'border_collie' : normalizedAnimal;
     
     // Use the cloud assets utility which handles the cloud/local switching
-    return getAssetUrl(`/animals/full-body/${animalFileName}.png`);
+    const imageUrl = getAssetUrl(`/animals/full-body/${animalFileName}.png`);
+    console.log('LayeredAvatarRoom - Loading full body image:', imageUrl);
+    return imageUrl;
   };
 
   // Get position from database
@@ -118,13 +122,14 @@ function LayeredAvatarRoom({
 
   // Build layers array
   const layers: AvatarLayer[] = [
-    // Base animal layer - full body
+    // Base animal layer - use the provided scale
     {
       id: 'base',
       src: getAnimalImage(),
       emoji: animalEmojis[animalType.toLowerCase()] || '🐾',
       zIndex: 1,
       position: { top: '50%', left: '50%' },
+      scale: animalScale, // Use the prop instead of hardcoded value
     },
   ];
 
@@ -135,25 +140,44 @@ function LayeredAvatarRoom({
     const dbPosition = getItemPosition(itemId, animalType);
     const storeItem = storeItems?.find((item: any) => item.id === itemId);
     
+    // Debug logging
+    console.log('LayeredAvatarRoom - Processing item:', {
+      slot,
+      itemId,
+      storeItem: storeItem?.name,
+      dbPosition,
+      animalType,
+      imageUrl: storeItem?.imageUrl
+    });
+    
     // Determine the image path
     let imagePath: string;
     if (storeItem?.imageUrl) {
-      imagePath = storeItem.imageUrl;
-      // If it's a relative URL, make it absolute
-      if (!imagePath.startsWith('http') && !imagePath.startsWith('/')) {
-        imagePath = '/' + imagePath;
-      }
-      // If it's a backend URL without domain, add the API URL
-      if (imagePath.startsWith('/uploads/')) {
-        imagePath = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${imagePath}`;
+      // If it's already a full Supabase URL, use it directly
+      if (storeItem.imageUrl.includes('supabase.co')) {
+        imagePath = storeItem.imageUrl;
+      } else if (storeItem.imageUrl.startsWith('http')) {
+        // If it's any other full URL, use it directly
+        imagePath = storeItem.imageUrl;
+      } else {
+        // Otherwise, try to get it through the cloud assets utility
+        imagePath = getAssetUrl(storeItem.imageUrl);
+        
+        // If getAssetUrl didn't map it and it's a relative path, construct full URL
+        if (!imagePath.includes('supabase.co') && !imagePath.startsWith('http')) {
+          // If it's a backend upload path
+          if (imagePath.startsWith('/uploads/')) {
+            imagePath = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${imagePath}`;
+          }
+        }
       }
     } else {
-      // Fallback
+      // Fallback - try to construct a path
       imagePath = `/uploads/store-items/${itemId}.png`;
-      if (!imagePath.startsWith('http')) {
-        imagePath = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${imagePath}`;
-      }
+      imagePath = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${imagePath}`;
     }
+    
+    console.log('LayeredAvatarRoom - Final image path:', imagePath);
     
     // Determine z-index based on slot
     const zIndex = slot === 'hat' ? 10 : slot === 'glasses' ? 8 : 7;
@@ -211,12 +235,12 @@ function LayeredAvatarRoom({
           ...layer.position,
           transform: `
             translate(-50%, -50%) 
-            scale(${isBaseLayer ? 1 : (layer.scale || 1)}) 
+            scale(${layer.scale || 1}) 
             rotate(${layer.rotation || 0}deg)
           `,
           transformOrigin: 'center',
           transition: animated ? 'all 0.3s ease' : undefined,
-          // Base layer should fill the container for full body
+          // Base layer should be contained
           ...(isBaseLayer ? {
             width: '100%',
             height: '100%',
