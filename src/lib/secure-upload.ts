@@ -1,3 +1,5 @@
+import { api } from "@/config/api";
+
 // Get auth token from localStorage
 function getAuthToken(): string | null {
   return localStorage.getItem('authToken');
@@ -118,7 +120,7 @@ export async function uploadImage({
       });
 
       // Set up request
-      xhr.open('POST', '/api/admin/upload-asset');
+      xhr.open('POST', api('/api/admin/upload-asset'));
       xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       
       // Send request
@@ -142,7 +144,7 @@ export async function deleteAsset(assetId: string): Promise<boolean> {
       throw new Error('Authentication required');
     }
 
-    const response = await fetch(`/api/admin/delete-asset/${assetId}`, {
+    const response = await fetch(api(`/api/admin/delete-asset/${assetId}`), {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -177,7 +179,7 @@ export async function getStorageStatus(): Promise<{
       throw new Error('Authentication required');
     }
 
-    const response = await fetch('/api/admin/storage-status', {
+    const response = await fetch(api('/api/admin/storage-status'), {
       headers: {
         'Authorization': `Bearer ${token}`
       }
