@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { X, Sparkles } from 'lucide-react';
-import LayeredAvatar from '@/components/avatar-v2/LayeredAvatar';
+import LayeredAvatarRoom from '@/components/avatar-v2/LayeredAvatarRoom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface AvatarCustomizerProps {
@@ -84,11 +84,11 @@ export default function AvatarCustomizer({
           {/* Avatar Preview */}
           <div className="flex flex-col items-center">
             <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl p-8 mb-4">
-              <LayeredAvatar
+              <LayeredAvatarRoom
                 animalType={animalType}
                 items={localEquipped}
-                width={250}
-                height={250}
+                width={350}
+                height={350}
                 animated={true}
               />
             </div>

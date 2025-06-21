@@ -669,8 +669,8 @@ export default function AvatarItemPositioner() {
                     <div 
                       className="relative" 
                       style={{ 
-                        width: 400, 
-                        height: 400,
+                        width: 600, 
+                        height: 600,
                         position: 'relative'
                       }}
                     >
@@ -681,8 +681,8 @@ export default function AvatarItemPositioner() {
                           selectedItem={selectedItem}
                           selectedItemImageUrl={selectedItemData?.imageUrl}
                           itemPosition={currentPosition}
-                          width={400}
-                          height={400}
+                          width={600}
+                          height={600}
                           animated={false}
                         />
                       </div>
