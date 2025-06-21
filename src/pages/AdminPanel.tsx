@@ -11,10 +11,12 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Users, School, BarChart3, Shield, Trash2, Key, Edit, Eye, Activity, Clock, Database, Wifi, Palette, Package, Sparkles } from "lucide-react";
+import { Users, School, BarChart3, Shield, Trash2, Key, Edit, Eye, Activity, Clock, Database, Wifi, Palette, Package, Sparkles, Monitor, Home } from "lucide-react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { SystemMonitoringTab } from "@/components/admin/SystemMonitoringTab";
+import { AdminDashboardSummary } from "@/components/admin/AdminDashboardSummary";
 
 interface Teacher {
   id: number;
@@ -270,14 +272,24 @@ export default function AdminPanel() {
         </Card>
       </div>
 
-      <Tabs defaultValue="teachers" className="space-y-4">
-        <TabsList>
+      <Tabs defaultValue="dashboard" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-7">
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="monitoring">Health</TabsTrigger>
           <TabsTrigger value="teachers">Teachers</TabsTrigger>
           <TabsTrigger value="classes">Classes</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="metrics">Performance</TabsTrigger>
-          <TabsTrigger value="avatar-tools">Avatar Tools</TabsTrigger>
+          <TabsTrigger value="avatar-tools">Store Tools</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="dashboard" className="space-y-4">
+          <AdminDashboardSummary />
+        </TabsContent>
+
+        <TabsContent value="monitoring" className="space-y-4">
+          <SystemMonitoringTab />
+        </TabsContent>
 
         <TabsContent value="teachers" className="space-y-4">
           <Card>

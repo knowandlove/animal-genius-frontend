@@ -34,7 +34,8 @@ export interface TransformOptions {
  */
 export function getAssetUrl(
   asset: Asset | string,
-  options: TransformOptions = {}
+  options: TransformOptions = {},
+  bustCache: boolean = false
 ): string {
   // Handle legacy string URLs
   if (typeof asset === 'string') {
@@ -47,7 +48,13 @@ export function getAssetUrl(
   }
 
   // Construct Supabase storage URL
-  const baseUrl = `${SUPABASE_URL}/storage/v1/object/public/${asset.bucket}/${asset.path}`;
+  let baseUrl = `${SUPABASE_URL}/storage/v1/object/public/${asset.bucket}/${asset.path}`;
+  
+  // Add cache busting parameter if requested
+  if (bustCache) {
+    const separator = baseUrl.includes('?') ? '&' : '?';
+    baseUrl += `${separator}v=${Date.now()}`;
+  }
 
   // If no transformations needed or no Cloudflare zone, return direct URL
   if (!CLOUDFLARE_ZONE || (!options.width && !options.height && !options.format)) {

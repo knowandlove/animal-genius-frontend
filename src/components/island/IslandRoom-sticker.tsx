@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { useIslandStore, ROOM_ITEM_LIMIT } from '@/stores/islandStore';
 import { cn } from '@/lib/utils';
-import LayeredAvatarDB from '@/components/avatar-v2/LayeredAvatarDB';
+import LayeredAvatarRoom from '@/components/avatar-v2/LayeredAvatarRoom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2 } from 'lucide-react';
 import { getAssetUrl } from '@/utils/cloud-assets';
@@ -315,7 +315,7 @@ export default function IslandRoomSticker() {
                 ease: "easeInOut"
               }}
             >
-              <LayeredAvatarDB
+              <LayeredAvatarRoom
                 animalType={displayAvatar.type}
                 items={displayAvatar.equipped}
                 width={504}

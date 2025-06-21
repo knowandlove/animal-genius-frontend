@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { getAssetUrl, getResponsiveSrcSet, type Asset, type TransformOptions } from '@/utils/asset-urls';
 
@@ -73,17 +73,25 @@ export function OptimizedImage({
     return showSkeleton ? <ImageSkeleton width={width} height={height} className={className} /> : null;
   }
 
-  // Generate image URLs with transformations
-  const transformOptions: TransformOptions = {
-    width,
-    height,
-    format: variant,
-    quality,
-    fit,
-  };
+  // Memoize URLs to prevent re-creation on every render
+  const { src, srcSet } = useMemo(() => {
+    if (hasError) {
+      return { src: fallback, srcSet: undefined };
+    }
+    
+    const transformOptions: TransformOptions = {
+      width,
+      height,
+      format: variant,
+      quality,
+      fit,
+    };
 
-  const src = hasError ? fallback : getAssetUrl(asset, transformOptions);
-  const srcSet = hasError ? undefined : width ? getResponsiveSrcSet(asset, width, height, { format: variant, quality, fit }) : undefined;
+    const computedSrc = getAssetUrl(asset, transformOptions);
+    const computedSrcSet = width ? getResponsiveSrcSet(asset, width, height, { format: variant, quality, fit }) : undefined;
+    
+    return { src: computedSrc, srcSet: computedSrcSet };
+  }, [asset, width, height, variant, quality, fit, hasError, fallback]);
 
   return (
     <>

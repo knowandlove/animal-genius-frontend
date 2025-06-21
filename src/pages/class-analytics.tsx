@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { getAnimalByName } from "@/lib/animals";
 import { apiRequest } from "@/lib/queryClient";
+import { getAssetUrl } from "@/utils/cloud-assets";
 import Header from "@/components/header";
 import { InteractivePieChart } from "@/components/interactive-pie-chart";
 import { Monitor, Upload, Eye, Volume2, Zap, BookOpen, MapPin, Coins, Plus, Minus, Store } from "lucide-react";
@@ -245,14 +246,14 @@ export default function ClassAnalytics() {
 
   // Animal color mapping and SVG paths
   const animalColors: Record<string, { color: string; svg: string }> = {
-    Meerkat: { color: "#4B4959", svg: "/images/meerkat.svg" },
-    Panda: { color: "#82BCC8", svg: "/images/panda.png" },
-    Owl: { color: "#BAC97D", svg: "/images/owl.png" },
-    Beaver: { color: "#829B79", svg: "/images/beaver.svg" },
-    Elephant: { color: "#BD85C8", svg: "/images/elephant.png" },
-    Otter: { color: "#FACC7D", svg: "/images/otter.png" },
-    Parrot: { color: "#FF8070", svg: "/images/parrot.png" },
-    "Border Collie": { color: "#DEA77E", svg: "/images/collie.png" },
+    Meerkat: { color: "#4B4959", svg: getAssetUrl("/images/meerkat.svg") },
+    Panda: { color: "#82BCC8", svg: getAssetUrl("/images/panda.png") },
+    Owl: { color: "#BAC97D", svg: getAssetUrl("/images/owl.png") },
+    Beaver: { color: "#829B79", svg: getAssetUrl("/images/beaver.svg") },
+    Elephant: { color: "#BD85C8", svg: getAssetUrl("/images/elephant.png") },
+    Otter: { color: "#FACC7D", svg: getAssetUrl("/images/otter.png") },
+    Parrot: { color: "#FF8070", svg: getAssetUrl("/images/parrot.png") },
+    "Border Collie": { color: "#DEA77E", svg: getAssetUrl("/images/collie.png") },
   };
 
   // Prepare pie chart data

@@ -3,7 +3,7 @@
  * All asset URLs should go through this utility to ensure consistent cloud/local switching
  */
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://zqyvfnbwpagguutzdvpy.supabase.co';
 const USE_CLOUD_STORAGE = import.meta.env.VITE_USE_CLOUD_STORAGE === 'true';
 
 // Debug logging
@@ -18,27 +18,38 @@ console.log('🌩️ Cloud Assets Config:', {
  * Maps local paths to Supabase bucket/path combinations
  */
 const ASSET_MAPPING = {
-  // Animal images - in public-assets/animals/
-  '/images/beaver.png': { bucket: 'public-assets', path: 'animals/beaver.png' },
-  '/images/beaver.svg': { bucket: 'public-assets', path: 'animals/beaver.svg' },
-  '/images/collie.png': { bucket: 'public-assets', path: 'animals/collie.png' },
-  '/images/border_collie.svg': { bucket: 'public-assets', path: 'animals/border_collie.svg' },
-  '/images/elephant.png': { bucket: 'public-assets', path: 'animals/elephant.png' },
-  '/images/elephant.svg': { bucket: 'public-assets', path: 'animals/elephant.svg' },
-  '/images/meerkat.png': { bucket: 'public-assets', path: 'animals/meerkat.png' },
-  '/images/meerkat.svg': { bucket: 'public-assets', path: 'animals/meerkat.svg' },
-  '/images/otter.png': { bucket: 'public-assets', path: 'animals/otter.png' },
-  '/images/otter.svg': { bucket: 'public-assets', path: 'animals/otter.svg' },
-  '/images/owl.png': { bucket: 'public-assets', path: 'animals/owl.png' },
-  '/images/owl.svg': { bucket: 'public-assets', path: 'animals/owl.svg' },
-  '/images/panda.png': { bucket: 'public-assets', path: 'animals/panda.png' },
-  '/images/panda.svg': { bucket: 'public-assets', path: 'animals/panda.svg' },
-  '/images/parrot.png': { bucket: 'public-assets', path: 'animals/parrot.png' },
-  '/images/parrot.svg': { bucket: 'public-assets', path: 'animals/parrot.svg' },
+  // Animal HEAD ICONS - in public-assets/animals/head_icons/
+  '/images/beaver.png': { bucket: 'public-assets', path: 'animals/head_icons/beaver.png' },
+  '/images/beaver.svg': { bucket: 'public-assets', path: 'animals/head_icons/beaver.svg' },
+  '/images/collie.png': { bucket: 'public-assets', path: 'animals/head_icons/collie.png' },
+  '/images/border_collie.svg': { bucket: 'public-assets', path: 'animals/head_icons/border_collie.svg' },
+  '/images/elephant.png': { bucket: 'public-assets', path: 'animals/head_icons/elephant.png' },
+  '/images/elephant.svg': { bucket: 'public-assets', path: 'animals/head_icons/elephant.svg' },
+  '/images/meerkat.png': { bucket: 'public-assets', path: 'animals/head_icons/meerkat.png' },
+  '/images/meerkat.svg': { bucket: 'public-assets', path: 'animals/head_icons/meerkat.svg' },
+  '/images/otter.png': { bucket: 'public-assets', path: 'animals/head_icons/otter.png' },
+  '/images/otter.svg': { bucket: 'public-assets', path: 'animals/head_icons/otter.svg' },
+  '/images/owl.png': { bucket: 'public-assets', path: 'animals/head_icons/owl.png' },
+  '/images/owl.svg': { bucket: 'public-assets', path: 'animals/head_icons/owl.svg' },
+  '/images/panda.png': { bucket: 'public-assets', path: 'animals/head_icons/panda.png' },
+  '/images/panda.svg': { bucket: 'public-assets', path: 'animals/head_icons/panda.svg' },
+  '/images/parrot.png': { bucket: 'public-assets', path: 'animals/head_icons/parrot.png' },
+  '/images/parrot.svg': { bucket: 'public-assets', path: 'animals/head_icons/parrot.svg' },
+  
+  // Animal FULL BODY images - in public-assets/animals/full-body/
+  '/animals/full-body/beaver.png': { bucket: 'public-assets', path: 'animals/full-body/beaver.png' },
+  '/animals/full-body/border_collie.png': { bucket: 'public-assets', path: 'animals/full-body/border_collie.png' },
+  '/animals/full-body/elephant.png': { bucket: 'public-assets', path: 'animals/full-body/elephant.png' },
+  '/animals/full-body/meerkat.png': { bucket: 'public-assets', path: 'animals/full-body/meerkat.png' },
+  '/animals/full-body/otter.png': { bucket: 'public-assets', path: 'animals/full-body/otter.png' },
+  '/animals/full-body/owl.png': { bucket: 'public-assets', path: 'animals/full-body/owl.png' },
+  '/animals/full-body/panda.png': { bucket: 'public-assets', path: 'animals/full-body/panda.png' },
+  '/animals/full-body/parrot.png': { bucket: 'public-assets', path: 'animals/full-body/parrot.png' },
   
   // UI assets - in public-assets/ui/
   '/rooms/shelves-and-trim.png': { bucket: 'public-assets', path: 'ui/shelves-and-trim.png' },
   '/images/kal-character.png': { bucket: 'public-assets', path: 'ui/kal-character.png' },
+  '/images/KALlogocolor.svg': { bucket: 'public-assets', path: 'ui/KALlogocolor.svg' },
   
   // Add more mappings as needed...
 } as const;

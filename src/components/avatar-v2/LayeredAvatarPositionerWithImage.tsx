@@ -61,19 +61,11 @@ function LayeredAvatarPositionerWithImage({
   const getAnimalImage = () => {
     const normalizedAnimal = animalType.toLowerCase().replace(' ', '-');
     
-    if (!useAvatarImage) {
-      // Fallback to SVG
-      const svgName = normalizedAnimal === 'border-collie' ? 'border_collie' : normalizedAnimal;
-      return getAssetUrl(`/images/${svgName}.svg`);
-    }
+    // Use full-body images for positioning (not the head icons)
+    const animalFileName = normalizedAnimal === 'border-collie' ? 'border_collie' : normalizedAnimal;
     
-    // Special case for border collie -> collie.png
-    if (normalizedAnimal === 'border-collie') {
-      return getAssetUrl('/images/collie.png');
-    }
-    
-    // For other animals, use the image directly
-    return getAssetUrl(`/images/${normalizedAnimal}.png`);
+    // Use the cloud assets utility which handles the cloud/local switching
+    return getAssetUrl(`/animals/full-body/${animalFileName}.png`);
   };
 
   // Build layers array
@@ -149,10 +141,10 @@ function LayeredAvatarPositionerWithImage({
           transition: animated ? 'all 0.3s ease' : undefined,
           // Base layer should fill the container
           ...(isBaseLayer ? {
-            width: '75%',
-            height: '75%',
-            maxWidth: '75%',
-            maxHeight: '75%',
+            width: '100%',
+            height: '100%',
+            maxWidth: '100%',
+            maxHeight: '100%',
           } : {}),
         };
 
