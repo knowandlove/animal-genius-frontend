@@ -1,4 +1,4 @@
-import { uploadImage, validateImageFile } from "@/lib/secure-upload";import { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,11 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Edit, Trash2, Upload, Package, Sparkles, AlertTriangle, ArrowLeft } from "lucide-react";
+import { Plus, Edit, Trash2, Upload, Package, AlertTriangle, ArrowLeft, Image as ImageIcon } from "lucide-react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { useDropzone } from "react-dropzone";
 
 interface StoreItem {
   id: string;
@@ -24,12 +23,10 @@ interface StoreItem {
   description?: string;
   itemType: string;
   cost: number;
-  imageUrl?: string;
   rarity: string;
   isActive: boolean;
   sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
+  imageUrl?: string;
 }
 
 const ITEM_TYPES = [
@@ -47,7 +44,7 @@ const RARITIES = [
   { value: 'legendary', label: 'Legendary', color: 'bg-yellow-500' },
 ];
 
-export default function StoreManagement() {
+export default function StoreManagementDirect() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -56,8 +53,11 @@ export default function StoreManagement() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [activeTab, setActiveTab] = useState('manage');
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+  const [uploadedAssetId, setUploadedAssetId] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   
-  // Form state for new/edit item
+  // Form state
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -67,9 +67,6 @@ export default function StoreManagement() {
     isActive: true,
     sortOrder: 0,
   });
-  
-  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Fetch all store items
   const { data: items = [], isLoading } = useQuery<StoreItem[]>({
@@ -77,66 +74,37 @@ export default function StoreManagement() {
     queryFn: () => apiRequest('GET', '/api/store/admin/items'),
   });
 
+  // Upload file function
+  const uploadFile = async (file: File, itemType: string) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('type', itemType);
+    
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/admin/assets/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+      },
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Upload failed');
+    }
+    
+    return response.json();
+  };
+
   // Create item mutation
   const createItem = useMutation({
     mutationFn: async (data: any) => {
-      console.log('Creating item with data:', data);
-      
-      // First upload image if present
-      let imageUrl = data.imageUrl;
-      let assetId = undefined;
-      
-      if (uploadedImage) {
-        // Validate file before upload
-        const validation = validateImageFile(uploadedImage);
-        if (!validation.valid) {
-          throw new Error(validation.error);
-        }
-        
-        // Show upload progress
-        toast({ 
-          title: "Uploading image...", 
-          description: "Please wait while we securely upload your image" 
-        });
-        
-        const uploadResult = await uploadImage({
-          file: uploadedImage,
-          type: 'item',
-          itemType: data.itemType,
-          name: data.name,
-          bucket: 'store-items',
-          onProgress: (progress) => {
-            console.log(`Upload progress: ${progress}%`);
-          }
-        });
-        
-        if (!uploadResult.success) {
-          throw new Error(uploadResult.error || 'Failed to upload image');
-        }
-        
-        imageUrl = uploadResult.url;
-        assetId = uploadResult.assetId;
-      }
-      
-      const payload = {
-        ...data,
-      };
-      
-      // Add image data if we have it
-      if (imageUrl) {
-        payload.imageUrl = imageUrl;
-      }
-      if (assetId) {
-        payload.assetId = assetId;
-      }
-      
-      console.log('Sending payload to API:', payload);
-      
-      return apiRequest('POST', '/api/store/admin/items', payload);
+      return apiRequest('POST', '/api/store/admin/items', data);
     },
     onSuccess: () => {
       toast({ title: "Success", description: "Item created successfully" });
       queryClient.invalidateQueries({ queryKey: ['/api/store/admin/items'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/store/catalog'] }); // Also invalidate public catalog
       resetForm();
       setActiveTab('manage');
     },
@@ -152,51 +120,12 @@ export default function StoreManagement() {
   // Update item mutation
   const updateItem = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      // Upload new image if changed
-      let imageUrl = data.imageUrl;
-      let assetId = data.assetId;
-      
-      if (uploadedImage) {
-        // Validate file before upload
-        const validation = validateImageFile(uploadedImage);
-        if (!validation.valid) {
-          throw new Error(validation.error);
-        }
-        
-        // Show upload progress
-        toast({ 
-          title: "Uploading new image...", 
-          description: "Please wait while we update the image" 
-        });
-        
-        const uploadResult = await uploadImage({
-          file: uploadedImage,
-          type: 'item',
-          itemType: data.itemType,
-          name: data.name,
-          bucket: 'store-items',
-          onProgress: (progress) => {
-            console.log(`Upload progress: ${progress}%`);
-          }
-        });
-        
-        if (!uploadResult.success) {
-          throw new Error(uploadResult.error || 'Failed to upload image');
-        }
-        
-        imageUrl = uploadResult.url;
-        assetId = uploadResult.assetId;
-      }
-      
-      return apiRequest('PUT', `/api/store/admin/items/${id}`, {
-        ...data,
-        imageUrl,
-        assetId,
-      });
+      return apiRequest('PUT', `/api/store/admin/items/${id}`, data);
     },
     onSuccess: () => {
       toast({ title: "Success", description: "Item updated successfully" });
       queryClient.invalidateQueries({ queryKey: ['/api/store/admin/items'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/store/catalog'] }); // Also invalidate public catalog
       setShowEditDialog(false);
       resetForm();
     },
@@ -215,6 +144,7 @@ export default function StoreManagement() {
     onSuccess: () => {
       toast({ title: "Success", description: "Item deleted successfully" });
       queryClient.invalidateQueries({ queryKey: ['/api/store/admin/items'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/store/catalog'] }); // Also invalidate public catalog
       setShowDeleteDialog(false);
       setSelectedItem(null);
     },
@@ -227,35 +157,36 @@ export default function StoreManagement() {
     },
   });
 
-  // Toggle item active status
-  const toggleActive = useMutation({
-    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) => 
-      apiRequest('PUT', `/api/store/admin/items/${id}`, { isActive }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/store/admin/items'] });
-    },
-  });
+  // Handle file selection
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  // Image upload handling
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles[0]) {
-      setUploadedImage(acceptedFiles[0]);
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(acceptedFiles[0]);
+    try {
+      setIsUploading(true);
+      
+      // Upload the file
+      const result = await uploadFile(file, formData.itemType);
+      
+      // Store the URL and assetId
+      setUploadedImageUrl(result.url);
+      setUploadedAssetId(result.assetId);
+      
+      toast({
+        title: "Success",
+        description: "Image uploaded successfully"
+      });
+      
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to upload image',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUploading(false);
     }
-  }, []);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.gif']
-    },
-    maxSize: 10 * 1024 * 1024, // 10MB
-    multiple: false,
-  });
+  };
 
   const resetForm = () => {
     setFormData({
@@ -267,8 +198,8 @@ export default function StoreManagement() {
       isActive: true,
       sortOrder: 0,
     });
-    setUploadedImage(null);
-    setImagePreview(null);
+    setUploadedImageUrl(null);
+    setUploadedAssetId(null);
   };
 
   const handleEdit = (item: StoreItem) => {
@@ -282,16 +213,29 @@ export default function StoreManagement() {
       isActive: item.isActive,
       sortOrder: item.sortOrder,
     });
-    setImagePreview(item.imageUrl || null);
     setShowEditDialog(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!uploadedImageUrl && !selectedItem) {
+      toast({
+        title: "Error",
+        description: "Please upload an image first",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (selectedItem) {
       updateItem.mutate({ id: selectedItem.id, data: formData });
     } else {
-      createItem.mutate(formData);
+      createItem.mutate({
+        ...formData,
+        imageUrl: uploadedImageUrl,
+        assetId: uploadedAssetId,
+      });
     }
   };
 
@@ -362,12 +306,9 @@ export default function StoreManagement() {
                       <CardContent className="p-4">
                         {/* Active toggle */}
                         <div className="absolute top-2 right-2 z-10">
-                          <Switch
-                            checked={item.isActive}
-                            onCheckedChange={(checked) => 
-                              toggleActive.mutate({ id: item.id, isActive: checked })
-                            }
-                          />
+                          <Badge variant={item.isActive ? "default" : "secondary"}>
+                            {item.isActive ? "Active" : "Inactive"}
+                          </Badge>
                         </div>
                         
                         {/* Item image */}
@@ -377,10 +318,6 @@ export default function StoreManagement() {
                               src={item.imageUrl} 
                               alt={item.name}
                               className="w-full h-full object-contain"
-                              onError={(e) => {
-                                console.error('Image failed to load:', item.imageUrl);
-                                e.currentTarget.style.display = 'none';
-                              }}
                             />
                           </div>
                         )}
@@ -452,41 +389,82 @@ export default function StoreManagement() {
             <CardHeader>
               <CardTitle>Add New Store Item</CardTitle>
               <CardDescription>
-                Create a new item for students to purchase
+                Upload an image and fill in the details to create a new store item
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Left column */}
+                  {/* Left column - Image upload */}
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="name">Item Name</Label>
-                      <Input
-                        id="name"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="e.g., Wizard Hat"
-                        required
-                      />
+                      <Label>Item Image</Label>
+                      {!uploadedImageUrl ? (
+                        <div className="mt-2">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileSelect}
+                            disabled={isUploading}
+                            className="hidden"
+                            id="file-upload"
+                          />
+                          <label
+                            htmlFor="file-upload"
+                            className={`block border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
+                              ${isUploading ? 'opacity-50 cursor-not-allowed' : 'hover:border-gray-400'}`}
+                          >
+                            {isUploading ? (
+                              <>
+                                <LoadingSpinner className="h-10 w-10 mx-auto mb-2" />
+                                <p className="text-sm text-gray-600">Uploading...</p>
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+                                <p className="text-sm text-gray-600">
+                                  Click to upload an image
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  PNG, JPG, GIF, WebP up to 10MB
+                                </p>
+                              </>
+                            )}
+                          </label>
+                        </div>
+                      ) : (
+                        <div className="mt-2 space-y-4">
+                          <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                            <img
+                              src={uploadedImageUrl}
+                              alt="Preview"
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setUploadedImageUrl(null);
+                              setUploadedAssetId(null);
+                            }}
+                            className="w-full"
+                          >
+                            Remove & Choose Different Image
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                    
-                    <div>
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea
-                        id="description"
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        placeholder="A magical hat that sparkles..."
-                        rows={3}
-                      />
-                    </div>
-                    
+                  </div>
+
+                  {/* Right column - Item details */}
+                  <div className="space-y-4">
                     <div>
                       <Label htmlFor="itemType">Item Type</Label>
                       <Select
                         value={formData.itemType}
                         onValueChange={(value) => setFormData({ ...formData, itemType: value })}
+                        disabled={!!uploadedImageUrl}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -499,6 +477,22 @@ export default function StoreManagement() {
                           ))}
                         </SelectContent>
                       </Select>
+                      {uploadedImageUrl && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Cannot change type after uploading
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="name">Item Name</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="e.g., Wizard Hat"
+                        required
+                      />
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
@@ -537,64 +531,32 @@ export default function StoreManagement() {
                         </Select>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Right column - Image upload */}
-                  <div>
-                    <Label>Item Image</Label>
-                    <div
-                      {...getRootProps()}
-                      className={`mt-2 border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-                        ${isDragActive ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-gray-400'}`}
-                    >
-                      <input {...getInputProps()} />
-                      {imagePreview ? (
-                        <div className="space-y-4">
-                          <img
-                            src={imagePreview}
-                            alt="Preview"
-                            className="mx-auto max-w-full max-h-48 rounded"
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setUploadedImage(null);
-                              setImagePreview(null);
-                            }}
-                          >
-                            Remove Image
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <Upload className="h-10 w-10 text-gray-400 mx-auto" />
-                          <p className="text-sm text-gray-600">
-                            Drop an image here, or click to select
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            PNG, JPG, GIF, WebP up to 10MB
-                          </p>
-                        </div>
-                      )}
+                    
+                    <div>
+                      <Label htmlFor="description">Description (optional)</Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        placeholder="A magical hat that sparkles..."
+                        rows={3}
+                      />
                     </div>
                   </div>
                 </div>
                 
                 {/* Form actions */}
-                <div className="flex justify-end gap-4">
+                <div className="flex justify-end gap-4 pt-6 border-t">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={resetForm}
                   >
-                    Reset
+                    Cancel
                   </Button>
                   <Button
                     type="submit"
-                    disabled={createItem.isPending}
+                    disabled={createItem.isPending || !uploadedImageUrl || !formData.name}
                   >
                     {createItem.isPending ? (
                       <>
@@ -626,6 +588,24 @@ export default function StoreManagement() {
           </DialogHeader>
           
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Show current image */}
+            {selectedItem?.imageUrl && (
+              <div className="aspect-square max-w-xs mx-auto bg-gray-100 rounded-lg overflow-hidden">
+                <img 
+                  src={selectedItem.imageUrl} 
+                  alt={selectedItem.name}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            )}
+            
+            <Alert>
+              <ImageIcon className="h-4 w-4" />
+              <AlertDescription>
+                To change the image, delete this item and create a new one.
+              </AlertDescription>
+            </Alert>
+            
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="edit-name">Item Name</Label>
@@ -711,24 +691,13 @@ export default function StoreManagement() {
               </div>
             </div>
             
-            <div>
-              <Label>Image</Label>
-              <div
-                {...getRootProps()}
-                className={`mt-2 border-2 border-dashed rounded-lg p-4 text-center cursor-pointer
-                  ${isDragActive ? 'border-primary bg-primary/5' : 'border-gray-300'}`}
-              >
-                <input {...getInputProps()} />
-                {imagePreview ? (
-                  <img 
-                    src={imagePreview} 
-                    alt="Preview" 
-                    className="mx-auto max-h-32 rounded" 
-                  />
-                ) : (
-                  <p className="text-sm text-gray-500">Click or drag to change image</p>
-                )}
-              </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="edit-active"
+                checked={formData.isActive}
+                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+              />
+              <Label htmlFor="edit-active">Active (visible in store)</Label>
             </div>
             
             <DialogFooter>

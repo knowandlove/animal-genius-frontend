@@ -4,13 +4,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { LoadingSpinner } from "@/components/loading-spinner";
-
-// Debug logging for environment variables
-console.log('🚀 App.tsx loading...');
-console.log('VITE_USE_CLOUD_STORAGE:', import.meta.env.VITE_USE_CLOUD_STORAGE);
-console.log('Type:', typeof import.meta.env.VITE_USE_CLOUD_STORAGE);
-console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL);
-console.log('All env vars:', import.meta.env);
+import { StoreDataProvider } from "@/contexts/StoreDataContext";
+import ErrorBoundary from "@/components/error-boundary";
 
 // Lazy load all page components
 const Landing = lazy(() => import("@/pages/Landing"));
@@ -45,7 +40,7 @@ const AvatarTestV2 = lazy(() => import("@/pages/avatar-test-v2"));
 const AvatarEditor = lazy(() => import("@/pages/avatar-editor"));
 const AvatarItemPositioner = lazy(() => import("@/pages/admin/avatar-item-positioner"));
 // const AddStoreItem = lazy(() => import("@/pages/admin/add-store-item")); // Removed - use StoreManagement instead
-const StoreManagement = lazy(() => import("@/pages/admin/store-management"));
+const StoreManagement = lazy(() => import("@/pages/admin/store-management-direct"));
 const AnimalSizer = lazy(() => import("@/pages/admin/animal-sizer"));
 const BulkPositionUpdate = lazy(() => import("@/pages/admin/bulk-position-update"));
 const MakeAdmin = lazy(() => import("@/pages/admin/make-admin"));
@@ -65,9 +60,6 @@ import "@/lib/auth-cleanup";
 function Router() {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
-  console.log('[ROUTER] Current path:', window.location.pathname);
-  console.log('[ROUTER] Token state:', !!token);
 
   useEffect(() => {
     // Check and clean up authentication state first
@@ -203,10 +195,14 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <StoreDataProvider>
+        <TooltipProvider>
+          <Toaster />
+          <ErrorBoundary>
+            <Router />
+          </ErrorBoundary>
+        </TooltipProvider>
+      </StoreDataProvider>
     </QueryClientProvider>
   );
 }

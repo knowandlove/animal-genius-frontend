@@ -90,6 +90,7 @@ export default function AvatarCustomizer({
                 width={350}
                 height={350}
                 animated={true}
+                animalScale={0.6} // Use smaller scale for avatar customizer
               />
             </div>
             <p className="text-sm text-muted-foreground text-center">

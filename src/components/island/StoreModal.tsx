@@ -32,7 +32,8 @@ export default function StoreModal({
 
   // Debug log
   console.log('Store Catalog:', storeCatalog);
-  console.log('Wallpapers:', storeCatalog?.filter(item => item.type === 'room_wallpaper'));
+  console.log('Sample item with image:', storeCatalog?.[0]);
+  console.log('Items with images:', storeCatalog?.filter(item => item.imageUrl).length, 'of', storeCatalog?.length);
 
   // Categorize items by type
   const categorizedItems = {
@@ -131,8 +132,24 @@ export default function StoreModal({
                   )}
                   
                   {/* Item display */}
-                  <div className="aspect-square bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg mb-2 flex items-center justify-center">
-                    <span className="text-3xl">{getItemEmoji(item)}</span>
+                  <div className="aspect-square bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg mb-2 flex items-center justify-center overflow-hidden">
+                    {item.imageUrl ? (
+                      <img 
+                        src={item.imageUrl} 
+                        alt={item.name}
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                          // Fallback to emoji if image fails
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.parentElement?.insertAdjacentHTML(
+                            'beforeend',
+                            `<span class="text-3xl">${getItemEmoji(item)}</span>`
+                          );
+                        }}
+                      />
+                    ) : (
+                      <span className="text-3xl">{getItemEmoji(item)}</span>
+                    )}
                   </div>
                   
                   {/* Item info */}

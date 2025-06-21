@@ -658,9 +658,10 @@ export default function AvatarItemPositioner() {
             </CardHeader>
             <CardContent>
               <div 
-                className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl p-8 min-h-[500px] flex items-center justify-center relative"
+                className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl p-8 flex items-center justify-center relative"
                 style={{ 
-                  overflow: 'hidden',
+                  minHeight: '700px',
+                  overflow: 'visible',
                   cursor: isDragging ? 'grabbing' : 'default'
                 }}
               >
@@ -671,7 +672,10 @@ export default function AvatarItemPositioner() {
                       style={{ 
                         width: 600, 
                         height: 600,
-                        position: 'relative'
+                        position: 'relative',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }}
                     >
                       {/* Base animal - full size in container */}

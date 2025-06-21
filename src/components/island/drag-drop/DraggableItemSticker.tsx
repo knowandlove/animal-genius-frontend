@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import type { InventoryItem } from '@/stores/islandStore';
 import { useIslandStore } from '@/stores/islandStore';
+import { useStoreItems } from '@/contexts/StoreDataContext';
 
 interface DraggableItemStickerProps {
   item: InventoryItem;
@@ -21,6 +22,7 @@ export default function DraggableItemSticker({
   const stopDragging = useIslandStore((state) => state.stopDragging);
   const placeItem = useIslandStore((state) => state.placeItem);
   const inventoryMode = useIslandStore((state) => state.ui.inventoryMode);
+  const storeItems = useStoreItems(); // Get store items to access image URLs
   
   // Determine if this item can be placed in the room
   const canBePlaced = item.type === 'room_furniture' || item.type === 'room_decoration';
@@ -64,6 +66,11 @@ export default function DraggableItemSticker({
     }
   };
 
+  const getItemImage = (itemId: string) => {
+    const storeItem = storeItems?.find(item => item.id === itemId);
+    return storeItem?.imageUrl || null;
+  };
+
   const getItemIcon = (item: InventoryItem) => {
     // Convert underscores to check for keywords
     const normalizedId = item.id.replace(/_/g, '');
@@ -100,10 +107,18 @@ export default function DraggableItemSticker({
       onDragEnd={handleDragEnd}
     >
       {/* Item Icon/Preview */}
-      <div className="aspect-square bg-gray-100 rounded flex items-center justify-center pointer-events-none">
-        <span className="text-2xl">
-          {getItemIcon(item)}
-        </span>
+      <div className="aspect-square bg-gray-100 rounded flex items-center justify-center pointer-events-none overflow-hidden">
+        {getItemImage(item.id) ? (
+          <img 
+            src={getItemImage(item.id)!} 
+            alt={item.name}
+            className="w-full h-full object-contain p-1"
+          />
+        ) : (
+          <span className="text-2xl">
+            {getItemIcon(item)}
+          </span>
+        )}
       </div>
 
       {/* Item Name */}

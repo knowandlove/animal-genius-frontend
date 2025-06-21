@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import LayeredAvatarDB from "@/components/avatar-v2/LayeredAvatarDB";
+import LayeredAvatarRoom from "@/components/avatar-v2/LayeredAvatarRoom";
 import { Coins, Home, ShoppingBag, Package, Sparkles, X, Wand2, Shirt } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -368,16 +369,18 @@ export default function StudentIsland() {
                     <div className="flex items-center justify-center h-[600px] bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg overflow-hidden">
                       <motion.div
                         initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1.5, opacity: 1, y: 30 }}
+                        animate={{ scale: 1, opacity: 1, y: 30 }}
                         exit={{ scale: 0.8, opacity: 0 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <LayeredAvatarDB
+                        <LayeredAvatarRoom
                           animalType={island.animalType}
                           items={draftAvatar.equipped}
                           width={400}
                           height={400}
                           animated={true}
+                          animalScale={0.6}
+                          storeCatalog={storeCatalog}
                         />
                       </motion.div>
                     </div>

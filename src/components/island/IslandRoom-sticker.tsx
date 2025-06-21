@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { useIslandStore, ROOM_ITEM_LIMIT } from '@/stores/islandStore';
 import { cn } from '@/lib/utils';
 import LayeredAvatarRoom from '@/components/avatar-v2/LayeredAvatarRoom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Trash2 } from 'lucide-react';
 import { getAssetUrl } from '@/utils/cloud-assets';
 
@@ -178,12 +178,13 @@ export default function IslandRoomSticker() {
 
 
   return (
-    <motion.div
+    <div
       className="relative w-full overflow-hidden rounded-lg shadow-inner bg-gray-100"
-      initial={{ scale: 1.2 }}
-      animate={{ scale: isEditingRoom ? 0.85 : 1 }}
-      transition={{ duration: 0.3 }}
-      style={{ aspectRatio: '16/9' }} // Widescreen aspect ratio for rooms
+      style={{ 
+        aspectRatio: '16/9',
+        transform: isEditingRoom ? 'scale(0.85)' : 'scale(1)',
+        transition: 'transform 0.3s ease'
+      }}
     >
       <div 
         ref={roomRef}
@@ -225,18 +226,17 @@ export default function IslandRoomSticker() {
           style={{ objectFit: 'cover' }}
         />
 
-      {/* Drop Preview (when dragging from inventory) */}
-      {dropPreview && ui.draggedItem?.fromInventory && (
-        <motion.div
+        {/* Drop Preview (when dragging from inventory) */}
+        {dropPreview && ui.draggedItem?.fromInventory && (
+        <div
           className="absolute pointer-events-none"
           style={{
             left: `${dropPreview.x}%`,
             top: `${dropPreview.y}%`,
             transform: `translate(-50%, -50%) scale(${getScaleFromY(dropPreview.y)})`,
             zIndex: Math.floor(dropPreview.y * 10),
+            opacity: 0.5
           }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.5 }}
         >
           <div 
             className="bg-blue-200/50 backdrop-blur rounded-lg p-3 border-2 border-blue-400 border-dashed shadow-lg"
@@ -245,11 +245,11 @@ export default function IslandRoomSticker() {
               {getItemIcon(ui.draggedItem.itemId)}
             </span>
           </div>
-        </motion.div>
-      )}
+        </div>
+        )}
 
-      {/* Placed Items */}
-      <div className="absolute inset-0 z-10">
+        {/* Placed Items */}
+        <div className="absolute inset-0 z-10">
         {sortedItems.map((item, index) => {
           // Handle both old grid system (0-3) and new percentage system (0-100)
           const isOldGrid = item.x <= 3 && item.y <= 3;
@@ -259,22 +259,17 @@ export default function IslandRoomSticker() {
           const scale = getScaleFromY(yPos);
           
           return (
-            <motion.div
+            <div
               key={item.id}
-              className="absolute cursor-move transition-transform"
+              className="absolute cursor-move transition-transform hover:scale-105"
               style={{
                 left: `${xPos}%`,
                 top: `${yPos}%`,
-                transform: `translate(-50%, -50%) scale(${scale})`,
-                zIndex: Math.floor(yPos * 10), // Z-index based on Y position with more granularity
+                transform: `translate(-50%, -50%) scale(${dragState?.itemId === item.id ? scale * 1.1 : scale})`,
+                zIndex: Math.floor(yPos * 10),
+                opacity: dragState?.itemId === item.id ? 0.6 : 1
               }}
-              whileHover={{ scale: scale * 1.05 }}
-              whileDrag={{ scale: scale * 1.1, opacity: 0.8 }}
               onMouseDown={(e) => handleItemMouseDown(e, item, xPos, yPos)}
-              animate={{
-                scale: dragState?.itemId === item.id ? scale * 1.1 : scale,
-                opacity: dragState?.itemId === item.id ? 0.6 : 1,
-              }}
             >
               {/* Item Visual */}
               <div 
@@ -291,28 +286,19 @@ export default function IslandRoomSticker() {
                   {item.itemId}
                 </div>
               )}
-            </motion.div>
+            </div>
           );
         })}
-      </div>
+        </div>
 
-          {!isEditingRoom && (
-            <motion.div
+        {!isEditingRoom && (
+            <div
               className="absolute pointer-events-none"
               style={{
                 left: `${displayAvatar.position.x}%`,
                 top: `${displayAvatar.position.y}%`,
                 transform: 'translate(-50%, -50%)',
                 zIndex: Math.floor((displayAvatar.position.y) * 10), // Dynamic z-index
-              }}
-              animate={{
-                x: [0, 0, 0],
-                y: displayAvatar.animation === 'idle' ? [0, -5, 0] : 0
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut"
               }}
             >
               <LayeredAvatarRoom
@@ -322,18 +308,19 @@ export default function IslandRoomSticker() {
                 height={504}
                 animated={displayAvatar.animation !== 'idle'}
               />
-            </motion.div>
+            </div>
           )}
 
-      {/* Trash Zone */}
-      <AnimatePresence>
+        {/* Trash Zone */}
+        <AnimatePresence>
         {showTrash && (
-          <motion.div
+          <div
             id="trash-zone"
-            className="absolute bottom-4 right-4 z-50"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
+            className="absolute bottom-4 right-4 z-50 transition-all duration-200"
+            style={{
+              transform: showTrash ? 'scale(1)' : 'scale(0)',
+              opacity: showTrash ? 1 : 0
+            }}
           >
             <div className={cn(
               "bg-red-500 text-white rounded-full p-4 shadow-lg transition-all",
@@ -344,23 +331,23 @@ export default function IslandRoomSticker() {
             <p className="text-xs text-center mt-1 text-white bg-black/50 rounded px-2 py-1">
               Drop to delete
             </p>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
+        </AnimatePresence>
 
-      {/* Decorative Elements */}
-      {!isEditingRoom && !isEditingAvatar && (
-        <>
-          {/* Sparkle effects */}
-          <div className="absolute top-10 right-10 animate-pulse">
-            <span className="text-2xl">✨</span>
-          </div>
-          <div className="absolute bottom-20 left-20 animate-pulse animation-delay-1000">
-            <span className="text-xl">🌟</span>
-          </div>
-        </>
-      )}
+        {/* Decorative Elements */}
+        {!isEditingRoom && !isEditingAvatar && (
+          <>
+            {/* Sparkle effects */}
+            <div className="absolute top-10 right-10 animate-pulse">
+              <span className="text-2xl">✨</span>
+            </div>
+            <div className="absolute bottom-20 left-20 animate-pulse animation-delay-1000">
+              <span className="text-xl">🌟</span>
+            </div>
+          </>
+        )}
       </div>
-    </motion.div>
+    </div>
   );
 }

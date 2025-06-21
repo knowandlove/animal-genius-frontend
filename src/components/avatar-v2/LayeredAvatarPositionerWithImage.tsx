@@ -55,7 +55,6 @@ function LayeredAvatarPositionerWithImage({
   animated = true,
 }: LayeredAvatarPositionerWithImageProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const [useAvatarImage, setUseAvatarImage] = useState(true);
 
   // Determine which image to use for the base animal
   const getAnimalImage = () => {
@@ -70,13 +69,14 @@ function LayeredAvatarPositionerWithImage({
 
   // Build layers array
   const layers: AvatarLayer[] = [
-    // Base animal layer
+    // Base animal layer - scaled to 60% with position adjustment
     {
       id: 'base',
       src: getAnimalImage(),
       emoji: animalEmojis[animalType.toLowerCase()] || '🐾',
       zIndex: 1,
-      position: { top: '50%', left: '50%' },
+      position: { top: '55%', left: '45%' }, // Move left and down slightly
+      scale: 0.6, // Match the scale in the avatar customizer
     },
   ];
 
@@ -134,12 +134,12 @@ function LayeredAvatarPositionerWithImage({
           ...layer.position,
           transform: `
             translate(-50%, -50%) 
-            scale(${isBaseLayer ? (animalConfig.baseScale || 1) : (layer.scale || 1)}) 
+            scale(${layer.scale || 1}) 
             rotate(${layer.rotation || 0}deg)
           `,
           transformOrigin: 'center',
           transition: animated ? 'all 0.3s ease' : undefined,
-          // Base layer should fill the container
+          // Base layer should be contained within the area
           ...(isBaseLayer ? {
             width: '100%',
             height: '100%',
@@ -159,10 +159,6 @@ function LayeredAvatarPositionerWithImage({
               draggable={false}
               onError={(e) => {
                 console.error(`Failed to load image: ${(e.target as HTMLImageElement).src}`);
-                if (isBaseLayer && useAvatarImage) {
-                  // Fallback to SVG for base animal
-                  setUseAvatarImage(false);
-                }
               }}
             />
           );

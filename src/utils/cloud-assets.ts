@@ -6,12 +6,7 @@
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://zqyvfnbwpagguutzdvpy.supabase.co';
 const USE_CLOUD_STORAGE = import.meta.env.VITE_USE_CLOUD_STORAGE === 'true';
 
-// Debug logging
-console.log('🌩️ Cloud Assets Config:', {
-  USE_CLOUD_STORAGE,
-  SUPABASE_URL,
-  env: import.meta.env.VITE_USE_CLOUD_STORAGE
-});
+
 
 /**
  * Known assets that are in Supabase storage
@@ -46,6 +41,16 @@ const ASSET_MAPPING = {
   '/animals/full-body/panda.png': { bucket: 'public-assets', path: 'animals/full_body/panda_full.png' },
   '/animals/full-body/parrot.png': { bucket: 'public-assets', path: 'animals/full_body/parrot_full.png' },
   
+  // Alternative paths for full body images (the format LayeredAvatarRoom is using)
+  '/images/beaver_full.png': { bucket: 'public-assets', path: 'animals/full_body/beaver_full.png' },
+  '/images/border_collie_full.png': { bucket: 'public-assets', path: 'animals/full_body/border_collie_full.png' },
+  '/images/elephant_full.png': { bucket: 'public-assets', path: 'animals/full_body/elephant_full.png' },
+  '/images/meerkat_full.png': { bucket: 'public-assets', path: 'animals/full_body/meerkat_full.png' },
+  '/images/otter_full.png': { bucket: 'public-assets', path: 'animals/full_body/otter_full.png' },
+  '/images/owl_full.png': { bucket: 'public-assets', path: 'animals/full_body/owl_full.png' },
+  '/images/panda_full.png': { bucket: 'public-assets', path: 'animals/full_body/panda_full.png' },
+  '/images/parrot_full.png': { bucket: 'public-assets', path: 'animals/full_body/parrot_full.png' },
+  
   // UI assets - in public-assets/ui/
   '/rooms/shelves-and-trim.png': { bucket: 'public-assets', path: 'ui/shelves-and-trim.png' },
   '/images/kal-character.png': { bucket: 'public-assets', path: 'ui/kal-character.png' },
@@ -69,7 +74,6 @@ function getSupabaseUrl(bucket: string, path: string): string {
 export function getAssetUrl(localPath: string): string {
   // If cloud storage is disabled, return local path
   if (!USE_CLOUD_STORAGE) {
-    console.log(`📁 Using local path: ${localPath}`);
     return localPath;
   }
   
@@ -77,19 +81,15 @@ export function getAssetUrl(localPath: string): string {
   const mapping = ASSET_MAPPING[localPath as keyof typeof ASSET_MAPPING];
   
   if (mapping) {
-    const cloudUrl = getSupabaseUrl(mapping.bucket, mapping.path);
-    console.log(`☁️ Mapped ${localPath} → ${cloudUrl}`);
-    return cloudUrl;
+    return getSupabaseUrl(mapping.bucket, mapping.path);
   }
   
   // If no mapping exists, check if it's already a Supabase URL
   if (localPath.includes('supabase.co')) {
-    console.log(`✅ Already a Supabase URL: ${localPath}`);
     return localPath;
   }
   
   // Fallback to local path if no mapping found
-  console.warn(`⚠️ No cloud mapping for: ${localPath}, using local`);
   return localPath;
 }
 

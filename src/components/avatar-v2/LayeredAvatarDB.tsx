@@ -1,10 +1,9 @@
 import React, { useState, CSSProperties, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { ANIMAL_CONFIGS } from '@/config/animal-sizing';
-import { apiRequest } from '@/lib/queryClient';
-import { useQuery } from '@tanstack/react-query';
 import { getItemFolder } from '@shared/currency-types';
 import { getAssetUrl } from '@/utils/cloud-assets';
+import { useStoreItems, useItemPositions } from '@/contexts/StoreDataContext';
 
 interface AvatarLayer {
   id: string;
@@ -48,45 +47,6 @@ const animalEmojis: Record<string, string> = {
   panda: '🐼',
 };
 
-// Default positioning (used when no database position exists)
-const defaultItemConfigs: Record<string, Partial<AvatarLayer>> = {
-  // Hats
-  explorer: {
-    src: '/avatars/items/hats/explorer.png',
-    emoji: '🎩',
-    zIndex: 10,
-  },
-  safari: {
-    src: '/avatars/items/hats/safari.png',
-    emoji: '👒',
-    zIndex: 10,
-  },
-  
-  // Glasses
-  greenblinds: {
-    src: '/avatars/items/glasses/greenblinds.png',
-    emoji: '🕶️',
-    zIndex: 8,
-  },
-  hearts: {
-    src: '/avatars/items/glasses/hearts.png',
-    emoji: '😍',
-    zIndex: 8,
-  },
-  
-  // Accessories
-  bow_tie: {
-    src: '/avatars/items/accessories/bow_tie.png',
-    emoji: '🎀',
-    zIndex: 7,
-  },
-  necklace: {
-    src: '/avatars/items/accessories/necklace.png',
-    emoji: '📿',
-    zIndex: 7,
-  },
-};
-
 function LayeredAvatarDB({
   animalType,
   width = 300,
@@ -99,28 +59,11 @@ function LayeredAvatarDB({
   const [isHovered, setIsHovered] = useState(false);
   const [useAvatarImage, setUseAvatarImage] = useState(true);
 
-  console.log('LayeredAvatarDB rendering with:', {
-    animalType,
-    items,
-    width,
-    height
-  });
+  // Get store data from context instead of fetching individually
+  const storeItems = useStoreItems();
+  const itemPositions = useItemPositions();
 
-  // Fetch store items from database
-  const { data: storeItems } = useQuery({
-    queryKey: ['/api/store/catalog'],
-    queryFn: () => apiRequest('GET', '/api/store/catalog'),
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-  });
 
-  // Fetch item positions from database
-  const { data: itemPositions } = useQuery({
-    queryKey: ['/api/item-positions'],
-    queryFn: () => apiRequest('GET', '/api/item-positions'),
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-  });
-
-  console.log('Fetched item positions:', itemPositions);
 
   const handleClick = () => {
     onClick?.();
@@ -141,7 +84,7 @@ function LayeredAvatarDB({
   // Get position from database or use default
   const getItemPosition = (itemId: string, animalType: string) => {
     if (!itemPositions) {
-      console.log('No item positions loaded yet');
+      // No item positions loaded yet
       return null;
     }
     
@@ -162,8 +105,7 @@ function LayeredAvatarDB({
       }
     );
     
-    console.log(`Looking for position: item=${itemId}, animal=${normalizedAnimal} (original: ${animalType})`);
-    console.log('Found position:', position);
+
     
     if (position) {
       const result = {
@@ -172,11 +114,11 @@ function LayeredAvatarDB({
         scale: (position.scale || 50) / 100,
         rotation: position.rotation || 0
       };
-      console.log('Returning position:', result);
+
       return result;
     }
     
-    console.log('No position found, using default');
+    // No position found, using default
     return null;
   };
 
@@ -196,71 +138,33 @@ function LayeredAvatarDB({
   Object.entries(items).forEach(([slot, itemId]) => {
     if (!itemId) return;
     
-    // Check if it's a legacy item with config
-    const baseConfig = defaultItemConfigs[itemId];
     const dbPosition = getItemPosition(itemId, animalType);
-    
-    // Try to find the item in the store catalog
     const storeItem = storeItems?.find((item: any) => item.id === itemId);
     
-    // Determine the image path
-    let imagePath: string;
-    if (baseConfig) {
-      // Legacy item - use old path structure
-      const folder = getItemFolder(itemId);
-      imagePath = `/avatars/items/${folder}/${itemId}.png`;
-    } else if (storeItem?.imageUrl) {
-      // New database item with imageUrl
-      imagePath = storeItem.imageUrl;
-      // If it's a relative URL, make it absolute
-      if (!imagePath.startsWith('http') && !imagePath.startsWith('/')) {
-        imagePath = '/' + imagePath;
-      }
-      // If it's a backend URL without domain, add the API URL
-      if (imagePath.startsWith('/uploads/')) {
-        imagePath = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${imagePath}`;
-      }
-    } else {
-      // Fallback - assume it's in uploads folder
-      imagePath = `/uploads/store-items/${itemId}.png`;
-      if (!imagePath.startsWith('http')) {
-        imagePath = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${imagePath}`;
-      }
-    }
+    // Simple: Just use the imageUrl from the store item
+    const imagePath = storeItem?.imageUrl;
+    if (!imagePath) return; // Skip if no image
     
     // Determine z-index based on slot
     const zIndex = slot === 'hat' ? 10 : slot === 'glasses' ? 8 : 7;
     
-    if (dbPosition) {
-      const layerConfig = {
-        id: `${slot}-${itemId}`,
-        src: imagePath,
-        emoji: baseConfig?.emoji || '🎩',
-        zIndex: zIndex,
-        position: { 
-          top: `${dbPosition.y}%`, 
-          left: `${dbPosition.x}%` 
-        },
-        scale: dbPosition.scale,
-        rotation: dbPosition.rotation,
-      };
-      console.log(`Adding layer for ${itemId} with position:`, layerConfig);
-      layers.push(layerConfig);
-    } else {
-      // Fallback to default center position
-      layers.push({
-        id: `${slot}-${itemId}`,
-        src: imagePath,
-        emoji: baseConfig?.emoji || '🎩',
-        zIndex: zIndex,
-        position: { 
-          top: '50%', 
-          left: '50%' 
-        },
-        scale: 0.5,
-        rotation: 0,
-      });
-    }
+    const position = dbPosition ? {
+      top: `${dbPosition.y}%`,
+      left: `${dbPosition.x}%`
+    } : {
+      top: '50%',
+      left: '50%'
+    };
+    
+    layers.push({
+      id: `${slot}-${itemId}`,
+      src: imagePath,
+      emoji: '🎩', // Generic fallback emoji
+      zIndex,
+      position,
+      scale: dbPosition?.scale || 0.5,
+      rotation: dbPosition?.rotation || 0,
+    });
   });
 
   return (
@@ -301,14 +205,7 @@ function LayeredAvatarDB({
           } : {}),
         };
         
-        if (!isBaseLayer) {
-          console.log(`Applying style to ${layer.id}:`, {
-            position: layer.position,
-            scale: layer.scale,
-            rotation: layer.rotation,
-            finalTransform: style.transform
-          });
-        }
+
 
         if (layer.src) {
           const imgElement = (
@@ -324,24 +221,13 @@ function LayeredAvatarDB({
                   // Fallback to SVG for base animal
                   setUseAvatarImage(false);
                 } else {
-                  console.error(`Failed to load image: ${(e.target as HTMLImageElement).src}`);
+                  // Image failed to load
                 }
               }}
             />
           );
           
-          if (!isBaseLayer) {
-            console.log(`Rendering ${layer.id} with HTML:`, {
-              src: layer.src,
-              style: {
-                position: style.position,
-                top: style.top,
-                left: style.left,
-                transform: style.transform,
-                zIndex: style.zIndex
-              }
-            });
-          }
+
           
           return imgElement;
         } else if (layer.emoji) {

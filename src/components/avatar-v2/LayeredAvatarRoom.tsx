@@ -1,9 +1,8 @@
 import React, { useState, CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 import { ANIMAL_CONFIGS } from '@/config/animal-sizing';
-import { apiRequest } from '@/lib/queryClient';
-import { useQuery } from '@tanstack/react-query';
 import { getAssetUrl } from '@/utils/cloud-assets';
+import { useStoreItems, useItemPositions } from '@/contexts/StoreDataContext';
 
 interface AvatarLayer {
   id: string;
@@ -33,6 +32,7 @@ interface LayeredAvatarRoomProps {
   className?: string;
   animated?: boolean;
   animalScale?: number; // New prop to control animal scale
+  storeCatalog?: any[]; // Optional prop to pass store catalog directly
 }
 
 // Emoji fallbacks for when images aren't loaded yet
@@ -57,22 +57,14 @@ function LayeredAvatarRoom({
   className,
   animated = true,
   animalScale = 1, // Default to full size
+  storeCatalog, // Optional prop to use instead of context
 }: LayeredAvatarRoomProps) {
   const [isHovered, setIsHovered] = useState(false);
 
-  // Fetch store items from database
-  const { data: storeItems } = useQuery({
-    queryKey: ['/api/store/catalog'],
-    queryFn: () => apiRequest('GET', '/api/store/catalog'),
-    staleTime: 1000 * 60 * 5,
-  });
-
-  // Fetch item positions from database
-  const { data: itemPositions } = useQuery({
-    queryKey: ['/api/item-positions'],
-    queryFn: () => apiRequest('GET', '/api/item-positions'),
-    staleTime: 1000 * 60 * 5,
-  });
+  // Get store data from context OR use provided catalog
+  const contextStoreItems = useStoreItems();
+  const storeItems = storeCatalog || contextStoreItems;
+  const itemPositions = useItemPositions();
 
   const handleClick = () => {
     onClick?.();
@@ -82,13 +74,11 @@ function LayeredAvatarRoom({
   const getAnimalImage = () => {
     const normalizedAnimal = animalType.toLowerCase().replace(' ', '-');
     
-    // Use full-body images for rooms (not the head icons)
+    // Use full-body images for rooms with _full suffix
     const animalFileName = normalizedAnimal === 'border-collie' ? 'border_collie' : normalizedAnimal;
     
     // Use the cloud assets utility which handles the cloud/local switching
-    const imageUrl = getAssetUrl(`/animals/full-body/${animalFileName}.png`);
-    console.log('LayeredAvatarRoom - Loading full body image:', imageUrl);
-    return imageUrl;
+    return getAssetUrl(`/images/${animalFileName}_full.png`);
   };
 
   // Get position from database
@@ -140,44 +130,11 @@ function LayeredAvatarRoom({
     const dbPosition = getItemPosition(itemId, animalType);
     const storeItem = storeItems?.find((item: any) => item.id === itemId);
     
-    // Debug logging
-    console.log('LayeredAvatarRoom - Processing item:', {
-      slot,
-      itemId,
-      storeItem: storeItem?.name,
-      dbPosition,
-      animalType,
-      imageUrl: storeItem?.imageUrl
-    });
-    
-    // Determine the image path
-    let imagePath: string;
-    if (storeItem?.imageUrl) {
-      // If it's already a full Supabase URL, use it directly
-      if (storeItem.imageUrl.includes('supabase.co')) {
-        imagePath = storeItem.imageUrl;
-      } else if (storeItem.imageUrl.startsWith('http')) {
-        // If it's any other full URL, use it directly
-        imagePath = storeItem.imageUrl;
-      } else {
-        // Otherwise, try to get it through the cloud assets utility
-        imagePath = getAssetUrl(storeItem.imageUrl);
-        
-        // If getAssetUrl didn't map it and it's a relative path, construct full URL
-        if (!imagePath.includes('supabase.co') && !imagePath.startsWith('http')) {
-          // If it's a backend upload path
-          if (imagePath.startsWith('/uploads/')) {
-            imagePath = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${imagePath}`;
-          }
-        }
-      }
-    } else {
-      // Fallback - try to construct a path
-      imagePath = `/uploads/store-items/${itemId}.png`;
-      imagePath = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${imagePath}`;
+    // Simple: Just use the imageUrl from the store item
+    const imagePath = storeItem?.imageUrl;
+    if (!imagePath) {
+      return; // Skip if no image
     }
-    
-    console.log('LayeredAvatarRoom - Final image path:', imagePath);
     
     // Determine z-index based on slot
     const zIndex = slot === 'hat' ? 10 : slot === 'glasses' ? 8 : 7;
@@ -259,7 +216,7 @@ function LayeredAvatarRoom({
               style={style}
               draggable={false}
               onError={(e) => {
-                console.error(`Failed to load image: ${(e.target as HTMLImageElement).src}`);
+                // Image failed to load
               }}
             />
           );

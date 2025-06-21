@@ -4,11 +4,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIslandStore } from '@/stores/islandStore';
 import { cn } from '@/lib/utils';
 import { Sparkles, HardHat, Glasses, Gem } from 'lucide-react';
+import { useStoreItems } from '@/contexts/StoreDataContext';
+import { useEffect } from 'react';
+import { Button } from '@/components/ui/button';
 
-export default function AvatarCustomizerView() {
+interface AvatarCustomizerViewProps {
+  selectedPreviewItem: {
+    id: string;
+    slot: string;
+    item: any;
+  } | null;
+  setSelectedPreviewItem: (item: {
+    id: string;
+    slot: string;
+    item: any;
+  } | null) => void;
+}
+
+export default function AvatarCustomizerView({ 
+  selectedPreviewItem, 
+  setSelectedPreviewItem 
+}: AvatarCustomizerViewProps) {
   const inventory = useIslandStore((state) => state.inventory);
   const draftAvatar = useIslandStore((state) => state.draftAvatar);
   const updateDraftAvatar = useIslandStore((state) => state.updateDraftAvatar);
+  const storeItems = useStoreItems(); // Get store items to access image URLs
 
   // Filter inventory for avatar items only
   const avatarItems = inventory.items.filter(item => 
@@ -27,10 +47,57 @@ export default function AvatarCustomizerView() {
     )
   };
 
-  const handleEquip = (slot: string, itemId: string) => {
-    // If clicking the same item, unequip it
+  const handleItemClick = (slot: string, itemId: string, item: any) => {
+    // Set the preview item
+    setSelectedPreviewItem({ id: itemId, slot, item });
+  };
+
+  const handleEquip = () => {
+    if (!selectedPreviewItem) return;
+    
+    const { slot, id } = selectedPreviewItem;
+    // If clicking the same item that's equipped, unequip it
     const currentItem = draftAvatar.equipped[slot as keyof typeof draftAvatar.equipped];
-    updateDraftAvatar(slot, currentItem === itemId ? null : itemId);
+    updateDraftAvatar(slot, currentItem === id ? null : id);
+    
+    // Clear preview after equipping
+    setSelectedPreviewItem(null);
+  };
+
+  const handleRemove = () => {
+    if (!selectedPreviewItem) return;
+    
+    const { slot } = selectedPreviewItem;
+    const equippedItem = draftAvatar.equipped[slot as keyof typeof draftAvatar.equipped];
+    
+    // Only remove if there's actually something equipped in this slot
+    if (equippedItem) {
+      updateDraftAvatar(slot, null);
+      // Don't clear selectedPreviewItem so user can immediately equip something else
+    }
+  };
+
+  // Listen for equip and remove events from parent
+  useEffect(() => {
+    const handleEquipEvent = () => {
+      handleEquip();
+    };
+    
+    const handleRemoveEvent = () => {
+      handleRemove();
+    };
+    
+    window.addEventListener('equip-item', handleEquipEvent);
+    window.addEventListener('remove-item', handleRemoveEvent);
+    return () => {
+      window.removeEventListener('equip-item', handleEquipEvent);
+      window.removeEventListener('remove-item', handleRemoveEvent);
+    };
+  }, [selectedPreviewItem]);
+
+  const getItemImage = (itemId: string) => {
+    const storeItem = storeItems?.find(item => item.id === itemId);
+    return storeItem?.imageUrl || null;
   };
 
   const getItemEmoji = (itemId: string) => {
@@ -65,22 +132,6 @@ export default function AvatarCustomizerView() {
     const gridItems = [];
     const equippedItem = draftAvatar.equipped[slot as keyof typeof draftAvatar.equipped];
     
-    // Add "Remove" button first if something is equipped
-    if (equippedItem) {
-      gridItems.push(
-        <motion.button
-          key={`remove-${slot}`}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => updateDraftAvatar(slot, null)}
-          className="aspect-square p-3 rounded-lg border-2 border-red-200 hover:border-red-300 bg-red-50 flex flex-col items-center justify-center relative"
-        >
-          <div className="text-2xl mb-1">❌</div>
-          <div className="text-xs font-medium">Remove</div>
-        </motion.button>
-      );
-    }
-    
     // Fill with actual items
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
@@ -89,18 +140,28 @@ export default function AvatarCustomizerView() {
       gridItems.push(
         <motion.button
           key={item.id}
-          whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => handleEquip(slot, item.id)}
+          onClick={() => handleItemClick(slot, item.id, item)}
           className={cn(
-            "aspect-square p-3 rounded-lg border-2 transition-all flex flex-col items-center justify-center relative",
+            "aspect-square p-2 rounded-lg border-2 transition-all flex flex-col items-center justify-center relative overflow-hidden group",
             isEquipped
-              ? "border-purple-500 bg-purple-50 shadow-md"
+              ? "border-purple-500 bg-purple-50 shadow-md ring-2 ring-purple-500 ring-inset"
+              : selectedPreviewItem?.id === item.id
+              ? "border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-500 ring-inset"
               : "border-gray-200 hover:border-purple-300 bg-white"
           )}
         >
           {getRarityBadge(item)}
-          <div className="text-2xl mb-1">{getItemEmoji(item.id)}</div>
+          {/* Show actual image if available, fallback to emoji */}
+          {getItemImage(item.id) ? (
+            <img 
+              src={getItemImage(item.id)!} 
+              alt={item.name}
+              className="w-12 h-12 object-contain mb-1 transition-transform group-hover:scale-110"
+            />
+          ) : (
+            <div className="text-2xl mb-1 transition-transform group-hover:scale-110">{getItemEmoji(item.id)}</div>
+          )}
           <div className="text-xs font-medium truncate max-w-full px-1">
             {item.name.replace('Avatar ', '').replace('Accessory', '').trim()}
           </div>
@@ -114,8 +175,7 @@ export default function AvatarCustomizerView() {
     }
     
     // Fill remaining slots with empty placeholders
-    const startIndex = equippedItem ? items.length + 1 : items.length;
-    for (let i = startIndex; i < GRID_SIZE; i++) {
+    for (let i = items.length; i < GRID_SIZE; i++) {
       gridItems.push(
         <div
           key={`empty-${slot}-${i}`}
@@ -138,11 +198,38 @@ export default function AvatarCustomizerView() {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Instructions */}
+      {/* Instructions / Item Preview */}
       <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-4">
-        <p className="text-sm text-purple-800">
-          <strong>Customize your avatar:</strong> Click items to equip them. Click again to remove.
-        </p>
+        {selectedPreviewItem ? (
+          <div>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h4 className="font-semibold text-sm text-purple-900">
+                  {selectedPreviewItem.item.name}
+                </h4>
+                <p className="text-xs text-purple-700 mt-1">
+                  {selectedPreviewItem.item.description || 'A stylish item for your avatar!'}
+                </p>
+              </div>
+              {selectedPreviewItem.item.rarity && (
+                <Badge 
+                  variant={selectedPreviewItem.item.rarity === 'legendary' ? 'default' : 'secondary'}
+                  className={cn(
+                    "ml-2",
+                    selectedPreviewItem.item.rarity === 'legendary' && 'bg-yellow-500',
+                    selectedPreviewItem.item.rarity === 'rare' && 'bg-purple-500'
+                  )}
+                >
+                  {selectedPreviewItem.item.rarity}
+                </Badge>
+              )}
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-purple-800">
+            <strong>Customize your avatar:</strong> Click items to preview them, then click Equip to wear them.
+          </p>
+        )}
       </div>
 
       {/* Tabs for different categories */}
@@ -186,7 +273,7 @@ export default function AvatarCustomizerView() {
                 <p className="text-xs mt-1">Visit the store to get some.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-2 overflow-hidden">
                 {renderItemGrid(categorizedItems.hat, 'hat')}
               </div>
             )}
@@ -200,7 +287,7 @@ export default function AvatarCustomizerView() {
                 <p className="text-xs mt-1">Visit the store to get some.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-2 overflow-hidden">
                 {renderItemGrid(categorizedItems.glasses, 'glasses')}
               </div>
             )}
@@ -214,7 +301,7 @@ export default function AvatarCustomizerView() {
                 <p className="text-xs mt-1">Visit the store to get some.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-2 overflow-hidden">
                 {renderItemGrid(categorizedItems.accessory, 'accessory')}
               </div>
             )}

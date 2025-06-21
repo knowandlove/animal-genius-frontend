@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import LayeredAvatarDB from "@/components/avatar-v2/LayeredAvatarDB";
+import LayeredAvatarRoom from "@/components/avatar-v2/LayeredAvatarRoom";
 import { Coins, Home, ShoppingBag, Package, Sparkles, X, Wand2, Shirt } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { StudentIsland } from "@shared/currency-types";
@@ -325,7 +326,7 @@ export default function StudentIsland() {
                         exit={{ scale: 0.8, opacity: 0 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <LayeredAvatarDB
+                        <LayeredAvatarRoom
                           animalType={island.animalType}
                           items={draftAvatar.equipped}
                           width={400}
