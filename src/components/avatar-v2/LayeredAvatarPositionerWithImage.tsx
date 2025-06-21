@@ -1,6 +1,7 @@
 import React, { useState, CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 import { ANIMAL_CONFIGS } from '@/config/animal-sizing';
+import { getAssetUrl } from '@/utils/cloud-assets';
 
 interface AvatarLayer {
   id: string;
@@ -63,16 +64,16 @@ function LayeredAvatarPositionerWithImage({
     if (!useAvatarImage) {
       // Fallback to SVG
       const svgName = normalizedAnimal === 'border-collie' ? 'border_collie' : normalizedAnimal;
-      return `/images/${svgName}.svg`;
+      return getAssetUrl(`/images/${svgName}.svg`);
     }
     
     // Special case for border collie -> collie.png
     if (normalizedAnimal === 'border-collie') {
-      return '/avatars/animals/collie.png';
+      return getAssetUrl('/images/collie.png');
     }
     
-    // For all other animals, use the normalized name
-    return `/avatars/animals/${normalizedAnimal}.png`;
+    // For other animals, use the image directly
+    return getAssetUrl(`/images/${normalizedAnimal}.png`);
   };
 
   // Build layers array
@@ -89,15 +90,21 @@ function LayeredAvatarPositionerWithImage({
 
   // Add selected item as layer with manual position
   if (selectedItem && itemPosition && selectedItemImageUrl) {
-    // Process the image URL - if it's relative, make it absolute
+    // The image URL should already be properly formatted from the backend
+    // (either a full Supabase URL or a local path with API URL)
     let imagePath = selectedItemImageUrl;
-    if (!imagePath.startsWith('http') && !imagePath.startsWith('/')) {
-      imagePath = '/' + imagePath;
-    }
     
-    // If it's a backend URL without domain, add the API URL
-    if (imagePath.startsWith('/uploads/')) {
-      imagePath = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${imagePath}`;
+    // Only process if it's not already a full URL
+    if (!imagePath.startsWith('http')) {
+      // If it's a relative path without leading slash, add it
+      if (!imagePath.startsWith('/')) {
+        imagePath = '/' + imagePath;
+      }
+      
+      // If it's a backend upload path, add the API URL
+      if (imagePath.startsWith('/uploads/')) {
+        imagePath = `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${imagePath}`;
+      }
     }
     
     layers.push({
