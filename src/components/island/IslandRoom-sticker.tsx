@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react';
 import { useIslandStore, ROOM_ITEM_LIMIT } from '@/stores/islandStore';
 import { cn } from '@/lib/utils';
-import LayeredAvatarRoom from '@/components/avatar-v2/LayeredAvatarRoom';
 import { AnimatePresence } from 'framer-motion';
 import { Trash2 } from 'lucide-react';
 import { getAssetUrl } from '@/utils/cloud-assets';
+import { useStoreItems } from '@/contexts/StoreDataContext';
 
 interface DragState {
   itemId: string;
@@ -23,28 +23,33 @@ export default function IslandRoomSticker() {
   const [overTrash, setOverTrash] = useState(false);
   const [dropPreview, setDropPreview] = useState<{ x: number; y: number } | null>(null);
   
+  // Get store items for image lookup
+  const storeItems = useStoreItems();
+  
   const { 
-    avatar, 
     room, 
     ui,
     removeItem,
     moveItem,
-    draftAvatar,
     draftRoom,
     startDragging,
     stopDragging,
   } = useIslandStore();
   
-  // Use draft states when in edit modes
-  const isEditingAvatar = ui.inventoryMode === 'avatar';
+  // Use draft state when in edit mode
   const isEditingRoom = ui.inventoryMode === 'room';
-  const displayAvatar = isEditingAvatar ? { ...avatar, equipped: draftAvatar.equipped } : avatar;
   const displayRoom = isEditingRoom ? { ...room, placedItems: draftRoom.placedItems } : room;
 
   // Sort items by z-index for proper layering
   const sortedItems = [...displayRoom.placedItems].sort((a, b) => 
     (a.zIndex || 0) - (b.zIndex || 0)
   );
+
+  // Get item data from store catalog
+  const getItemData = (itemId: string) => {
+    const item = storeItems?.find((item: any) => item.id === itemId);
+    return item || null;
+  };
 
   const handleItemMouseDown = (e: React.MouseEvent, item: any, displayX: number, displayY: number) => {
     if (!isEditingRoom || !roomRef.current) return;
@@ -153,39 +158,56 @@ export default function IslandRoomSticker() {
   };
 
   const getItemIcon = (itemId: string) => {
-    // Convert underscores to check for keywords
-    const normalizedId = itemId.replace(/_/g, '');
+    // Convert to lowercase and normalize
+    const normalizedId = itemId.toLowerCase().replace(/[_-]/g, '');
     
-    if (normalizedId.includes('chair') || itemId === 'cozy_chair' || itemId === 'gaming_chair') return '🪑';
-    if (normalizedId.includes('table') || itemId === 'wooden_table') return '🪵';
-    if (normalizedId.includes('lamp') || itemId === 'floor_lamp') return '💡';
-    if (normalizedId.includes('plant') || itemId === 'potted_plant') return '🪴';
-    if (normalizedId.includes('poster')) return '🖼️';
-    if (normalizedId.includes('rug') || itemId === 'rug_circle') return '🟫';
-    if (normalizedId.includes('clock') || itemId === 'wall_clock') return '🕐';
-    if (normalizedId.includes('bookshelf')) return '📚';
-    if (normalizedId.includes('bean') || itemId === 'bean_bag') return '🛋️';
-    if (normalizedId.includes('treasure') || itemId === 'treasure_chest') return '💎';
-    if (normalizedId.includes('fuzzy')) return '🟫';
+    // Check for specific items first
+    if (itemId === 'cozy_chair' || itemId === 'gaming_chair') return '🪑';
+    if (itemId === 'wooden_table') return '🪵';
+    if (itemId === 'floor_lamp') return '💡';
+    if (itemId === 'potted_plant' || itemId === 'floor_plant') return '🪴';
+    if (itemId === 'wall_clock') return '🕐';
+    if (itemId === 'bean_bag') return '🛋️';
+    if (itemId === 'treasure_chest') return '💎';
+    if (itemId === 'rug_circle') return '🟫';
+    
+    // Then check for keywords
+    if (normalizedId.includes('chair')) return '🪑';
+    if (normalizedId.includes('table') || normalizedId.includes('desk')) return '🪵';
+    if (normalizedId.includes('lamp') || normalizedId.includes('light')) return '💡';
+    if (normalizedId.includes('plant') || normalizedId.includes('flower')) return '🪴';
+    if (normalizedId.includes('poster') || normalizedId.includes('picture')) return '🖼️';
+    if (normalizedId.includes('rug') || normalizedId.includes('carpet')) return '🟫';
+    if (normalizedId.includes('clock') || normalizedId.includes('time')) return '🕐';
+    if (normalizedId.includes('book') || normalizedId.includes('shelf')) return '📚';
+    if (normalizedId.includes('bean') || normalizedId.includes('sofa') || normalizedId.includes('couch')) return '🛋️';
+    if (normalizedId.includes('treasure') || normalizedId.includes('chest') || normalizedId.includes('box')) return '💎';
+    if (normalizedId.includes('bed')) return '🛏️';
+    if (normalizedId.includes('mirror')) return '🪞';
+    if (normalizedId.includes('window')) return '🪟';
+    if (normalizedId.includes('door')) return '🚪';
+    
+    // Debug: Log unmatched items
+    console.log('No icon match for item:', itemId);
     return '📦';
   };
 
-  // No scaling - all items same size
+  // Scale items based on Y position to create depth
   const getScaleFromY = (yPercent: number): number => {
-    return 1; // Always return scale of 1
+    // Items at top (y=0) are smaller, items at bottom (y=100) are larger
+    // This creates a sense of depth in the room
+    const minScale = 0.6;  // Smallest size at the back
+    const maxScale = 1.2;  // Largest size at the front
+    return minScale + (yPercent / 100) * (maxScale - minScale);
   };
 
 
 
   return (
-    <div
-      className="relative w-full overflow-hidden rounded-lg shadow-inner bg-gray-100"
-      style={{ 
-        aspectRatio: '16/9',
-        transform: isEditingRoom ? 'scale(0.85)' : 'scale(1)',
-        transition: 'transform 0.3s ease'
-      }}
-    >
+    <div className="w-full h-full flex justify-center items-center">
+      <div
+        className="relative overflow-hidden rounded-lg shadow-inner bg-gray-100 w-full h-full"
+      >
       <div 
         ref={roomRef}
         className="absolute inset-0 w-full h-full"
@@ -218,6 +240,25 @@ export default function IslandRoomSticker() {
           />
         </div>
         
+        {/* Room Item Counter - Show when editing */}
+        {isEditingRoom && (
+          <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg z-50">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">
+                {displayRoom.placedItems.length}/{ROOM_ITEM_LIMIT} items
+              </span>
+              {displayRoom.placedItems.length >= ROOM_ITEM_LIMIT && (
+                <span className="text-xs text-yellow-300">(Room Full!)</span>
+              )}
+            </div>
+            {displayRoom.placedItems.length > ROOM_ITEM_LIMIT * 0.8 && displayRoom.placedItems.length < ROOM_ITEM_LIMIT && (
+              <span className="text-xs text-yellow-300 block mt-1">
+                Almost full - {ROOM_ITEM_LIMIT - displayRoom.placedItems.length} spots left
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Room Structure - Shelves and Baseboard */}
         <img 
           src={getAssetUrl('/rooms/shelves-and-trim.png')} 
@@ -227,26 +268,43 @@ export default function IslandRoomSticker() {
         />
 
         {/* Drop Preview (when dragging from inventory) */}
-        {dropPreview && ui.draggedItem?.fromInventory && (
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            left: `${dropPreview.x}%`,
-            top: `${dropPreview.y}%`,
-            transform: `translate(-50%, -50%) scale(${getScaleFromY(dropPreview.y)})`,
-            zIndex: Math.floor(dropPreview.y * 10),
-            opacity: 0.5
-          }}
-        >
-          <div 
-            className="bg-blue-200/50 backdrop-blur rounded-lg p-3 border-2 border-blue-400 border-dashed shadow-lg"
-          >
-            <span className="text-3xl block">
-              {getItemIcon(ui.draggedItem.itemId)}
-            </span>
-          </div>
-        </div>
-        )}
+        {dropPreview && ui.draggedItem?.fromInventory && (() => {
+          const itemData = getItemData(ui.draggedItem.itemId);
+          return (
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                left: `${dropPreview.x}%`,
+                top: `${dropPreview.y}%`,
+                transform: `translate(-50%, -50%) scale(${getScaleFromY(dropPreview.y)})`,
+                zIndex: Math.floor(dropPreview.y * 10),
+                opacity: 0.5
+              }}
+            >
+              {itemData?.imageUrl ? (
+                <div className="relative" style={{ width: '10vw', maxWidth: '120px', height: '10vw', maxHeight: '120px' }}>
+                  <img
+                    src={itemData.imageUrl}
+                    alt={itemData.name}
+                    className="opacity-75"
+                    style={{ 
+                      filter: 'drop-shadow(0 0 10px rgba(59, 130, 246, 0.5))',
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain'
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="bg-blue-200/50 backdrop-blur rounded-lg p-3 border-2 border-blue-400 border-dashed shadow-lg">
+                  <span className="text-3xl block">
+                    {getItemIcon(ui.draggedItem.itemId)}
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Placed Items */}
         <div className="absolute inset-0 z-10">
@@ -257,11 +315,12 @@ export default function IslandRoomSticker() {
           const yPos = isOldGrid ? (item.y / 3) * 80 + 10 : item.y;
           
           const scale = getScaleFromY(yPos);
+          const itemData = getItemData(item.itemId);
           
           return (
             <div
               key={item.id}
-              className="absolute cursor-move transition-transform hover:scale-105"
+              className="absolute cursor-move transition-transform"
               style={{
                 left: `${xPos}%`,
                 top: `${yPos}%`,
@@ -272,18 +331,32 @@ export default function IslandRoomSticker() {
               onMouseDown={(e) => handleItemMouseDown(e, item, xPos, yPos)}
             >
               {/* Item Visual */}
-              <div 
-                className="bg-white/90 backdrop-blur rounded-lg p-3 select-none border-2 border-gray-200 shadow-lg"
-              >
-                <span className="text-3xl block">
-                  {getItemIcon(item.itemId)}
-                </span>
-              </div>
+              {itemData?.imageUrl ? (
+                <div className="relative" style={{ width: '10vw', maxWidth: '120px', height: '10vw', maxHeight: '120px' }}>
+                  <img
+                    src={itemData.imageUrl}
+                    alt={itemData.name}
+                    style={{ 
+                      filter: dragState?.itemId === item.id ? 'brightness(0.8)' : 'none',
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain'
+                    }}
+                    draggable={false}
+                  />
+                </div>
+              ) : (
+                <div className="bg-white/90 backdrop-blur rounded-lg p-3 select-none border-2 border-gray-200 shadow-lg">
+                  <span className="text-3xl block">
+                    {getItemIcon(item.itemId)}
+                  </span>
+                </div>
+              )}
               
               {/* Item label */}
               {isEditingRoom && (
                 <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs bg-black/70 text-white px-2 py-1 rounded whitespace-nowrap">
-                  {item.itemId}
+                  {itemData?.name || item.itemId}
                 </div>
               )}
             </div>
@@ -291,63 +364,30 @@ export default function IslandRoomSticker() {
         })}
         </div>
 
-        {!isEditingRoom && (
-            <div
-              className="absolute pointer-events-none"
-              style={{
-                left: `${displayAvatar.position.x}%`,
-                top: `${displayAvatar.position.y}%`,
-                transform: 'translate(-50%, -50%)',
-                zIndex: Math.floor((displayAvatar.position.y) * 10), // Dynamic z-index
-              }}
-            >
-              <LayeredAvatarRoom
-                animalType={displayAvatar.type}
-                items={displayAvatar.equipped}
-                width={504}
-                height={504}
-                animated={displayAvatar.animation !== 'idle'}
-              />
-            </div>
-          )}
-
-        {/* Trash Zone */}
+        {/* Trash Zone - Centered below avatar */}
         <AnimatePresence>
         {showTrash && (
           <div
             id="trash-zone"
-            className="absolute bottom-4 right-4 z-50 transition-all duration-200"
+            className="absolute left-1/2 bottom-[8%] transform -translate-x-1/2 z-50 transition-all duration-200"
             style={{
-              transform: showTrash ? 'scale(1)' : 'scale(0)',
+              transform: showTrash ? 'translateX(-50%) scale(1)' : 'translateX(-50%) scale(0)',
               opacity: showTrash ? 1 : 0
             }}
           >
             <div className={cn(
-              "bg-red-500 text-white rounded-full p-4 shadow-lg transition-all",
-              overTrash ? "bg-red-600 scale-110" : ""
+              "bg-red-500 text-white rounded-full shadow-lg transition-all",
+              "w-16 h-16 flex items-center justify-center",
+              overTrash ? "bg-red-600 scale-125 shadow-2xl" : ""
             )}>
               <Trash2 className="w-8 h-8" />
             </div>
-            <p className="text-xs text-center mt-1 text-white bg-black/50 rounded px-2 py-1">
-              Drop to delete
-            </p>
           </div>
         )}
         </AnimatePresence>
 
-        {/* Decorative Elements */}
-        {!isEditingRoom && !isEditingAvatar && (
-          <>
-            {/* Sparkle effects */}
-            <div className="absolute top-10 right-10 animate-pulse">
-              <span className="text-2xl">✨</span>
-            </div>
-            <div className="absolute bottom-20 left-20 animate-pulse animation-delay-1000">
-              <span className="text-xl">🌟</span>
-            </div>
-          </>
-        )}
       </div>
+    </div>
     </div>
   );
 }

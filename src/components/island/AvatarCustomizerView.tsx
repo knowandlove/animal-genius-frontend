@@ -3,10 +3,16 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIslandStore } from '@/stores/islandStore';
 import { cn } from '@/lib/utils';
-import { Sparkles, HardHat, Glasses, Gem } from 'lucide-react';
+import { Sparkles, HardHat, Glasses, Gem, Wand2, Home, ShoppingBag } from 'lucide-react';
 import { useStoreItems } from '@/contexts/StoreDataContext';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface AvatarCustomizerViewProps {
   selectedPreviewItem: {
@@ -29,6 +35,9 @@ export default function AvatarCustomizerView({
   const draftAvatar = useIslandStore((state) => state.draftAvatar);
   const updateDraftAvatar = useIslandStore((state) => state.updateDraftAvatar);
   const storeItems = useStoreItems(); // Get store items to access image URLs
+  const setInventoryMode = useIslandStore((state) => state.setInventoryMode);
+  const closeInventory = useIslandStore((state) => state.closeInventory);
+  const [currentTab, setCurrentTab] = useState('hat');
 
   // Filter inventory for avatar items only
   const avatarItems = inventory.items.filter(item => 
@@ -48,8 +57,17 @@ export default function AvatarCustomizerView({
   };
 
   const handleItemClick = (slot: string, itemId: string, item: any) => {
-    // Set the preview item
-    setSelectedPreviewItem({ id: itemId, slot, item });
+    const currentItem = draftAvatar.equipped[slot as keyof typeof draftAvatar.equipped];
+    
+    // If clicking the same item that's equipped, unequip it
+    if (currentItem === itemId) {
+      updateDraftAvatar(slot, null);
+      setSelectedPreviewItem(null);
+    } else {
+      // Otherwise, equip the new item immediately
+      updateDraftAvatar(slot, itemId);
+      setSelectedPreviewItem({ id: itemId, slot, item });
+    }
   };
 
   const handleEquip = () => {
@@ -127,8 +145,8 @@ export default function AvatarCustomizerView({
   };
 
   const renderItemGrid = (items: any[], slot: string) => {
-    // Create a 4x5 grid (20 slots total)
-    const GRID_SIZE = 20;
+    // Create a 3x5 grid (15 slots total)
+    const GRID_SIZE = 15;
     const gridItems = [];
     const equippedItem = draftAvatar.equipped[slot as keyof typeof draftAvatar.equipped];
     
@@ -138,39 +156,61 @@ export default function AvatarCustomizerView({
       const isEquipped = equippedItem === item.id;
       
       gridItems.push(
-        <motion.button
-          key={item.id}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => handleItemClick(slot, item.id, item)}
-          className={cn(
-            "aspect-square p-2 rounded-lg border-2 transition-all flex flex-col items-center justify-center relative overflow-hidden group",
-            isEquipped
-              ? "border-purple-500 bg-purple-50 shadow-md ring-2 ring-purple-500 ring-inset"
-              : selectedPreviewItem?.id === item.id
-              ? "border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-500 ring-inset"
-              : "border-gray-200 hover:border-purple-300 bg-white"
-          )}
-        >
-          {getRarityBadge(item)}
-          {/* Show actual image if available, fallback to emoji */}
-          {getItemImage(item.id) ? (
-            <img 
-              src={getItemImage(item.id)!} 
-              alt={item.name}
-              className="w-12 h-12 object-contain mb-1 transition-transform group-hover:scale-110"
-            />
-          ) : (
-            <div className="text-2xl mb-1 transition-transform group-hover:scale-110">{getItemEmoji(item.id)}</div>
-          )}
-          <div className="text-xs font-medium truncate max-w-full px-1">
-            {item.name.replace('Avatar ', '').replace('Accessory', '').trim()}
-          </div>
-          {isEquipped && (
-            <div className="absolute -bottom-1 -right-1 bg-purple-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
-              ✓
-            </div>
-          )}
-        </motion.button>
+        <TooltipProvider key={item.id}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleItemClick(slot, item.id, item)}
+                className={cn(
+                  "w-16 h-16 p-0.5 rounded-lg border-2 transition-all flex items-center justify-center relative overflow-hidden group",
+                  isEquipped
+                    ? "border-purple-500 bg-purple-50 shadow-md ring-2 ring-purple-500 ring-inset"
+                    : selectedPreviewItem?.id === item.id
+                    ? "border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-500 ring-inset"
+                    : "border-gray-200 hover:border-purple-300 bg-white"
+                )}
+              >
+                {getRarityBadge(item)}
+                {/* Show actual image if available, fallback to emoji */}
+                {getItemImage(item.id) ? (
+                  <img 
+                    src={getItemImage(item.id)!} 
+                    alt={item.name}
+                    className="w-8 h-8 object-contain transition-transform group-hover:scale-110"
+                  />
+                ) : (
+                  <div className="text-lg transition-transform group-hover:scale-110">{getItemEmoji(item.id)}</div>
+                )}
+                {isEquipped && (
+                  <div className="absolute -bottom-1 -right-1 bg-purple-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">
+                    ✓
+                  </div>
+                )}
+              </motion.button>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="max-w-[200px]">
+              <div className="space-y-1">
+                <p className="font-semibold text-sm">{item.name}</p>
+                {item.description && (
+                  <p className="text-xs text-muted-foreground">{item.description}</p>
+                )}
+                {item.rarity && (
+                  <p className="text-xs">
+                    <span className={cn(
+                      "inline-flex items-center gap-1",
+                      item.rarity === 'legendary' && 'text-yellow-600',
+                      item.rarity === 'rare' && 'text-purple-600'
+                    )}>
+                      {item.rarity === 'legendary' && <Sparkles className="w-3 h-3" />}
+                      {item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1)}
+                    </span>
+                  </p>
+                )}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       );
     }
     
@@ -179,9 +219,9 @@ export default function AvatarCustomizerView({
       gridItems.push(
         <div
           key={`empty-${slot}-${i}`}
-          className="aspect-square border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center"
+          className="w-16 h-16 border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center"
         >
-          <span className="text-gray-300 text-xs">Empty</span>
+          <span className="text-gray-300 text-[10px]">Empty</span>
         </div>
       );
     }
@@ -198,71 +238,131 @@ export default function AvatarCustomizerView({
 
   return (
     <div className="h-full flex flex-col">
-      {/* Instructions / Item Preview */}
-      <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-4">
-        {selectedPreviewItem ? (
-          <div>
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h4 className="font-semibold text-sm text-purple-900">
-                  {selectedPreviewItem.item.name}
-                </h4>
-                <p className="text-xs text-purple-700 mt-1">
-                  {selectedPreviewItem.item.description || 'A stylish item for your avatar!'}
-                </p>
-              </div>
-              {selectedPreviewItem.item.rarity && (
-                <Badge 
-                  variant={selectedPreviewItem.item.rarity === 'legendary' ? 'default' : 'secondary'}
-                  className={cn(
-                    "ml-2",
-                    selectedPreviewItem.item.rarity === 'legendary' && 'bg-yellow-500',
-                    selectedPreviewItem.item.rarity === 'rare' && 'bg-purple-500'
-                  )}
-                >
-                  {selectedPreviewItem.item.rarity}
-                </Badge>
-              )}
-            </div>
-          </div>
-        ) : (
-          <p className="text-sm text-purple-800">
-            <strong>Customize your avatar:</strong> Click items to preview them, then click Equip to wear them.
-          </p>
-        )}
+      {/* Mode Switcher Buttons */}
+      <div className="flex justify-center gap-2 mb-4">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-10 h-10 bg-purple-700 text-white rounded-full shadow flex items-center justify-center cursor-default"
+              >
+                <Wand2 className="w-5 h-5" />
+              </motion.button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Customize Avatar (Current)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setInventoryMode('room')}
+                className="w-10 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow flex items-center justify-center transition-colors"
+              >
+                <Home className="w-5 h-5" />
+              </motion.button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Decorate Room</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  closeInventory();
+                  // This would trigger opening the store modal
+                }}
+                className="w-10 h-10 bg-green-600 hover:bg-green-700 text-white rounded-full shadow flex items-center justify-center transition-colors"
+              >
+                <ShoppingBag className="w-5 h-5" />
+              </motion.button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Visit Store</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {/* Tabs for different categories */}
-      <Tabs defaultValue="hat" className="flex-1 flex flex-col">
-        <TabsList className="grid w-full grid-cols-3 mb-4">
-          <TabsTrigger value="hat" className="flex items-center gap-1 relative">
-            <HardHat className="w-4 h-4" />
-            <span className="hidden sm:inline">Hats</span>
-            {equippedSlots.hat && (
-              <div className="absolute -top-1 -right-1 bg-purple-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
-                •
-              </div>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="glasses" className="flex items-center gap-1 relative">
-            <Glasses className="w-4 h-4" />
-            <span className="hidden sm:inline">Glasses</span>
-            {equippedSlots.glasses && (
-              <div className="absolute -top-1 -right-1 bg-purple-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
-                •
-              </div>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="accessory" className="flex items-center gap-1 relative">
-            <Gem className="w-4 h-4" />
-            <span className="hidden sm:inline">Accessories</span>
-            {equippedSlots.accessory && (
-              <div className="absolute -top-1 -right-1 bg-purple-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
-                •
-              </div>
-            )}
-          </TabsTrigger>
+      <Tabs defaultValue="hat" className="flex-1 flex flex-col" onValueChange={setCurrentTab}>
+        <TabsList className="grid w-full grid-cols-3 mb-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="hat" className="relative data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700">
+                  <HardHat className="w-4 h-4" />
+                  {equippedSlots.hat && (
+                    <div className="absolute -top-1 -right-1 bg-purple-500 text-white rounded-full w-3 h-3 flex items-center justify-center text-[8px]">
+                      •
+                    </div>
+                  )}
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Hats</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="glasses" className="relative data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700">
+                  <Glasses className="w-4 h-4" />
+                  {equippedSlots.glasses && (
+                    <div className="absolute -top-1 -right-1 bg-purple-500 text-white rounded-full w-3 h-3 flex items-center justify-center text-[8px]">
+                      •
+                    </div>
+                  )}
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Glasses</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="accessory" className="relative data-[state=active]:bg-purple-100 data-[state=active]:text-purple-700">
+                  <Gem className="w-4 h-4" />
+                  {equippedSlots.accessory && (
+                    <div className="absolute -top-1 -right-1 bg-purple-500 text-white rounded-full w-3 h-3 flex items-center justify-center text-[8px]">
+                      •
+                    </div>
+                  )}
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Accessories</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </TabsList>
+        
+        {/* Current Tab Indicator */}
+        <div className="text-center mb-3">
+          <span className="text-sm text-purple-600 font-medium">
+            {currentTab === 'hat' && 'Hats'}
+            {currentTab === 'glasses' && 'Glasses'}
+            {currentTab === 'accessory' && 'Accessories'}
+          </span>
+        </div>
 
         <div className="flex-1 overflow-y-auto">
           <TabsContent value="hat" className="mt-0">
@@ -273,7 +373,7 @@ export default function AvatarCustomizerView({
                 <p className="text-xs mt-1">Visit the store to get some.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-4 gap-2 overflow-hidden">
+              <div className="grid grid-cols-3 gap-2 overflow-hidden">
                 {renderItemGrid(categorizedItems.hat, 'hat')}
               </div>
             )}
@@ -287,7 +387,7 @@ export default function AvatarCustomizerView({
                 <p className="text-xs mt-1">Visit the store to get some.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-4 gap-2 overflow-hidden">
+              <div className="grid grid-cols-3 gap-2 overflow-hidden">
                 {renderItemGrid(categorizedItems.glasses, 'glasses')}
               </div>
             )}
@@ -301,7 +401,7 @@ export default function AvatarCustomizerView({
                 <p className="text-xs mt-1">Visit the store to get some.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-4 gap-2 overflow-hidden">
+              <div className="grid grid-cols-3 gap-2 overflow-hidden">
                 {renderItemGrid(categorizedItems.accessory, 'accessory')}
               </div>
             )}

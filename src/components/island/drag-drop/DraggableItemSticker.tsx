@@ -10,13 +10,15 @@ interface DraggableItemStickerProps {
   isSelected: boolean;
   disabled?: boolean;
   onClick: () => void;
+  className?: string;
 }
 
 export default function DraggableItemSticker({ 
   item, 
   isSelected, 
   disabled, 
-  onClick 
+  onClick,
+  className 
 }: DraggableItemStickerProps) {
   const startDragging = useIslandStore((state) => state.startDragging);
   const stopDragging = useIslandStore((state) => state.stopDragging);
@@ -95,11 +97,12 @@ export default function DraggableItemSticker({
   return (
     <div
       className={cn(
-        "relative p-2 border rounded-lg transition-all select-none group",
+        "relative p-1 border rounded-lg transition-all select-none group aspect-square",
         "hover:border-primary hover:shadow-md",
         isSelected && "border-primary bg-primary/5 ring-2 ring-primary/20",
         !canBePlaced && disabled && "opacity-50",
-        canBePlaced && !disabled && "cursor-grab active:cursor-grabbing hover:transform hover:scale-105"
+        canBePlaced && !disabled && "cursor-grab active:cursor-grabbing hover:transform hover:scale-105",
+        className
       )}
       onClick={handleClick}
       draggable={canBePlaced && !disabled}
@@ -107,29 +110,21 @@ export default function DraggableItemSticker({
       onDragEnd={handleDragEnd}
     >
       {/* Item Icon/Preview */}
-      <div className="aspect-square bg-gray-100 rounded flex items-center justify-center pointer-events-none overflow-hidden">
+      <div className="w-full h-full bg-gray-100 rounded flex items-center justify-center pointer-events-none overflow-hidden">
         {getItemImage(item.id) ? (
           <img 
             src={getItemImage(item.id)!} 
             alt={item.name}
-            className="w-full h-full object-contain p-1"
+            className="w-8 h-8 object-contain"
           />
         ) : (
-          <span className="text-2xl">
+          <span className="text-lg">
             {getItemIcon(item)}
           </span>
         )}
       </div>
 
-      {/* Item Name */}
-      <p className="text-xs font-medium truncate mt-1">{item.name}</p>
-
-      {/* Quantity Badge */}
-      {item.quantity && item.quantity > 1 && (
-        <Badge variant="secondary" className="absolute top-1 right-1 text-xs px-1 scale-75">
-          {item.quantity}x
-        </Badge>
-      )}
+      {/* Quantity Badge - removed for room decorations */}
 
       {/* Rarity Badge */}
       {item.rarity && item.rarity !== 'common' && (

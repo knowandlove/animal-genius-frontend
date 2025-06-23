@@ -1,10 +1,18 @@
 import { motion } from 'framer-motion';
-import { Package, Sparkles, Sofa, Palette, Home, AlertCircle, Paintbrush, Box } from 'lucide-react';
+import { Package, Sparkles, Sofa, Palette, Home, AlertCircle, Paintbrush, Box, Wand2, ShoppingBag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIslandStore, ROOM_ITEM_LIMIT } from '@/stores/islandStore';
 import { cn } from '@/lib/utils';
 import DraggableItemSticker from './drag-drop/DraggableItemSticker';
+import { useState } from 'react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { UnsavedChangesModal } from '@/components/modals/UnsavedChangesModal';
 
 export default function RoomDecoratorView() {
   const inventory = useIslandStore((state) => state.inventory);
@@ -13,6 +21,14 @@ export default function RoomDecoratorView() {
   const selectedItem = useIslandStore((state) => state.inventory.selectedItem);
   const updateRoomColors = useIslandStore((state) => state.updateRoomColors);
   const updateRoomPatterns = useIslandStore((state) => state.updateRoomPatterns);
+  const setInventoryMode = useIslandStore((state) => state.setInventoryMode);
+  const closeInventory = useIslandStore((state) => state.closeInventory);
+  const showUnsavedChangesModal = useIslandStore((state) => state.ui.showUnsavedChangesModal);
+  const inventoryMode = useIslandStore((state) => state.ui.inventoryMode);
+  const handleUnsavedChangesSave = useIslandStore((state) => state.handleUnsavedChangesSave);
+  const handleUnsavedChangesDiscard = useIslandStore((state) => state.handleUnsavedChangesDiscard);
+  const handleUnsavedChangesCancel = useIslandStore((state) => state.handleUnsavedChangesCancel);
+  const [currentTab, setCurrentTab] = useState('furniture');
 
   // Filter inventory for room items only
   const roomItems = inventory.items.filter(item => 
@@ -43,121 +59,219 @@ export default function RoomDecoratorView() {
   };
 
   const renderItemGrid = (items: any[], categoryType: string) => {
-    // Create a 4x5 grid (20 slots total)
-    const GRID_SIZE = 20;
+    // Create a 3x5 grid (15 slots total)
+    const GRID_SIZE = 15;
     const gridItems = [];
     
     // Fill with actual items
-    for (let i = 0; i < GRID_SIZE; i++) {
-      if (i < items.length) {
-        gridItems.push(
-          <DraggableItemSticker
-            key={items[i].id}
-            item={items[i]}
-            isSelected={selectedItem === items[i].id}
-            onClick={() => selectInventoryItem(
-              selectedItem === items[i].id ? undefined : items[i].id
-            )}
-          />
-        );
-      } else {
-        // Empty slot
-        gridItems.push(
-          <div
-            key={`empty-${categoryType}-${i}`}
-            className="aspect-square border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center"
-          >
-            <span className="text-gray-300 text-xs">Empty</span>
-          </div>
-        );
-      }
+    for (let i = 0; i < items.length && i < GRID_SIZE; i++) {
+      const item = items[i];
+      
+      gridItems.push(
+        <TooltipProvider key={item.id}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="w-16 h-16">
+                <DraggableItemSticker
+                  item={item}
+                  isSelected={selectedItem === item.id}
+                  onClick={() => selectInventoryItem(
+                    selectedItem === item.id ? undefined : item.id
+                  )}
+                  className="w-full h-full"
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="max-w-[200px]">
+              <div className="space-y-1">
+                <p className="font-semibold text-sm">{item.name}</p>
+                {item.description && (
+                  <p className="text-xs text-muted-foreground">{item.description}</p>
+                )}
+                {item.rarity && (
+                  <p className="text-xs">
+                    <span className={cn(
+                      "inline-flex items-center gap-1",
+                      item.rarity === 'legendary' && 'text-yellow-600',
+                      item.rarity === 'rare' && 'text-purple-600'
+                    )}>
+                      {item.rarity === 'legendary' && <Sparkles className="w-3 h-3" />}
+                      {item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1)}
+                    </span>
+                  </p>
+                )}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+    
+    // Fill remaining slots with empty placeholders
+    for (let i = items.length; i < GRID_SIZE; i++) {
+      gridItems.push(
+        <div
+          key={`empty-${categoryType}-${i}`}
+          className="w-16 h-16 border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center"
+        >
+          <span className="text-gray-300 text-[10px]">Empty</span>
+        </div>
+      );
     }
     
     return gridItems;
   };
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Instructions / Item Details */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Home className="w-4 h-4 text-blue-700" />
-            <span className="text-sm font-semibold text-blue-900">
-              Room Items: {draftRoom.placedItems.length} / {ROOM_ITEM_LIMIT}
-            </span>
-          </div>
-          {draftRoom.placedItems.length >= ROOM_ITEM_LIMIT && (
-            <Badge variant="destructive" className="text-xs">
-              <AlertCircle className="w-3 h-3 mr-1" />
-              Room Full!
-            </Badge>
-          )}
-          {draftRoom.placedItems.length >= ROOM_ITEM_LIMIT - 5 && 
-           draftRoom.placedItems.length < ROOM_ITEM_LIMIT && (
-            <Badge variant="outline" className="text-xs border-yellow-500 text-yellow-700">
-              Almost Full
-            </Badge>
-          )}
-        </div>
-        {selectedItemDetails ? (
-          <div>
-            <div className="flex items-start justify-between">
-              <div>
-                <h4 className="font-semibold text-sm text-blue-900">{selectedItemDetails.name}</h4>
-                <p className="text-xs text-blue-800 mt-1">
-                  {selectedItemDetails.description}
-                </p>
-              </div>
-              <div className={cn(
-                "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs",
-                selectedItemDetails.rarity === 'rare' ? 'bg-purple-100 text-purple-700' :
-                selectedItemDetails.rarity === 'legendary' ? 'bg-yellow-100 text-yellow-700' :
-                'bg-gray-100 text-gray-700'
-              )}>
-                {selectedItemDetails.rarity === 'legendary' && <Sparkles className="w-3 h-3" />}
-                {selectedItemDetails.rarity || 'common'}
-              </div>
-            </div>
-            <p className="text-xs text-blue-700 mt-2">
-              <strong>Tip:</strong> Drag to room or click again to place!
-            </p>
-          </div>
-        ) : (
-          <p className="text-sm text-blue-800">
-            <strong>How to decorate:</strong> Click an item to select it, then drag to place in your room.
-          </p>
-        )}
+    <>
+      <UnsavedChangesModal
+        isOpen={showUnsavedChangesModal}
+        onSave={handleUnsavedChangesSave}
+        onDiscard={handleUnsavedChangesDiscard}
+        onCancel={handleUnsavedChangesCancel}
+        mode={inventoryMode || 'room'}
+      />
+      
+      <div className="h-full flex flex-col">
+      {/* Mode Switcher Buttons */}
+      <div className="flex justify-center gap-2 mb-4">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setInventoryMode('avatar')}
+                className="w-10 h-10 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow flex items-center justify-center transition-colors"
+              >
+                <Wand2 className="w-5 h-5" />
+              </motion.button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Customize Avatar</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="w-10 h-10 bg-blue-700 text-white rounded-full shadow flex items-center justify-center cursor-default"
+              >
+                <Home className="w-5 h-5" />
+              </motion.button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Decorate Room (Current)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  closeInventory();
+                  // This would trigger opening the store modal
+                  // You might need to pass a callback or use a global state
+                }}
+                className="w-10 h-10 bg-green-600 hover:bg-green-700 text-white rounded-full shadow flex items-center justify-center transition-colors"
+              >
+                <ShoppingBag className="w-5 h-5" />
+              </motion.button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Visit Store</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {/* Tabs for different categories */}
-      <Tabs defaultValue="furniture" className="flex-1 flex flex-col">
-        <TabsList className="grid w-full grid-cols-3 mb-4">
-          <TabsTrigger value="furniture" className="flex items-center gap-1">
-            <Sofa className="w-4 h-4" />
-            <span className="hidden sm:inline">Furniture</span>
-          </TabsTrigger>
-          <TabsTrigger value="objects" className="flex items-center gap-1">
-            <Box className="w-4 h-4" />
-            <span className="hidden sm:inline">Objects</span>
-          </TabsTrigger>
-          <TabsTrigger value="colors" className="flex items-center gap-1">
-            <Paintbrush className="w-4 h-4" />
-            <span className="hidden sm:inline">Colors</span>
-          </TabsTrigger>
+      <Tabs defaultValue="furniture" className="flex-1 flex flex-col" onValueChange={setCurrentTab}>
+        <TabsList className="grid w-full grid-cols-3 mb-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="furniture" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700">
+                  <Sofa className="w-4 h-4" />
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Furniture</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="objects" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700">
+                  <Box className="w-4 h-4" />
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Objects</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="colors" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700">
+                  <Paintbrush className="w-4 h-4" />
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Colors</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </TabsList>
+        
+        {/* Current Tab Indicator */}
+        <div className="text-center mb-3">
+          <span className="text-sm text-blue-600 font-medium">
+            {currentTab === 'furniture' && 'Furniture'}
+            {currentTab === 'objects' && 'Objects'}
+            {currentTab === 'colors' && 'Room Colors'}
+          </span>
+        </div>
 
         <div className="flex-1 overflow-y-auto">
           <TabsContent value="furniture" className="mt-0">
-            <div className="grid grid-cols-4 gap-2">
-              {renderItemGrid(furnitureItems, 'furniture')}
-            </div>
+            {furnitureItems.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Sofa className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                <p className="text-sm">No furniture owned yet!</p>
+                <p className="text-xs mt-1">Visit the store to get some.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2 overflow-hidden">
+                {renderItemGrid(furnitureItems, 'furniture')}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="objects" className="mt-0">
-            <div className="grid grid-cols-4 gap-2">
-              {renderItemGrid(objectItems, 'objects')}
-            </div>
+            {objectItems.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Box className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                <p className="text-sm">No decorations owned yet!</p>
+                <p className="text-xs mt-1">Visit the store to get some.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2 overflow-hidden">
+                {renderItemGrid(objectItems, 'objects')}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="colors" className="mt-0">
@@ -249,6 +363,7 @@ export default function RoomDecoratorView() {
           </TabsContent>
         </div>
       </Tabs>
-    </div>
+      </div>
+    </>
   );
 }
