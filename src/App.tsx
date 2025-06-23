@@ -48,6 +48,7 @@ const DiagnosticCheck = lazy(() => import("@/pages/admin/diagnostic-check"));
 const DebugAuth = lazy(() => import("@/pages/admin/debug-auth"));
 const TestAdmin = lazy(() => import("@/pages/admin/test-admin"));
 const TestPositions = lazy(() => import("@/pages/admin/test-positions"));
+const AvatarSizeDebug = lazy(() => import("@/pages/admin/avatar-size-debug"));
 
 // Import the properly configured query client
 import { queryClient } from "@/lib/queryClient";
@@ -164,6 +165,7 @@ function Router() {
             <Route path="/admin/debug-auth" component={DebugAuth} />
             <Route path="/admin/test-admin" component={TestAdmin} />
             <Route path="/admin/test-positions" component={TestPositions} />
+            <Route path="/admin/avatar-debug" component={AvatarSizeDebug} />
           </>
         ) : (
           <>

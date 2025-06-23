@@ -2,6 +2,7 @@ import React, { useState, CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 import { ANIMAL_CONFIGS } from '@/config/animal-sizing';
 import { getAssetUrl } from '@/utils/cloud-assets';
+import { getAnimalScale, getItemScale, AVATAR_RENDER_CONFIG } from '@/utils/avatar-render';
 
 interface AvatarLayer {
   id: string;
@@ -47,8 +48,8 @@ const animalEmojis: Record<string, string> = {
 
 function LayeredAvatarPositionerWithImage({
   animalType,
-  width = 300,
-  height = 300,
+  width = 600,  // Standardized to 600
+  height = 600, // Standardized to 600
   selectedItem,
   selectedItemImageUrl,
   itemPosition,
@@ -60,23 +61,23 @@ function LayeredAvatarPositionerWithImage({
   const getAnimalImage = () => {
     const normalizedAnimal = animalType.toLowerCase().replace(' ', '-');
     
-    // Use full-body images for positioning (not the head icons)
+    // Use full-body images for positioning - matching LayeredAvatarRoom path format
     const animalFileName = normalizedAnimal === 'border-collie' ? 'border_collie' : normalizedAnimal;
     
     // Use the cloud assets utility which handles the cloud/local switching
-    return getAssetUrl(`/animals/full-body/${animalFileName}.png`);
+    return getAssetUrl(`/images/${animalFileName}_full.png`);
   };
 
   // Build layers array
   const layers: AvatarLayer[] = [
-    // Base animal layer - scaled to 60% with position adjustment
+    // Base animal layer - using unified rendering
     {
       id: 'base',
       src: getAnimalImage(),
       emoji: animalEmojis[animalType.toLowerCase()] || '🐾',
       zIndex: 1,
-      position: { top: '55%', left: '45%' }, // Move left and down slightly
-      scale: 0.6, // Match the scale in the avatar customizer
+      position: AVATAR_RENDER_CONFIG.baseAnimalPosition,
+      scale: getAnimalScale(animalType),
     },
   ];
 
@@ -108,7 +109,7 @@ function LayeredAvatarPositionerWithImage({
         top: `${itemPosition.y}%`, 
         left: `${itemPosition.x}%` 
       },
-      scale: itemPosition.scale,
+      scale: getItemScale(itemPosition.scale * 100, animalType),
       rotation: itemPosition.rotation,
     });
   }

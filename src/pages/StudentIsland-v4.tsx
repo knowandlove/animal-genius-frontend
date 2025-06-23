@@ -1,16 +1,13 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
-import LayeredAvatarDB from "@/components/avatar-v2/LayeredAvatarDB";
-import LayeredAvatarRoom from "@/components/avatar-v2/LayeredAvatarRoom";
-import { Coins, Home, ShoppingBag, Package, Sparkles, X, Wand2, Shirt } from "lucide-react";
+import { Coins, ShoppingBag, Sparkles, X, Wand2, Home } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -21,11 +18,13 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useIslandStore, ROOM_ITEM_LIMIT } from "@/stores/islandStore";
-import IslandRoomSticker from "@/components/island/IslandRoom-sticker";
-import WelcomeAnimation from "@/components/island/WelcomeAnimation";
-import EditorControls from "@/components/island/EditorControls";
-import UnifiedInventoryPanel from "@/components/island/UnifiedInventoryPanel";
 import { AnimatePresence, motion } from "framer-motion";
+import { useMediaQuery } from "@/hooks/use-media-query";
+
+// Import new components
+import MainRoomView from "@/components/island/MainRoomView";
+import InventoryPanel from "@/components/island/InventoryPanel";
+import WelcomeAnimation from "@/components/island/WelcomeAnimation";
 import StoreModal from "@/components/island/StoreModal";
 
 interface StoreItem {
@@ -81,10 +80,21 @@ export default function StudentIsland() {
 
   // Island store
   const initializeFromServerData = useIslandStore((state) => state.initializeFromServerData);
-  const setAvatarEquipment = useIslandStore((state) => state.setAvatarEquipment);
-  const inventoryMode = useIslandStore((state) => state.ui.inventoryMode);
-  const draftAvatar = useIslandStore((state) => state.draftAvatar);
-  const draftRoom = useIslandStore((state) => state.draftRoom);
+  const isInventoryOpen = useIslandStore((state) => state.ui.isInventoryOpen);
+  const editingMode = useIslandStore((state) => state.ui.editingMode);
+
+  // Check if we're on mobile
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  
+  // Listen for store open event (triggered after handling unsaved changes)
+  useEffect(() => {
+    const handleOpenStore = () => {
+      setShowStore(true);
+    };
+    
+    window.addEventListener('openStore', handleOpenStore);
+    return () => window.removeEventListener('openStore', handleOpenStore);
+  }, []);
 
   // Fetch all island data in one request
   const { data: pageData, isLoading, error } = useQuery<PageData>({
@@ -157,7 +167,6 @@ export default function StudentIsland() {
     onSuccess: (data) => {
       setPurchaseMessage({ type: 'success', message: data.message });
       setShowPurchaseDialog(false);
-      // Refetch all data to get updated purchase requests
       queryClient.invalidateQueries({ queryKey: [`/api/island-page-data/${passportCode}`] });
       setTimeout(() => setPurchaseMessage(null), 5000);
     },
@@ -170,31 +179,6 @@ export default function StudentIsland() {
       setTimeout(() => setPurchaseMessage(null), 5000);
     },
   });
-
-  // Equip mutation
-  const equipMutation = useMutation({
-    mutationFn: ({ slot, itemId }: { slot: string; itemId: string | null }) => 
-      apiRequest('POST', `/api/island/${passportCode}/equip`, { slot, itemId }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/island-page-data/${passportCode}`] });
-      setPurchaseMessage({ 
-        type: 'success', 
-        message: 'Avatar updated!' 
-      });
-      setTimeout(() => setPurchaseMessage(null), 3000);
-    },
-    onError: (error: any) => {
-      setPurchaseMessage({ 
-        type: 'error', 
-        message: error.message || 'Failed to equip item' 
-      });
-      setTimeout(() => setPurchaseMessage(null), 3000);
-    },
-  });
-
-  const handleEquipItem = (slot: string, itemId: string | null) => {
-    equipMutation.mutate({ slot, itemId });
-  };
 
   const handlePurchaseClick = (item: StoreItem) => {
     setSelectedItem(item);
@@ -213,40 +197,6 @@ export default function StudentIsland() {
       (req: any) => req.itemId === itemId && req.status === 'pending'
     );
   };
-
-  // Categorize owned items
-  const categorizedItems = useMemo(() => {
-    if (!pageData?.island.avatarData?.owned || !pageData?.storeCatalog) {
-      return { hats: [], glasses: [], accessories: [] };
-    }
-    
-    const items = {
-      hats: [] as StoreItem[],
-      glasses: [] as StoreItem[],
-      accessories: [] as StoreItem[]
-    };
-    
-    // Create item map for quick lookup
-    const itemMap = new Map<string, StoreItem>();
-    pageData.storeCatalog.forEach(item => {
-      itemMap.set(item.id, item);
-    });
-    
-    pageData.island.avatarData.owned.forEach((itemId: string) => {
-      const item = itemMap.get(itemId);
-      if (!item) return;
-      
-      if (item.type === 'avatar_hat') {
-        items.hats.push(item);
-      } else if (item.type === 'avatar_accessory' && (itemId.includes('blind') || itemId.includes('heart') || itemId.includes('glass'))) {
-        items.glasses.push(item);
-      } else if (item.type === 'avatar_accessory') {
-        items.accessories.push(item);
-      }
-    });
-    
-    return items;
-  }, [pageData]);
 
   if (isLoading) {
     return (
@@ -284,6 +234,7 @@ export default function StudentIsland() {
 
   return (
     <>
+      {/* Welcome Animation */}
       <AnimatePresence>
         {showWelcome && island && (
           <WelcomeAnimation
@@ -298,133 +249,189 @@ export default function StudentIsland() {
         )}
       </AnimatePresence>
       
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-        {/* Header */}
-        <div className="bg-white/80 backdrop-blur-sm shadow-sm">
-          <div className="container mx-auto px-4 py-4">
+      <div className="relative w-full h-screen overflow-hidden bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50" id="island-container">
+        {/* Fixed Header */}
+        <div className="absolute top-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-sm shadow-sm">
+          <div className="container mx-auto px-4 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                   {island.studentName}'s Island
                 </h1>
-                <Badge variant="secondary" className="text-sm">
+                <Badge variant="secondary" className="text-xs sm:text-sm hidden sm:inline-flex">
                   {island.animalType} • {island.className}
                 </Badge>
               </div>
-              <div className="flex items-center gap-2 bg-yellow-100 rounded-full px-4 py-2">
-                <Coins className="w-5 h-5 text-yellow-600" />
-                <span className="font-bold text-lg">{wallet.total}</span>
-                {wallet.pending > 0 && (
-                  <span className="text-xs text-yellow-700">({wallet.available} available)</span>
-                )}
-              </div>
             </div>
           </div>
         </div>
 
-        {/* Messages */}
-        {purchaseMessage && (
-          <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-50">
-            <Alert className={cn(
-              "border-2 shadow-lg",
-              purchaseMessage.type === 'success' ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'
-            )}>
-              <AlertDescription className="flex items-center gap-2">
-                {purchaseMessage.type === 'success' ? (
-                  <Sparkles className="w-4 h-4 text-green-600" />
-                ) : (
-                  <X className="w-4 h-4 text-red-600" />
-                )}
-                {purchaseMessage.message}
-              </AlertDescription>
-            </Alert>
-          </div>
-        )}
-
-        {/* Main Content */}
-        <div className="container mx-auto px-4 py-8">
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Room Display - scales when inventory is open */}
-            <div className={cn(
-              "transition-all duration-300",
-              inventoryMode ? "lg:col-span-2" : "lg:col-span-3"
-            )}>
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-xl">Your Island</CardTitle>
-                      {inventoryMode === 'room' && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          🏠 Room Decoration Mode - Items placed: {draftRoom.placedItems.length}/{ROOM_ITEM_LIMIT}
-                        </p>
-                      )}
-                    </div>
-                    <EditorControls />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {/* Show avatar preview in avatar mode, room in all other modes */}
-                  {inventoryMode === 'avatar' ? (
-                    <div className="flex items-center justify-center h-[600px] bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg overflow-hidden">
-                      <motion.div
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1, y: 30 }}
-                        exit={{ scale: 0.8, opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <LayeredAvatarRoom
-                          animalType={island.animalType}
-                          items={draftAvatar.equipped}
-                          width={400}
-                          height={400}
-                          animated={true}
-                          animalScale={0.6}
-                          storeCatalog={storeCatalog}
-                        />
-                      </motion.div>
-                    </div>
-                  ) : (
-                    <IslandRoomSticker />
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Inventory Sidebar - only visible when a mode is active */}
-            <AnimatePresence>
-              {inventoryMode && (
-                <motion.div
-                  className="lg:col-span-1"
-                  initial={{ opacity: 0, x: 50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 50 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <UnifiedInventoryPanel />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="mt-6 flex justify-center">
-            <Button
-              size="lg"
-              onClick={() => setShowStore(true)}
-              disabled={!storeStatus?.isOpen}
-              className="flex items-center gap-2"
+        {/* Notification Messages */}
+        <AnimatePresence>
+          {purchaseMessage && (
+            <motion.div
+              className="absolute top-20 left-1/2 transform -translate-x-1/2 z-50"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
             >
-              <ShoppingBag className="w-5 h-5" />
-              Visit Store
-              {storeStatus?.isOpen ? (
-                <Badge variant="secondary" className="ml-1 bg-green-400 text-green-900">Open</Badge>
-              ) : (
-                <Badge variant="secondary" className="ml-1 bg-red-400 text-red-900">Closed</Badge>
+              <Alert className={cn(
+                "border-2 shadow-lg",
+                purchaseMessage.type === 'success' ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'
+              )}>
+                <AlertDescription className="flex items-center gap-2">
+                  {purchaseMessage.type === 'success' ? (
+                    <Sparkles className="w-4 h-4 text-green-600" />
+                  ) : (
+                    <X className="w-4 h-4 text-red-600" />
+                  )}
+                  {purchaseMessage.message}
+                </AlertDescription>
+              </Alert>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Main Room View - Centered */}
+        <MainRoomView 
+          island={island}
+          storeCatalog={storeCatalog}
+          passportCode={passportCode}
+        />
+
+        {/* Bottom Left Info - Coins and Room Items */}
+        <div className="absolute bottom-4 sm:bottom-8 left-4 sm:left-8 z-30">
+          <div className="space-y-2">
+            {/* Coin Balance */}
+            <div className="flex items-center gap-2 bg-yellow-100 rounded-full px-3 py-1.5 shadow-md">
+              <Coins className="w-4 h-4 text-yellow-600" />
+              <span className="font-bold text-sm">{wallet.total}</span>
+              {wallet.pending > 0 && (
+                <span className="text-xs text-yellow-700">({wallet.available} available)</span>
               )}
-            </Button>
+            </div>
+            
+            {/* Room Items Count - Only show when room inventory is open */}
+            {isInventoryOpen && editingMode === 'room' && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="flex items-center gap-2 bg-blue-100 rounded-full px-3 py-1.5 shadow-md"
+              >
+                <Home className="w-4 h-4 text-blue-600" />
+                <span className="font-bold text-sm">
+                  {useIslandStore.getState().draftRoom.placedItems.length} / {ROOM_ITEM_LIMIT}
+                </span>
+              </motion.div>
+            )}
           </div>
         </div>
+
+        {/* Action Buttons - Under the Room */}
+        <div className="absolute bottom-4 sm:bottom-8 left-1/2 transform -translate-x-1/2 z-30">
+          <div className="flex items-center gap-2 sm:gap-4">
+            {/* Customize Avatar Button */}
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                const store = useIslandStore.getState();
+                if (store.ui.isInventoryOpen && store.ui.editingMode === 'avatar') {
+                  // If avatar panel is open, close it
+                  store.closeInventory();
+                } else {
+                  // Open avatar panel (will handle unsaved changes if needed)
+                  store.openInventory('avatar');
+                }
+              }}
+              className={cn(
+                "w-12 h-12 sm:w-16 sm:h-16 rounded-full shadow-lg flex items-center justify-center transition-colors",
+                isInventoryOpen && editingMode === 'avatar'
+                  ? "bg-purple-700 text-white ring-4 ring-purple-400"
+                  : "bg-purple-600 hover:bg-purple-700 text-white"
+              )}
+              title="Customize Avatar"
+            >
+              <Wand2 className="w-5 h-5 sm:w-7 sm:h-7" />
+            </motion.button>
+
+            {/* Decorate Room Button */}
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                const store = useIslandStore.getState();
+                if (store.ui.isInventoryOpen && store.ui.editingMode === 'room') {
+                  // If room panel is open, close it
+                  store.closeInventory();
+                } else {
+                  // Open room panel (will handle unsaved changes if needed)
+                  store.openInventory('room');
+                }
+              }}
+              className={cn(
+                "w-12 h-12 sm:w-16 sm:h-16 rounded-full shadow-lg flex items-center justify-center transition-colors",
+                isInventoryOpen && editingMode === 'room'
+                  ? "bg-blue-700 text-white ring-4 ring-blue-400"
+                  : "bg-blue-600 hover:bg-blue-700 text-white"
+              )}
+              title="Decorate Room"
+            >
+              <Home className="w-5 h-5 sm:w-7 sm:h-7" />
+            </motion.button>
+
+            {/* Store Button */}
+            <motion.button
+              whileHover={{ scale: storeStatus?.isOpen ? 1.1 : 1 }}
+              whileTap={{ scale: storeStatus?.isOpen ? 0.95 : 1 }}
+              onClick={() => {
+                if (!storeStatus?.isOpen) return;
+                
+                const store = useIslandStore.getState();
+                
+                // Exit editing mode if active
+                if (store.ui.editingMode) {
+                  store.closeInventory();
+                  useIslandStore.setState((state) => ({
+                    ui: {
+                      ...state.ui,
+                      editingMode: null,
+                      inventoryMode: null,
+                    },
+                  }));
+                }
+                setShowStore(true);
+              }}
+              className={cn(
+                "w-12 h-12 sm:w-16 sm:h-16 rounded-full shadow-lg flex items-center justify-center transition-colors relative",
+                storeStatus?.isOpen 
+                  ? "bg-green-600 hover:bg-green-700 text-white cursor-pointer" 
+                  : "bg-gray-400 text-gray-600 cursor-not-allowed"
+              )}
+              title={storeStatus?.isOpen ? "Visit Store" : "Store Closed"}
+              disabled={!storeStatus?.isOpen}
+            >
+              <ShoppingBag className="w-5 h-5 sm:w-7 sm:h-7" />
+              {!storeStatus?.isOpen && (
+                <div className="absolute -bottom-1 -right-1 bg-red-500 text-white text-[10px] sm:text-xs rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center font-bold">
+                  ✕
+                </div>
+              )}
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Inventory Panel Overlay */}
+        <AnimatePresence>
+          {isInventoryOpen && (
+            <InventoryPanel
+              editingMode={editingMode}
+              isMobile={isMobile}
+              storeCatalog={storeCatalog}
+            />
+          )}
+        </AnimatePresence>
 
         {/* Store Modal */}
         <StoreModal

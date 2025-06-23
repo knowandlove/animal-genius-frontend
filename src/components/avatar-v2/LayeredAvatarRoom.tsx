@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { ANIMAL_CONFIGS } from '@/config/animal-sizing';
 import { getAssetUrl } from '@/utils/cloud-assets';
 import { useStoreItems, useItemPositions } from '@/contexts/StoreDataContext';
+import { getAnimalScale, getItemScale, parsePositionData, AVATAR_RENDER_CONFIG } from '@/utils/avatar-render';
 
 interface AvatarLayer {
   id: string;
@@ -31,7 +32,6 @@ interface LayeredAvatarRoomProps {
   onClick?: () => void;
   className?: string;
   animated?: boolean;
-  animalScale?: number; // New prop to control animal scale
   storeCatalog?: any[]; // Optional prop to pass store catalog directly
 }
 
@@ -50,13 +50,12 @@ const animalEmojis: Record<string, string> = {
 
 function LayeredAvatarRoom({
   animalType,
-  width = 504,
-  height = 504,
+  width = 600,  // Changed default to 600
+  height = 600, // Changed default to 600
   items = {},
   onClick,
   className,
   animated = true,
-  animalScale = 1, // Default to full size
   storeCatalog, // Optional prop to use instead of context
 }: LayeredAvatarRoomProps) {
   const [isHovered, setIsHovered] = useState(false);
@@ -99,27 +98,25 @@ function LayeredAvatarRoom({
     );
     
     if (position) {
-      return {
-        x: position.position_x || 50,
-        y: position.position_y || 50,
-        scale: (position.scale || 50) / 100,
-        rotation: position.rotation || 0
-      };
+      return parsePositionData(position);
     }
     
     return null;
   };
 
+  // Calculate size ratio for scale-aware positioning
+  const sizeRatio = width / AVATAR_RENDER_CONFIG.standardContainerSize;
+
   // Build layers array
   const layers: AvatarLayer[] = [
-    // Base animal layer - use the provided scale
+    // Base animal layer - using unified scale
     {
       id: 'base',
       src: getAnimalImage(),
       emoji: animalEmojis[animalType.toLowerCase()] || '🐾',
       zIndex: 1,
-      position: { top: '50%', left: '50%' },
-      scale: animalScale, // Use the prop instead of hardcoded value
+      position: AVATAR_RENDER_CONFIG.baseAnimalPosition,
+      scale: getAnimalScale(animalType), // No container size needed anymore
     },
   ];
 
@@ -149,7 +146,7 @@ function LayeredAvatarRoom({
           top: `${dbPosition.y}%`, 
           left: `${dbPosition.x}%` 
         },
-        scale: dbPosition.scale,
+        scale: getItemScale(dbPosition.scale * 100, animalType) * sizeRatio,
         rotation: dbPosition.rotation,
       });
     } else {
@@ -163,7 +160,7 @@ function LayeredAvatarRoom({
           top: '50%', 
           left: '50%' 
         },
-        scale: 0.5,
+        scale: 0.5 * sizeRatio,
         rotation: 0,
       });
     }
@@ -172,11 +169,11 @@ function LayeredAvatarRoom({
   return (
     <div
       className={cn(
-        'relative cursor-pointer transition-all duration-300',
+        'relative cursor-pointer transition-all duration-300 w-full h-full',
         isHovered && 'scale-105',
         className
       )}
-      style={{ width, height, overflow: 'visible' }}
+      style={{ overflow: 'visible' }}
       onClick={handleClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

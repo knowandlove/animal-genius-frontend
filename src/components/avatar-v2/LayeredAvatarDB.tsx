@@ -4,6 +4,7 @@ import { ANIMAL_CONFIGS } from '@/config/animal-sizing';
 import { getItemFolder } from '@shared/currency-types';
 import { getAssetUrl } from '@/utils/cloud-assets';
 import { useStoreItems, useItemPositions } from '@/contexts/StoreDataContext';
+import { getAnimalScale, getItemScale, parsePositionData, AVATAR_RENDER_CONFIG } from '@/utils/avatar-render';
 
 interface AvatarLayer {
   id: string;
@@ -73,12 +74,11 @@ function LayeredAvatarDB({
   const getAnimalImage = () => {
     const normalizedAnimal = animalType.toLowerCase().replace(' ', '-');
     
-    // Use head icons from cloud storage
-    // Special case for border collie -> collie.png
-    const fileName = normalizedAnimal === 'border-collie' ? 'collie' : normalizedAnimal;
+    // Use full-body images for consistency with positioning tool
+    const animalFileName = normalizedAnimal === 'border-collie' ? 'border_collie' : normalizedAnimal;
     
     // Use the cloud assets utility which handles the cloud/local switching
-    return getAssetUrl(`/images/${fileName}.png`);
+    return getAssetUrl(`/animals/full-body/${animalFileName}.png`);
   };
 
   // Get position from database or use default
@@ -108,14 +108,7 @@ function LayeredAvatarDB({
 
     
     if (position) {
-      const result = {
-        x: position.position_x || 50,
-        y: position.position_y || 50,
-        scale: (position.scale || 50) / 100,
-        rotation: position.rotation || 0
-      };
-
-      return result;
+      return parsePositionData(position);
     }
     
     // No position found, using default
@@ -124,13 +117,14 @@ function LayeredAvatarDB({
 
   // Build layers array
   const layers: AvatarLayer[] = [
-    // Base animal layer
+    // Base animal layer - using unified scale
     {
       id: 'base',
       src: getAnimalImage(),
       emoji: animalEmojis[animalType.toLowerCase()] || '🐾',
       zIndex: 1,
-      position: { top: '50%', left: '50%' },
+      position: AVATAR_RENDER_CONFIG.baseAnimalPosition,
+      scale: getAnimalScale(animalType),
     },
   ];
 
@@ -162,7 +156,7 @@ function LayeredAvatarDB({
       emoji: '🎩', // Generic fallback emoji
       zIndex,
       position,
-      scale: dbPosition?.scale || 0.5,
+      scale: dbPosition ? getItemScale(dbPosition.scale * 100, animalType) : 0.5,
       rotation: dbPosition?.rotation || 0,
     });
   });
@@ -191,17 +185,17 @@ function LayeredAvatarDB({
           ...layer.position,
           transform: `
             translate(-50%, -50%) 
-            scale(${isBaseLayer ? (animalConfig.baseScale || 1) : (layer.scale || 1)}) 
+            scale(${layer.scale || 1}) 
             rotate(${layer.rotation || 0}deg)
           `,
           transformOrigin: 'center',
           transition: animated ? 'all 0.3s ease' : undefined,
           // Base layer should fill the container
           ...(isBaseLayer ? {
-            width: '75%',
-            height: '75%',
-            maxWidth: '75%',
-            maxHeight: '75%',
+            width: '100%',
+            height: '100%',
+            maxWidth: '100%',
+            maxHeight: '100%',
           } : {}),
         };
         

@@ -98,29 +98,34 @@ export const CURRENCY_CONSTANTS = {
   STARTING_BALANCE: 0,         // Starting currency balance
 } as const;
 
-// Helper function to get the correct folder for an item
-// This is now based on item type from the database
-export function getItemFolder(itemType: ItemType, itemId: string): string {
-  // Special case for legacy glasses items
-  if (itemId === 'greenblinds' || itemId === 'hearts' || itemId === 'sunglasses' || itemId === 'star_glasses') {
-    return 'glasses';
-  }
-  
-  // Based on item type
-  if (itemType === 'avatar_hat') {
-    return 'hats';
-  }
-  
-  // Check if it's glasses based on naming pattern
-  if (itemId.includes('glass') || itemId.includes('blind') || itemId.includes('shade')) {
-    return 'glasses';
-  }
-  
-  // Default to accessories
-  return 'accessories';
+// ============================================
+// DEPRECATED: Store catalog moved to database!
+// ============================================
+// The store catalog is now managed in the database (Supabase).
+// These exports are kept temporarily for backwards compatibility
+// but should NOT be used in new code.
+// 
+// Use the API endpoints instead:
+// - GET /api/store/catalog - Get all store items
+// - GET /api/island-page-data/:passportCode - Get page data including store
+// ============================================
+
+/** @deprecated Use database/API instead */
+export const STORE_CATALOG: StoreItem[] = [];
+
+/** @deprecated This function always returns undefined. Use server data instead. */
+export function getItemById(itemId: string): StoreItem | undefined {
+  console.warn('getItemById is deprecated. Store items should come from the server.');
+  return undefined;
 }
 
-// Helper function to check affordability
+/** @deprecated This function always returns empty array. Use server data instead. */
+export function getItemsByType(type: ItemType): StoreItem[] {
+  console.warn('getItemsByType is deprecated. Store items should come from the server.');
+  return [];
+}
+
+// This is still valid as it's just a utility
 export function canAffordItem(balance: number, itemCost: number): boolean {
   return balance >= itemCost;
 }

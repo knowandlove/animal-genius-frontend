@@ -76,8 +76,10 @@ export default function AvatarItemPositioner() {
     item.itemType === 'avatar_hat' || item.itemType === 'avatar_accessory'
   );
   
-  // Get the base item scale for the current animal
-  const animalItemScale = ANIMAL_CONFIGS[selectedAnimal]?.itemScale || 1;
+  // Update item in positioning tool
+  const handleItemPositionChange = (position: PositionData) => {
+    setCurrentPosition(position);
+  };
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [showExport, setShowExport] = useState(false);
   const [exportData, setExportData] = useState<any>(null);
@@ -683,7 +685,7 @@ export default function AvatarItemPositioner() {
                         <LayeredAvatarPositionerWithImage
                           animalType={selectedAnimal}
                           selectedItem={selectedItem}
-                          selectedItemImageUrl={selectedItemData?.imageUrl}
+                          selectedItemImageUrl={selectedItemData?.imageUrl || selectedItemData?.imageURL}
                           itemPosition={currentPosition}
                           width={600}
                           height={600}

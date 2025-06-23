@@ -2,6 +2,7 @@ import React, { useState, CSSProperties, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { ANIMAL_CONFIGS } from '@/config/animal-sizing';
 import { getItemFolder } from '@shared/currency-types';
+import { getAnimalScale, getItemScale, AVATAR_RENDER_CONFIG } from '@/utils/avatar-render';
 
 interface AvatarLayer {
   id: string;
@@ -115,13 +116,14 @@ function LayeredAvatarPositioner({
 
   // Build layers array
   const layers: AvatarLayer[] = [
-    // Base animal layer
+    // Base animal layer - using unified positioning
     {
       id: 'base',
       src: getAnimalImage(),
       emoji: animalEmojis[animalType.toLowerCase()] || '🐾',
       zIndex: 1,
-      position: { top: '50%', left: '50%' },
+      position: AVATAR_RENDER_CONFIG.baseAnimalPosition,
+      scale: getAnimalScale(animalType),
     },
   ];
 
@@ -185,18 +187,12 @@ function LayeredAvatarPositioner({
           ...layer.position,
           transform: `
             translate(-50%, -50%) 
-            scale(${isBaseLayer ? (animalConfig.baseScale || 1) : (layer.scale || 1)}) 
+            scale(${layer.scale || 1}) 
             rotate(${layer.rotation || 0}deg)
           `,
           transformOrigin: 'center',
           transition: animated ? 'all 0.3s ease' : undefined,
-          // Base layer should fill the container
-          ...(isBaseLayer ? {
-            width: '75%',
-            height: '75%',
-            maxWidth: '75%',
-            maxHeight: '75%',
-          } : {}),
+          // Remove the width/height for base layer - let transform handle it
         };
 
         if (layer.src) {
@@ -205,7 +201,7 @@ function LayeredAvatarPositioner({
               key={layer.id}
               src={layer.src}
               alt=""
-              className={isBaseLayer ? "object-contain" : "absolute"}
+              className={isBaseLayer ? "object-contain w-full h-full" : "absolute"}
               style={style}
               draggable={false}
               onError={(e) => {
