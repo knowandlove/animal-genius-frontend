@@ -108,6 +108,7 @@ export interface IslandStore {
     mode: 'normal' | 'placing' | 'inventory' | 'customizing';
     inventoryMode: InventoryMode;
     isInventoryOpen: boolean;
+    isStoreModalOpen: boolean;
     editingMode: EditingMode | null;
     draggedItem?: DraggedItem;
     showTutorial: boolean;
@@ -163,6 +164,9 @@ export interface IslandStore {
   addToInventory: (item: StoreItem) => void;
   removeFromInventory: (itemId: ItemId) => void;
   setShowTutorial: (show: boolean) => void;
+  openStoreModal: () => void;
+  closeStoreModal: () => void;
+  exitEditingMode: () => void;
   undo: () => void;
   canUndo: () => boolean;
   isDirty: () => boolean;
@@ -205,6 +209,7 @@ export const useIslandStore = create<IslandStore>()(
       mode: 'normal',
       inventoryMode: null,
       isInventoryOpen: false,
+      isStoreModalOpen: false,
       editingMode: null,
       draggedItem: undefined,
       showTutorial: true,
@@ -656,6 +661,29 @@ export const useIslandStore = create<IslandStore>()(
     setShowTutorial: (show) => {
       set((state) => ({
         ui: { ...state.ui, showTutorial: show },
+      }));
+    },
+    
+    openStoreModal: () => {
+      set((state) => ({
+        ui: { ...state.ui, isStoreModalOpen: true },
+      }));
+    },
+    
+    closeStoreModal: () => {
+      set((state) => ({
+        ui: { ...state.ui, isStoreModalOpen: false },
+      }));
+    },
+    
+    exitEditingMode: () => {
+      get().closeInventory();
+      set((state) => ({
+        ui: {
+          ...state.ui,
+          editingMode: null,
+          inventoryMode: null,
+        },
       }));
     },
     
