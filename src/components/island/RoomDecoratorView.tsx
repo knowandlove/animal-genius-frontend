@@ -12,7 +12,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { UnsavedChangesModal } from '@/components/modals/UnsavedChangesModal';
 
 export default function RoomDecoratorView() {
   const inventory = useIslandStore((state) => state.inventory);
@@ -23,11 +22,8 @@ export default function RoomDecoratorView() {
   const updateRoomPatterns = useIslandStore((state) => state.updateRoomPatterns);
   const setInventoryMode = useIslandStore((state) => state.setInventoryMode);
   const closeInventory = useIslandStore((state) => state.closeInventory);
-  const showUnsavedChangesModal = useIslandStore((state) => state.ui.showUnsavedChangesModal);
-  const inventoryMode = useIslandStore((state) => state.ui.inventoryMode);
-  const handleUnsavedChangesSave = useIslandStore((state) => state.handleUnsavedChangesSave);
-  const handleUnsavedChangesDiscard = useIslandStore((state) => state.handleUnsavedChangesDiscard);
-  const handleUnsavedChangesCancel = useIslandStore((state) => state.handleUnsavedChangesCancel);
+  const exitEditingMode = useIslandStore((state) => state.exitEditingMode);
+  const openStoreModal = useIslandStore((state) => state.openStoreModal);
   const [currentTab, setCurrentTab] = useState('furniture');
 
   // Filter inventory for room items only
@@ -123,26 +119,17 @@ export default function RoomDecoratorView() {
   };
 
   return (
-    <>
-      <UnsavedChangesModal
-        isOpen={showUnsavedChangesModal}
-        onSave={handleUnsavedChangesSave}
-        onDiscard={handleUnsavedChangesDiscard}
-        onCancel={handleUnsavedChangesCancel}
-        mode={inventoryMode || 'room'}
-      />
-      
-      <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col">
       {/* Mode Switcher Buttons */}
-      <div className="flex justify-center gap-2 mb-4">
+      <div className="flex justify-center gap-2 mb-4 overflow-visible">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <motion.button
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setInventoryMode('avatar')}
-                className="w-10 h-10 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow flex items-center justify-center transition-colors"
+                className="w-10 h-10 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow flex items-center justify-center transition-colors relative z-10"
               >
                 <Wand2 className="w-5 h-5" />
               </motion.button>
@@ -157,9 +144,13 @@ export default function RoomDecoratorView() {
           <Tooltip>
             <TooltipTrigger asChild>
               <motion.button
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="w-10 h-10 bg-blue-700 text-white rounded-full shadow flex items-center justify-center cursor-default"
+                onClick={() => {
+                  // Currently in room mode, so just close the panel
+                  closeInventory();
+                }}
+                className="w-10 h-10 bg-blue-700 text-white rounded-full shadow flex items-center justify-center cursor-pointer relative z-10"
               >
                 <Home className="w-5 h-5" />
               </motion.button>
@@ -174,14 +165,13 @@ export default function RoomDecoratorView() {
           <Tooltip>
             <TooltipTrigger asChild>
               <motion.button
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   closeInventory();
-                  // This would trigger opening the store modal
-                  // You might need to pass a callback or use a global state
+                  openStoreModal();
                 }}
-                className="w-10 h-10 bg-green-600 hover:bg-green-700 text-white rounded-full shadow flex items-center justify-center transition-colors"
+                className="w-10 h-10 bg-green-600 hover:bg-green-700 text-white rounded-full shadow flex items-center justify-center transition-colors relative z-10"
               >
                 <ShoppingBag className="w-5 h-5" />
               </motion.button>
@@ -245,8 +235,8 @@ export default function RoomDecoratorView() {
           </span>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          <TabsContent value="furniture" className="mt-0">
+        <div className="flex-1 overflow-visible px-1">
+          <TabsContent value="furniture" className="mt-0 overflow-y-auto overflow-x-visible h-full">
             {furnitureItems.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <Sofa className="w-12 h-12 mx-auto mb-2 text-gray-400" />
@@ -254,13 +244,13 @@ export default function RoomDecoratorView() {
                 <p className="text-xs mt-1">Visit the store to get some.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-2 overflow-hidden">
+              <div className="grid grid-cols-3 gap-3 p-4">
                 {renderItemGrid(furnitureItems, 'furniture')}
               </div>
             )}
           </TabsContent>
 
-          <TabsContent value="objects" className="mt-0">
+          <TabsContent value="objects" className="mt-0 overflow-y-auto overflow-x-visible h-full">
             {objectItems.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <Box className="w-12 h-12 mx-auto mb-2 text-gray-400" />
@@ -268,13 +258,13 @@ export default function RoomDecoratorView() {
                 <p className="text-xs mt-1">Visit the store to get some.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-2 overflow-hidden">
+              <div className="grid grid-cols-3 gap-3 p-4">
                 {renderItemGrid(objectItems, 'objects')}
               </div>
             )}
           </TabsContent>
 
-          <TabsContent value="colors" className="mt-0">
+          <TabsContent value="colors" className="mt-0 overflow-y-auto overflow-x-visible h-full">
             <div className="space-y-4">
               {/* Wall Color */}
               <div>
@@ -363,7 +353,6 @@ export default function RoomDecoratorView() {
           </TabsContent>
         </div>
       </Tabs>
-      </div>
-    </>
+    </div>
   );
 }

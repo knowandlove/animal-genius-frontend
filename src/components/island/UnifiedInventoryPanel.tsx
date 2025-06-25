@@ -17,7 +17,7 @@ export default function UnifiedInventoryPanel() {
   return (
     <div className="h-full flex flex-col">
       {/* Content area - will grow and scroll */}
-      <ScrollArea className="flex-1 p-4">
+      <div className="flex-1 p-4 overflow-y-auto overflow-x-visible">
         {inventoryMode === 'avatar' && (
           <AvatarCustomizerView 
             selectedPreviewItem={selectedPreviewItem}
@@ -25,7 +25,7 @@ export default function UnifiedInventoryPanel() {
           />
         )}
         {inventoryMode === 'room' && <RoomDecoratorView />}
-      </ScrollArea>
+      </div>
     </div>
   );
 }

@@ -7,6 +7,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { DataState } from "@/components/data-states";
+import { safeHandler } from "@/lib/error-handling";
+import { PerformanceMonitor } from "@/components/PerformanceMonitor";
 
 // Import new components
 import MainRoomView from "@/components/island/MainRoomView";
@@ -29,9 +32,11 @@ export default function StudentIsland() {
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const [purchaseMessage, setPurchaseMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [showPerformanceMonitor, setShowPerformanceMonitor] = useState(false);
 
   // Island store
   const isInventoryOpen = useIslandStore((state) => state.ui.isInventoryOpen);
+  const showInventoryTab = useIslandStore((state) => state.ui.showInventoryTab);
   const editingMode = useIslandStore((state) => state.ui.editingMode);
   const isStoreModalOpen = useIslandStore((state) => state.ui.isStoreModalOpen);
   const openStoreModal = useIslandStore((state) => state.openStoreModal);
@@ -53,10 +58,10 @@ export default function StudentIsland() {
     }
   }, [shouldShowWelcome]);
 
-  const handlePurchaseClick = (item: StoreItem) => {
+  const handlePurchaseClick = safeHandler((item: StoreItem) => {
     setSelectedItem(item);
     setShowPurchaseDialog(true);
-  };
+  }, 'Purchase click');
 
   const handleMutationSettled = (message: { type: 'success' | 'error'; message: string }) => {
     setPurchaseMessage(message);
@@ -64,7 +69,7 @@ export default function StudentIsland() {
     setTimeout(() => setPurchaseMessage(null), 5000);
   };
 
-  const confirmPurchase = () => {
+  const confirmPurchase = safeHandler(() => {
     if (!selectedItem || !passportCode) {
       handleMutationSettled({ 
         type: 'error', 
@@ -84,7 +89,7 @@ export default function StudentIsland() {
         });
       },
     });
-  };
+  }, 'Confirm purchase');
 
   // Check if item has pending request
   const hasPendingRequest = (itemId: string) => {
@@ -93,47 +98,42 @@ export default function StudentIsland() {
     );
   };
 
-  const handleWelcomeComplete = () => {
+  const handleWelcomeComplete = safeHandler(() => {
     setShowWelcome(false);
     localStorage.setItem(`island-welcomed-${passportCode}`, 'true');
-  };
+  }, 'Welcome complete');
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
-        <Card className="p-8">
-          <div className="text-center">
-            <LoadingSpinner />
-            <p className="mt-4 text-lg">Loading your island...</p>
-          </div>
-        </Card>
-      </div>
-    );
-  }
+  // Toggle performance monitor with keyboard shortcut
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + Shift + P
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'P') {
+        e.preventDefault();
+        setShowPerformanceMonitor(prev => !prev);
+      }
+    };
 
-  if (error || !pageData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-pink-50">
-        <Card className="p-8 max-w-md">
-          <div className="text-center">
-            <div className="text-4xl mb-4">🏝️</div>
-            <h2 className="text-xl font-bold mb-2">Island Not Found</h2>
-            <p className="text-muted-foreground mb-4">
-              We couldn't find an island with passport code: <span className="font-mono">{passportCode}</span>
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Double-check your passport code or ask your teacher for help.
-            </p>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  const { island, wallet, storeStatus, storeCatalog } = pageData;
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
 
   return (
-    <>
+    <DataState
+      isLoading={isLoading}
+      error={error}
+      isEmpty={!pageData}
+      loadingMessage="Loading your island..."
+      errorMessage={error ? "Island Not Found" : undefined}
+      emptyTitle="Island Not Found"
+      emptyMessage={`We couldn't find an island with passport code: ${passportCode}. Double-check your passport code or ask your teacher for help.`}
+      className="min-h-screen"
+    >
+
+      {pageData && (() => {
+        const { island, wallet, storeStatus, storeCatalog } = pageData;
+        
+        return (
+          <>
       {/* Welcome Animation */}
       <AnimatePresence>
         {showWelcome && island && (
@@ -202,7 +202,7 @@ export default function StudentIsland() {
 
         {/* Inventory Panel Overlay */}
         <AnimatePresence>
-          {isInventoryOpen && (
+          {showInventoryTab && (
             <InventoryPanel
               editingMode={editingMode}
               isMobile={isMobile}
@@ -235,7 +235,15 @@ export default function StudentIsland() {
           onConfirm={confirmPurchase}
           isPending={purchaseMutation.isPending}
         />
-      </div>
-    </>
+
+        {/* Performance Monitor (toggle with Ctrl+Shift+P) */}
+        {showPerformanceMonitor && (
+          <PerformanceMonitor onClose={() => setShowPerformanceMonitor(false)} />
+        )}
+          </div>
+          </>
+        );
+      })()}
+    </DataState>
   );
 }

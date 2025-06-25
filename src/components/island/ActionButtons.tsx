@@ -1,5 +1,5 @@
-import { ShoppingBag, Wand2, Home } from "lucide-react";
-import { motion } from "framer-motion";
+import { ShoppingBag, Wand2, Home, Undo2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useIslandStore } from "@/stores/islandStore";
 
@@ -12,6 +12,8 @@ export default function ActionButtons({ storeIsOpen, onStoreClick }: ActionButto
   const store = useIslandStore();
   const isInventoryOpen = store.ui.isInventoryOpen;
   const editingMode = store.ui.editingMode;
+  const undo = store.undo;
+  const canUndo = store.canUndo();
 
   const handleEditModeClick = (mode: 'avatar' | 'room') => {
     if (isInventoryOpen && editingMode === mode) {
@@ -34,6 +36,30 @@ export default function ActionButtons({ storeIsOpen, onStoreClick }: ActionButto
   return (
     <div className="absolute bottom-4 sm:bottom-8 left-1/2 transform -translate-x-1/2 z-30">
       <div className="flex items-center gap-2 sm:gap-4">
+        {/* Undo Button - Shows when editing */}
+        <AnimatePresence>
+          {editingMode && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              whileHover={{ scale: canUndo ? 1.1 : 1 }}
+              whileTap={{ scale: canUndo ? 0.95 : 1 }}
+              onClick={undo}
+              disabled={!canUndo}
+              className={cn(
+                "w-12 h-12 sm:w-16 sm:h-16 rounded-full shadow-lg flex items-center justify-center transition-colors",
+                canUndo
+                  ? "bg-gray-600 hover:bg-gray-700 text-white cursor-pointer"
+                  : "bg-gray-400 text-gray-600 cursor-not-allowed opacity-50"
+              )}
+              title={canUndo ? "Undo last action" : "Nothing to undo"}
+            >
+              <Undo2 className="w-5 h-5 sm:w-7 sm:h-7" />
+            </motion.button>
+          )}
+        </AnimatePresence>
+
         {/* Customize Avatar Button */}
         <motion.button
           whileHover={{ scale: 1.1 }}

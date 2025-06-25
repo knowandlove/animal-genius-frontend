@@ -37,6 +37,9 @@ export default function AvatarCustomizerView({
   const storeItems = useStoreItems(); // Get store items to access image URLs
   const setInventoryMode = useIslandStore((state) => state.setInventoryMode);
   const closeInventory = useIslandStore((state) => state.closeInventory);
+  const editingMode = useIslandStore((state) => state.ui.editingMode);
+  const exitEditingMode = useIslandStore((state) => state.exitEditingMode);
+  const openStoreModal = useIslandStore((state) => state.openStoreModal);
   const [currentTab, setCurrentTab] = useState('hat');
 
   // Filter inventory for avatar items only
@@ -163,7 +166,7 @@ export default function AvatarCustomizerView({
                 whileTap={{ scale: 0.95 }}
                 onClick={() => handleItemClick(slot, item.id, item)}
                 className={cn(
-                  "w-16 h-16 p-0.5 rounded-lg border-2 transition-all flex items-center justify-center relative overflow-hidden group",
+                  "w-16 h-16 p-2 rounded-lg border-2 transition-all flex items-center justify-center relative overflow-hidden group",
                   isEquipped
                     ? "border-purple-500 bg-purple-50 shadow-md ring-2 ring-purple-500 ring-inset"
                     : selectedPreviewItem?.id === item.id
@@ -177,13 +180,13 @@ export default function AvatarCustomizerView({
                   <img 
                     src={getItemImage(item.id)!} 
                     alt={item.name}
-                    className="w-8 h-8 object-contain transition-transform group-hover:scale-110"
+                    className="w-full h-full object-contain transition-transform group-hover:scale-110"
                   />
                 ) : (
                   <div className="text-lg transition-transform group-hover:scale-110">{getItemEmoji(item.id)}</div>
                 )}
                 {isEquipped && (
-                  <div className="absolute -bottom-1 -right-1 bg-purple-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">
+                  <div className="absolute -bottom-1 -right-1 bg-purple-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold z-10">
                     ✓
                   </div>
                 )}
@@ -239,14 +242,18 @@ export default function AvatarCustomizerView({
   return (
     <div className="h-full flex flex-col">
       {/* Mode Switcher Buttons */}
-      <div className="flex justify-center gap-2 mb-4">
+      <div className="flex justify-center gap-2 mb-4 overflow-visible">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <motion.button
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="w-10 h-10 bg-purple-700 text-white rounded-full shadow flex items-center justify-center cursor-default"
+                onClick={() => {
+                  // Currently in avatar mode, so just close the panel
+                  closeInventory();
+                }}
+                className="w-10 h-10 bg-purple-700 text-white rounded-full shadow flex items-center justify-center cursor-pointer relative z-10"
               >
                 <Wand2 className="w-5 h-5" />
               </motion.button>
@@ -261,10 +268,10 @@ export default function AvatarCustomizerView({
           <Tooltip>
             <TooltipTrigger asChild>
               <motion.button
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setInventoryMode('room')}
-                className="w-10 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow flex items-center justify-center transition-colors"
+                className="w-10 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow flex items-center justify-center transition-colors relative z-10"
               >
                 <Home className="w-5 h-5" />
               </motion.button>
@@ -279,13 +286,13 @@ export default function AvatarCustomizerView({
           <Tooltip>
             <TooltipTrigger asChild>
               <motion.button
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   closeInventory();
-                  // This would trigger opening the store modal
+                  openStoreModal();
                 }}
-                className="w-10 h-10 bg-green-600 hover:bg-green-700 text-white rounded-full shadow flex items-center justify-center transition-colors"
+                className="w-10 h-10 bg-green-600 hover:bg-green-700 text-white rounded-full shadow flex items-center justify-center transition-colors relative z-10"
               >
                 <ShoppingBag className="w-5 h-5" />
               </motion.button>
@@ -364,8 +371,8 @@ export default function AvatarCustomizerView({
           </span>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          <TabsContent value="hat" className="mt-0">
+        <div className="flex-1 overflow-y-auto overflow-x-visible px-1">
+          <TabsContent value="hat" className="mt-0 overflow-visible">
             {categorizedItems.hat.length === 0 && !draftAvatar.equipped.hat ? (
               <div className="text-center py-8 text-gray-500">
                 <HardHat className="w-12 h-12 mx-auto mb-2 text-gray-400" />
@@ -373,13 +380,13 @@ export default function AvatarCustomizerView({
                 <p className="text-xs mt-1">Visit the store to get some.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-2 overflow-hidden">
+              <div className="grid grid-cols-3 gap-3 p-2">
                 {renderItemGrid(categorizedItems.hat, 'hat')}
               </div>
             )}
           </TabsContent>
 
-          <TabsContent value="glasses" className="mt-0">
+          <TabsContent value="glasses" className="mt-0 overflow-visible">
             {categorizedItems.glasses.length === 0 && !draftAvatar.equipped.glasses ? (
               <div className="text-center py-8 text-gray-500">
                 <Glasses className="w-12 h-12 mx-auto mb-2 text-gray-400" />
@@ -387,13 +394,13 @@ export default function AvatarCustomizerView({
                 <p className="text-xs mt-1">Visit the store to get some.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-2 overflow-hidden">
+              <div className="grid grid-cols-3 gap-3 p-2">
                 {renderItemGrid(categorizedItems.glasses, 'glasses')}
               </div>
             )}
           </TabsContent>
 
-          <TabsContent value="accessory" className="mt-0">
+          <TabsContent value="accessory" className="mt-0 overflow-visible">
             {categorizedItems.accessory.length === 0 && !draftAvatar.equipped.accessory ? (
               <div className="text-center py-8 text-gray-500">
                 <Gem className="w-12 h-12 mx-auto mb-2 text-gray-400" />
@@ -401,7 +408,7 @@ export default function AvatarCustomizerView({
                 <p className="text-xs mt-1">Visit the store to get some.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-2 overflow-hidden">
+              <div className="grid grid-cols-3 gap-3 p-2">
                 {renderItemGrid(categorizedItems.accessory, 'accessory')}
               </div>
             )}

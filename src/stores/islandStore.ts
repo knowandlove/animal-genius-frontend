@@ -2,8 +2,13 @@ import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import type { StoreItem } from '@shared/currency-types';
 import { apiRequest } from '@/lib/queryClient';
+import { handleAsync, showErrorToast } from '@/lib/error-handling';
 
-// Simple debounce function
+// =============================================================================
+// UTILITIES
+// =============================================================================
+
+// Simple debounce function for auto-saving
 function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T & { cancel: () => void } {
   let timeout: NodeJS.Timeout | null = null;
   
@@ -19,13 +24,22 @@ function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T &
   return debounced as T & { cancel: () => void };
 }
 
-// Types for our Animal Crossing-style island
+// =============================================================================
+// TYPE DEFINITIONS
+// =============================================================================
+
+// Basic Types
 export type AnimalType = string; // e.g., 'dolphin', 'elephant', etc.
 export type ItemId = string;
 export type RoomTheme = 'wood' | 'modern' | 'cozy' | 'space' | 'underwater' | 'blank';
+export type AvatarAnimation = 'idle' | 'happy' | 'sleeping' | 'wave' | 'dance';
+export type InventoryMode = 'avatar' | 'room' | null;
+export type EditingMode = 'avatar' | 'room';
 
+// Constants
 export const ROOM_ITEM_LIMIT = 50; // Maximum items allowed in a room for performance
 
+// Room-related types
 export interface PlacedItem {
   id: string;
   itemId: ItemId;
@@ -35,9 +49,7 @@ export interface PlacedItem {
   rotation?: 0 | 90 | 180 | 270;
 }
 
-// Hotspots no longer needed for sticker-style placement
-// export interface Hotspot {...}
-
+// Inventory types
 export interface InventoryItem extends StoreItem {
   quantity?: number;
   obtainedAt?: Date;
@@ -49,15 +61,7 @@ export interface DraggedItem {
   originalPosition?: { x: number; y: number };
 }
 
-// Animation states for the avatar
-export type AvatarAnimation = 'idle' | 'happy' | 'sleeping' | 'wave' | 'dance';
-
-// Inventory modes
-export type InventoryMode = 'avatar' | 'room' | null;
-export type EditingMode = 'avatar' | 'room';
-
-// Main store interface
-// Undo history types
+// Undo/Redo types
 export interface UndoHistoryItem {
   type: 'avatar' | 'room';
   timestamp: Date;
@@ -67,13 +71,17 @@ export interface UndoHistoryItem {
   };
 }
 
+// =============================================================================
+// MAIN STORE INTERFACE
+// =============================================================================
+
 export interface IslandStore {
-  // Player data
+  // ===== PLAYER DATA =====
   passportCode: string;
   playerName: string;
   balance: number;
   
-  // Avatar state
+  // ===== AVATAR STATE =====
   avatar: {
     type: AnimalType;
     equipped: {
@@ -86,7 +94,7 @@ export interface IslandStore {
     animation: AvatarAnimation;
   };
   
-  // Room state
+  // ===== ROOM STATE =====
   room: {
     theme: RoomTheme;
     wallColor?: string;
@@ -96,18 +104,19 @@ export interface IslandStore {
     placedItems: PlacedItem[];
   };
   
-  // Inventory
+  // ===== INVENTORY STATE =====
   inventory: {
     items: InventoryItem[];
     filter: 'all' | 'clothing' | 'furniture' | 'special';
     selectedItem?: ItemId;
   };
   
-  // UI state
+  // ===== UI STATE =====
   ui: {
     mode: 'normal' | 'placing' | 'inventory' | 'customizing';
     inventoryMode: InventoryMode;
     isInventoryOpen: boolean;
+    showInventoryTab: boolean; // New: tracks if the tab should be visible
     isStoreModalOpen: boolean;
     editingMode: EditingMode | null;
     draggedItem?: DraggedItem;
@@ -118,7 +127,7 @@ export interface IslandStore {
     pendingModeChange: InventoryMode | null;
   };
   
-  // Draft states for unsaved changes
+  // ===== DRAFT STATES (for unsaved changes) =====
   draftAvatar: {
     equipped: {
       hat?: ItemId;
@@ -134,43 +143,64 @@ export interface IslandStore {
     placedItems: PlacedItem[];
   };
   
-  // Undo history
+  // ===== UNDO/REDO SYSTEM =====
   undoHistory: UndoHistoryItem[];
   maxUndoSteps: number;
   
-  // Actions
+  // =============================================================================
+  // ACTIONS
+  // =============================================================================
+  
+  // ===== INITIALIZATION =====
   initializeFromServerData: (data: any) => void;
+  
+  // ===== PLAYER ACTIONS =====
   setBalance: (balance: number) => void;
+  
+  // ===== AVATAR ACTIONS =====
   setAvatarEquipment: (slot: string, itemId: ItemId | null) => void;
   setAvatarAnimation: (animation: AvatarAnimation) => void;
   moveAvatar: (x: number, y: number) => void;
+  updateDraftAvatar: (slot: string, itemId: ItemId | null) => void;
+  
+  // ===== ROOM ACTIONS =====
   placeItem: (itemId: ItemId, x: number, y: number) => void;
   moveItem: (placedItemId: string, x: number, y: number) => void;
   removeItem: (placedItemId: string) => void;
+  updateDraftRoom: (placedItems: PlacedItem[]) => void;
+  updateRoomColors: (wallColor?: string, floorColor?: string) => void;
+  updateRoomPatterns: (wallPattern?: string, floorPattern?: string) => void;
+  
+  // ===== INVENTORY ACTIONS =====
   setInventoryFilter: (filter: IslandStore['inventory']['filter']) => void;
   selectInventoryItem: (itemId: ItemId | undefined) => void;
+  addToInventory: (item: StoreItem) => void;
+  removeFromInventory: (itemId: ItemId) => void;
+  
+  // ===== UI ACTIONS =====
   setUIMode: (mode: IslandStore['ui']['mode']) => void;
   setInventoryMode: (mode: InventoryMode) => void;
   openInventory: (mode: EditingMode) => void;
   closeInventory: () => void;
-  updateDraftAvatar: (slot: string, itemId: ItemId | null) => void;
-  updateDraftRoom: (placedItems: PlacedItem[]) => void;
-  updateRoomColors: (wallColor?: string, floorColor?: string) => void;
-  updateRoomPatterns: (wallPattern?: string, floorPattern?: string) => void;
   startDragging: (item: DraggedItem) => void;
   stopDragging: () => void;
-  // highlightHotspots removed for sticker-style
-  saveToServer: () => Promise<void>;
-  addToInventory: (item: StoreItem) => void;
-  removeFromInventory: (itemId: ItemId) => void;
   setShowTutorial: (show: boolean) => void;
   openStoreModal: () => void;
   closeStoreModal: () => void;
   exitEditingMode: () => void;
+  
+  // ===== PERSISTENCE ACTIONS =====
+  saveToServer: () => Promise<void>;
+  
+  // ===== UNDO/REDO ACTIONS =====
   undo: () => void;
   canUndo: () => boolean;
   isDirty: () => boolean;
 }
+
+// =============================================================================
+// STORE CREATION
+// =============================================================================
 
 // Create the debounced save function outside the store
 const debouncedSave = debounce(() => {
@@ -180,11 +210,16 @@ const debouncedSave = debounce(() => {
 // Create the store with auto-save functionality
 export const useIslandStore = create<IslandStore>()(
   subscribeWithSelector((set, get) => ({
-    // Initial state
+    // =========================================================================
+    // INITIAL STATE
+    // =========================================================================
+    
+    // Player data
     passportCode: '',
     playerName: '',
     balance: 0,
     
+    // Avatar state
     avatar: {
       type: 'dolphin',
       equipped: {},
@@ -192,6 +227,7 @@ export const useIslandStore = create<IslandStore>()(
       animation: 'idle',
     },
     
+    // Room state
     room: {
       theme: 'wood',
       wallColor: '#f5ddd9',
@@ -199,16 +235,19 @@ export const useIslandStore = create<IslandStore>()(
       placedItems: [],
     },
     
+    // Inventory state
     inventory: {
       items: [],
       filter: 'all',
       selectedItem: undefined,
     },
     
+    // UI state
     ui: {
       mode: 'normal',
       inventoryMode: null,
       isInventoryOpen: false,
+      showInventoryTab: false,
       isStoreModalOpen: false,
       editingMode: null,
       draggedItem: undefined,
@@ -219,6 +258,7 @@ export const useIslandStore = create<IslandStore>()(
       pendingModeChange: null,
     },
     
+    // Draft states
     draftAvatar: {
       equipped: {},
     },
@@ -229,10 +269,15 @@ export const useIslandStore = create<IslandStore>()(
       placedItems: [],
     },
     
+    // Undo system
     undoHistory: [],
     maxUndoSteps: 10,
     
-    // Actions
+    // =========================================================================
+    // ACTION IMPLEMENTATIONS
+    // =========================================================================
+    
+    // ===== INITIALIZATION =====
     initializeFromServerData: (data) => {
       const equipped = data.avatarData?.equipped || {};
       const rawPlacedItems = data.roomData?.furniture || [];
@@ -258,7 +303,7 @@ export const useIslandStore = create<IslandStore>()(
         avatar: {
           type: data.animalType.toLowerCase(),
           equipped: equipped,
-          position: { x: 50, y: 85 }, // Centered horizontally, near bottom
+          position: { x: 50, y: 85 },
           animation: 'idle',
         },
         room: {
@@ -294,8 +339,10 @@ export const useIslandStore = create<IslandStore>()(
       });
     },
     
+    // ===== PLAYER ACTIONS =====
     setBalance: (balance) => set({ balance }),
     
+    // ===== AVATAR ACTIONS =====
     setAvatarEquipment: (slot, itemId) => {
       set((state) => ({
         avatar: {
@@ -330,6 +377,42 @@ export const useIslandStore = create<IslandStore>()(
       }));
     },
     
+    updateDraftAvatar: (slot, itemId) => {
+      const state = get();
+      
+      // Save current state to undo history
+      const undoItem: UndoHistoryItem = {
+        type: 'avatar',
+        timestamp: new Date(),
+        state: {
+          avatar: { ...state.avatar, equipped: { ...state.avatar.equipped } }
+        }
+      };
+      
+      const newHistory = [undoItem, ...state.undoHistory.slice(0, state.maxUndoSteps - 1)];
+      
+      // Update both avatar and draft
+      const newEquipped = {
+        ...state.avatar.equipped,
+        [slot]: itemId || undefined,
+      };
+      
+      set({
+        avatar: {
+          ...state.avatar,
+          equipped: newEquipped,
+        },
+        draftAvatar: {
+          equipped: newEquipped,
+        },
+        undoHistory: newHistory,
+      });
+      
+      // Auto-save
+      get().saveToServer();
+    },
+    
+    // ===== ROOM ACTIONS =====
     placeItem: (itemId, x, y) => {
       console.log('placeItem called with:', { itemId, x, y });
       
@@ -392,6 +475,46 @@ export const useIslandStore = create<IslandStore>()(
       get().saveToServer();
     },
     
+    moveItem: (placedItemId, x, y) => {
+      const state = get();
+      
+      // Save current state to undo history
+      const undoItem: UndoHistoryItem = {
+        type: 'room',
+        timestamp: new Date(),
+        state: {
+          room: { ...state.room, placedItems: [...state.room.placedItems] }
+        }
+      };
+      
+      const newHistory = [undoItem, ...state.undoHistory.slice(0, state.maxUndoSteps - 1)];
+      
+      // Calculate z-index based on Y position
+      const zIndex = Math.floor(y * 10);
+      
+      // Update both room and draft
+      const newPlacedItems = state.room.placedItems.map(item =>
+        item.id === placedItemId
+          ? { ...item, x, y, zIndex }
+          : item
+      );
+      
+      set({
+        room: {
+          ...state.room,
+          placedItems: newPlacedItems,
+        },
+        draftRoom: {
+          ...state.draftRoom,
+          placedItems: newPlacedItems,
+        },
+        undoHistory: newHistory,
+      });
+      
+      // Use debounced save instead of immediate save
+      debouncedSave();
+    },
+    
     removeItem: (placedItemId) => {
       const state = get();
       
@@ -450,65 +573,6 @@ export const useIslandStore = create<IslandStore>()(
       get().saveToServer();
     },
     
-    setInventoryFilter: (filter) => {
-      set((state) => ({
-        inventory: { ...state.inventory, filter },
-      }));
-    },
-    
-    selectInventoryItem: (itemId) => {
-      set((state) => ({
-        inventory: { ...state.inventory, selectedItem: itemId },
-      }));
-    },
-    
-    setUIMode: (mode) => {
-      set((state) => ({
-        ui: { ...state.ui, mode },
-      }));
-    },
-    
-    setInventoryMode: (mode) => {
-      set((state) => ({
-        ui: { ...state.ui, inventoryMode: mode },
-      }));
-    },
-    
-    updateDraftAvatar: (slot, itemId) => {
-      const state = get();
-      
-      // Save current state to undo history
-      const undoItem: UndoHistoryItem = {
-        type: 'avatar',
-        timestamp: new Date(),
-        state: {
-          avatar: { ...state.avatar, equipped: { ...state.avatar.equipped } }
-        }
-      };
-      
-      const newHistory = [undoItem, ...state.undoHistory.slice(0, state.maxUndoSteps - 1)];
-      
-      // Update both avatar and draft
-      const newEquipped = {
-        ...state.avatar.equipped,
-        [slot]: itemId || undefined,
-      };
-      
-      set({
-        avatar: {
-          ...state.avatar,
-          equipped: newEquipped,
-        },
-        draftAvatar: {
-          equipped: newEquipped,
-        },
-        undoHistory: newHistory,
-      });
-      
-      // Auto-save
-      get().saveToServer();
-    },
-    
     updateDraftRoom: (placedItems) => {
       set((state) => ({
         draftRoom: {
@@ -538,106 +602,17 @@ export const useIslandStore = create<IslandStore>()(
       }));
     },
     
-
-    
-    startDragging: (item) => {
+    // ===== INVENTORY ACTIONS =====
+    setInventoryFilter: (filter) => {
       set((state) => ({
-        ui: { ...state.ui, draggedItem: item },
+        inventory: { ...state.inventory, filter },
       }));
     },
     
-    stopDragging: () => {
-      // Cancel any pending debounced save and save immediately
-      debouncedSave.cancel();
-      get().saveToServer();
-      
+    selectInventoryItem: (itemId) => {
       set((state) => ({
-        ui: { ...state.ui, draggedItem: undefined },
+        inventory: { ...state.inventory, selectedItem: itemId },
       }));
-    },
-    
-    moveItem: (placedItemId, x, y) => {
-      const state = get();
-      
-      // Save current state to undo history
-      const undoItem: UndoHistoryItem = {
-        type: 'room',
-        timestamp: new Date(),
-        state: {
-          room: { ...state.room, placedItems: [...state.room.placedItems] }
-        }
-      };
-      
-      const newHistory = [undoItem, ...state.undoHistory.slice(0, state.maxUndoSteps - 1)];
-      
-      // Calculate z-index based on Y position
-      const zIndex = Math.floor(y * 10);
-      
-      // Update both room and draft
-      const newPlacedItems = state.room.placedItems.map(item =>
-        item.id === placedItemId
-          ? { ...item, x, y, zIndex }
-          : item
-      );
-      
-      set({
-        room: {
-          ...state.room,
-          placedItems: newPlacedItems,
-        },
-        draftRoom: {
-          ...state.draftRoom,
-          placedItems: newPlacedItems,
-        },
-        undoHistory: newHistory,
-      });
-      
-      // Use debounced save instead of immediate save
-      debouncedSave();
-    },
-    
-    saveToServer: async () => {
-      const state = get();
-      if (!state.passportCode || !state.ui.editingMode) return;
-      
-      set((state) => ({
-        ui: { ...state.ui, isSaving: true, saveError: null },
-      }));
-      
-      try {
-        if (state.ui.editingMode === 'avatar') {
-          // Save current avatar state
-          await apiRequest('POST', `/api/island/${state.passportCode}/avatar`, {
-            equipped: state.avatar.equipped,
-          });
-        } else if (state.ui.editingMode === 'room') {
-          // Save current room state
-          await apiRequest('POST', `/api/island/${state.passportCode}/room`, {
-            theme: state.room.theme,
-            wallColor: state.room.wallColor,
-            floorColor: state.room.floorColor,
-            wallPattern: state.room.wallPattern,
-            floorPattern: state.room.floorPattern,
-            furniture: state.room.placedItems,
-          });
-        }
-        
-        set((state) => ({
-          ui: { ...state.ui, lastSaved: new Date(), isSaving: false, saveError: null },
-        }));
-      } catch (error) {
-        console.error('Failed to save island state:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Failed to save changes';
-        set((state) => ({
-          ui: { ...state.ui, isSaving: false, saveError: errorMessage },
-        }));
-        // Clear error after 5 seconds
-        setTimeout(() => {
-          set((state) => ({
-            ui: { ...state.ui, saveError: null },
-          }));
-        }, 5000);
-      }
     },
     
     addToInventory: (item) => {
@@ -655,6 +630,96 @@ export const useIslandStore = create<IslandStore>()(
           ...state.inventory,
           items: state.inventory.items.filter(item => item.id !== itemId),
         },
+      }));
+    },
+    
+    // ===== UI ACTIONS =====
+    setUIMode: (mode) => {
+      set((state) => ({
+        ui: { ...state.ui, mode },
+      }));
+    },
+    
+    setInventoryMode: (mode) => {
+      const state = get();
+      
+      if (mode === null) {
+        // If setting to null, close everything
+        set({
+          ui: {
+            ...state.ui,
+            inventoryMode: null,
+            isInventoryOpen: false,
+            showInventoryTab: false,
+            editingMode: null,
+          },
+        });
+      } else {
+        // If switching modes, open the new mode
+        get().openInventory(mode);
+      }
+    },
+    
+    openInventory: (mode: EditingMode) => {
+      const state = get();
+      
+      // Sync drafts with current state when opening
+      if (mode === 'avatar') {
+        set({
+          draftAvatar: {
+            equipped: { ...state.avatar.equipped },
+          },
+          ui: {
+            ...state.ui,
+            isInventoryOpen: true,
+            showInventoryTab: true,
+            editingMode: mode,
+            inventoryMode: mode,
+          },
+        });
+      } else if (mode === 'room') {
+        set({
+          draftRoom: {
+            wallColor: state.room.wallColor,
+            floorColor: state.room.floorColor,
+            wallPattern: state.room.wallPattern,
+            floorPattern: state.room.floorPattern,
+            placedItems: [...state.room.placedItems],
+          },
+          ui: {
+            ...state.ui,
+            isInventoryOpen: true,
+            showInventoryTab: true,
+            editingMode: mode,
+            inventoryMode: mode,
+          },
+        });
+      }
+    },
+    
+    closeInventory: () => {
+      set((state) => ({
+        ui: {
+          ...state.ui,
+          isInventoryOpen: false,
+          // Keep editingMode, inventoryMode, and showInventoryTab active so tab remains visible
+        },
+      }));
+    },
+    
+    startDragging: (item) => {
+      set((state) => ({
+        ui: { ...state.ui, draggedItem: item },
+      }));
+    },
+    
+    stopDragging: () => {
+      // Cancel any pending debounced save and save immediately
+      debouncedSave.cancel();
+      get().saveToServer();
+      
+      set((state) => ({
+        ui: { ...state.ui, draggedItem: undefined },
       }));
     },
     
@@ -677,66 +742,69 @@ export const useIslandStore = create<IslandStore>()(
     },
     
     exitEditingMode: () => {
-      get().closeInventory();
       set((state) => ({
         ui: {
           ...state.ui,
+          isInventoryOpen: false,
+          showInventoryTab: false,
           editingMode: null,
           inventoryMode: null,
         },
       }));
     },
     
-    openInventory: (mode: EditingMode) => {
+    // ===== PERSISTENCE ACTIONS =====
+    saveToServer: async () => {
       const state = get();
+      if (!state.passportCode || !state.ui.editingMode) return;
       
-      // Sync drafts with current state when opening
-      if (mode === 'avatar') {
-        set({
-          draftAvatar: {
-            equipped: { ...state.avatar.equipped },
-          },
-          ui: {
-            ...state.ui,
-            isInventoryOpen: true,
-            editingMode: mode,
-            inventoryMode: mode,
-          },
-        });
-      } else if (mode === 'room') {
-        set({
-          draftRoom: {
+      set((state) => ({
+        ui: { ...state.ui, isSaving: true, saveError: null },
+      }));
+      
+      const result = await handleAsync(async () => {
+        if (state.ui.editingMode === 'avatar') {
+          // Save current avatar state
+          await apiRequest('POST', `/api/island/${state.passportCode}/avatar`, {
+            equipped: state.avatar.equipped,
+          });
+        } else if (state.ui.editingMode === 'room') {
+          // Save current room state
+          await apiRequest('POST', `/api/island/${state.passportCode}/room`, {
+            theme: state.room.theme,
             wallColor: state.room.wallColor,
             floorColor: state.room.floorColor,
             wallPattern: state.room.wallPattern,
             floorPattern: state.room.floorPattern,
-            placedItems: [...state.room.placedItems],
-          },
-          ui: {
-            ...state.ui,
-            isInventoryOpen: true,
-            editingMode: mode,
-            inventoryMode: mode,
-          },
-        });
+            furniture: state.room.placedItems,
+          });
+        }
+        return true;
+      }, {
+        context: 'Saving changes',
+        showToast: true,
+        onError: (error) => {
+          const errorMessage = error instanceof Error ? error.message : 'Failed to save changes';
+          set((state) => ({
+            ui: { ...state.ui, isSaving: false, saveError: errorMessage },
+          }));
+          // Clear error after 5 seconds
+          setTimeout(() => {
+            set((state) => ({
+              ui: { ...state.ui, saveError: null },
+            }));
+          }, 5000);
+        }
+      });
+      
+      if (result) {
+        set((state) => ({
+          ui: { ...state.ui, lastSaved: new Date(), isSaving: false, saveError: null },
+        }));
       }
     },
     
-    closeInventory: () => {
-      set((state) => ({
-        ui: {
-          ...state.ui,
-          isInventoryOpen: false,
-          // Keep editingMode and inventoryMode active so changes persist
-          // editingMode: null,
-          // inventoryMode: null,
-        },
-      }));
-    },
-    
-
-
-    
+    // ===== UNDO/REDO ACTIONS =====
     undo: () => {
       const state = get();
       if (state.undoHistory.length === 0) return;
@@ -784,8 +852,9 @@ export const useIslandStore = create<IslandStore>()(
   }))
 );
 
-// Note: Auto-save is now handled immediately on each action (placeItem, removeItem, etc.)
-// No need for debounced saving since we want instant feedback
+// =============================================================================
+// DEVELOPMENT HELPERS
+// =============================================================================
 
 // Make store accessible in development for testing
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
