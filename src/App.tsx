@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { StoreDataProvider } from "@/contexts/StoreDataContext";
-import ErrorBoundary from "@/components/error-boundary";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 // Lazy load all page components
 const Landing = lazy(() => import("@/pages/Landing"));
@@ -27,6 +27,9 @@ const TeacherStudentView = lazy(() => import("@/pages/teacher-student-view"));
 const TeacherPersonalityResults = lazy(() => import("@/pages/teacher-personality-results"));
 const LiveDiscoveryBoard = lazy(() => import("@/pages/LiveDiscoveryBoard"));
 const NotFound = lazy(() => import("@/pages/not-found"));
+const EmergencyLogin = lazy(() => import("@/pages/emergency-login"));
+const EmailVerificationPending = lazy(() => import("@/pages/email-verification-pending"));
+const EmailConfirmation = lazy(() => import("@/pages/email-confirmation"));
 const GameJoin = lazy(() => import("@/pages/game-join"));
 const GameLobby = lazy(() => import("@/pages/game-lobby"));
 const GamePlay = lazy(() => import("@/pages/game-play"));
@@ -55,6 +58,7 @@ import { queryClient } from "@/lib/queryClient";
 import { checkAuthStateOnLoad } from "@/lib/auth-utils";
 // Import auth cleanup to run immediately on app load
 import "@/lib/auth-cleanup";
+import "@/lib/security-cleanup"; // Security fix: clean up old user data
 
 
 
@@ -63,8 +67,10 @@ function Router() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    console.log('[Router] Checking auth state...');
     // Check and clean up authentication state first
     const hasValidAuth = checkAuthStateOnLoad();
+    console.log('[Router] Has valid auth:', hasValidAuth);
     
     // Check for SSO token in URL first
     const urlParams = new URLSearchParams(window.location.search);
@@ -85,6 +91,7 @@ function Router() {
 
     // Check for existing token in localStorage
     const authToken = localStorage.getItem("authToken");
+    console.log('[Router] Auth token found:', !!authToken);
     setToken(authToken);
     setIsLoading(false);
 
@@ -132,6 +139,9 @@ function Router() {
         {/* Authentication routes - always available */}
         <Route path="/register" component={TeacherRegistration} />
         <Route path="/login" component={TeacherLogin} />
+        <Route path="/emergency-login" component={EmergencyLogin} />
+        <Route path="/email-verification-pending" component={EmailVerificationPending} />
+        <Route path="/auth/confirm" component={EmailConfirmation} />
         
         {/* Protected teacher routes - only when authenticated */}
         {token ? (

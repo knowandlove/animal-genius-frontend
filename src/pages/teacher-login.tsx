@@ -22,6 +22,7 @@ const loginSchema = z.object({
 type LoginData = z.infer<typeof loginSchema>;
 
 export default function TeacherLogin() {
+  console.log("TEACHER LOGIN COMPONENT LOADED!");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { login } = useAuth();
@@ -36,16 +37,39 @@ export default function TeacherLogin() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginData) => {
-      return await apiRequest("POST", "/api/login", data);
+      console.log("Mutation function called with:", data);
+      try {
+        const result = await apiRequest("POST", "/api/auth/login", data);
+        console.log("API request returned:", result);
+        return result;
+      } catch (error) {
+        console.error("API request failed:", error);
+        throw error;
+      }
     },
     onSuccess: async (data) => {
+      console.log("Login success! Data received:", data);
       login(data.token, data.user, data.refreshToken);
+      
+      // Check what was stored
+      console.log("After login, localStorage contains:");
+      console.log("- authToken:", localStorage.getItem("authToken"));
+      console.log("- user:", localStorage.getItem("user"));
+      console.log("- refreshToken:", localStorage.getItem("refreshToken"));
       
       toast({
         title: "Welcome back!",
         description: "You have been logged in successfully.",
       });
-      window.location.href = "/dashboard";
+      
+      // Dispatch a custom event to notify the app about auth change
+      window.dispatchEvent(new Event('authTokenChanged'));
+      
+      // Use wouter's setLocation for SPA navigation
+      console.log("Navigating to /dashboard...");
+      setTimeout(() => {
+        setLocation("/dashboard");
+      }, 100); // Small delay to ensure state updates
     },
     onError: (error) => {
       toast({
@@ -57,6 +81,7 @@ export default function TeacherLogin() {
   });
 
   const onSubmit = (data: LoginData) => {
+    console.log("FORM SUBMITTED, calling mutation with:", data);
     loginMutation.mutate(data);
   };
 
@@ -71,7 +96,7 @@ export default function TeacherLogin() {
               <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-white text-xl">🔐</span>
               </div>
-              <CardTitle className="text-3xl font-bold text-gray-900">Welcome Back</CardTitle>
+              <CardTitle className="text-3xl font-bold text-gray-900">Welcome Back - USING NEW AUTH</CardTitle>
               <p className="text-gray-600">Sign in to your teacher dashboard</p>
             </CardHeader>
             
@@ -97,7 +122,7 @@ export default function TeacherLogin() {
               )}
               
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="space-y-6">
                   <FormField
                     control={form.control}
                     name="email"
@@ -126,10 +151,13 @@ export default function TeacherLogin() {
                     )}
                   />
 
-                  <Button type="submit" className="w-full text-lg py-4" disabled={loginMutation.isPending}>
+                  <Button type="button" onClick={() => {
+                    console.log("Button clicked!");
+                    form.handleSubmit(onSubmit)();
+                  }} className="w-full text-lg py-4" disabled={loginMutation.isPending}>
                     {loginMutation.isPending ? "Signing In..." : "Sign In"}
                   </Button>
-                </form>
+                </div>
               </Form>
 
 
