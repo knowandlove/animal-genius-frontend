@@ -1,5 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { api } from "@/config/api";
+import { handleQueryError, retry } from "@/lib/error-handling";
 
 async function refreshAuthToken(): Promise<string | null> {
   const refreshToken = localStorage.getItem("refreshToken");
@@ -8,7 +9,7 @@ async function refreshAuthToken(): Promise<string | null> {
   }
 
   try {
-    const response = await fetch(api("/api/refresh-token"), {
+    const response = await fetch(api("/api/auth/refresh-token"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -183,10 +184,18 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
+      retry: (failureCount, error) => {
+        // Don't retry on 4xx errors
+        if (error instanceof Error && error.message.includes('4')) {
+          return false;
+        }
+        return failureCount < 2;
+      },
+      onError: (error) => handleQueryError(error, 'Data Loading'),
     },
     mutations: {
       retry: false,
+      onError: (error) => handleQueryError(error, 'Data Update'),
     },
   },
 });

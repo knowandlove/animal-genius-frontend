@@ -182,7 +182,7 @@ export default function QuizResults() {
     );
   }
 
-  const animalData = ANIMAL_TYPES[result.animal.toLowerCase()];
+  const animalData = ANIMAL_TYPES[result.animal] || ANIMAL_TYPES[result.animal.charAt(0).toUpperCase() + result.animal.slice(1).toLowerCase()];
   const animalColor = animalData?.color || "#6366F1";
 
   return (

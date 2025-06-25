@@ -52,9 +52,29 @@ export default function TeacherRegistration() {
 
   const registerMutation = useMutation({
     mutationFn: async (data: Omit<RegistrationData, "confirmPassword">) => {
-      return apiRequest("POST", "/api/register", data);
+      return apiRequest("POST", "/api/auth/register", data);
     },
     onSuccess: (data) => {
+      // Check if email verification is required
+      if (data.requiresEmailVerification) {
+        // Save email for the verification pending page
+        const formData = form.getValues();
+        localStorage.setItem("pendingVerificationEmail", formData.email);
+        
+        toast({
+          title: "Check Your Email!",
+          description: data.message || "Please verify your email to complete registration.",
+          duration: 5000,
+        });
+        
+        // Redirect to verification pending page
+        setTimeout(() => {
+          setLocation("/email-verification-pending");
+        }, 1000);
+        return;
+      }
+      
+      // Normal login flow if no email verification needed
       localStorage.setItem("authToken", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       if (data.refreshToken) {

@@ -128,6 +128,8 @@ export default function ClassEconomy() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [transactionHistoryOpen, setTransactionHistoryOpen] = useState(false);
+  const [autoApprovalThreshold, setAutoApprovalThreshold] = useState<number | null>(null);
+  const [tempThreshold, setTempThreshold] = useState<string>("");
 
   // Get class data and students
   const { data: economyData, isLoading, error } = useQuery({
@@ -140,6 +142,21 @@ export default function ClassEconomy() {
       };
     },
     enabled: !!classId,
+  });
+
+  // Get store settings including auto-approval threshold
+  const { data: storeStatusData } = useQuery({
+    queryKey: [`/api/classes/${classId}/store-status`],
+    queryFn: async () => {
+      return await apiRequest('GET', `/api/classes/${classId}/store-status`);
+    },
+    enabled: !!classId,
+    onSuccess: (data: any) => {
+      if (data?.settings?.autoApprovalThreshold !== undefined) {
+        setAutoApprovalThreshold(data.settings.autoApprovalThreshold);
+        setTempThreshold(data.settings.autoApprovalThreshold?.toString() || "");
+      }
+    },
   });
 
   // Get purchase requests for the class
@@ -205,6 +222,32 @@ export default function ClassEconomy() {
       toast({
         title: "Error",
         description: error.message || "Failed to update currency",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Auto-approval threshold mutation
+  const autoApprovalMutation = useMutation({
+    mutationFn: async (threshold: number | null) => {
+      return await apiRequest('POST', '/api/currency/store/auto-approval', {
+        classId: parseInt(classId!),
+        threshold
+      });
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Success",
+        description: data.message,
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/classes/${classId}/store-status`],
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update auto-approval threshold",
         variant: "destructive",
       });
     },
@@ -807,6 +850,64 @@ export default function ClassEconomy() {
               </CardContent>
             </Card>
 
+            {/* Auto-Approval Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Check className="w-5 h-5" />
+                  Auto-Approval Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="threshold" className="text-sm font-medium">
+                      Auto-approve purchases under this amount:
+                    </Label>
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="relative flex-1 max-w-xs">
+                        <Coins className="absolute left-3 top-1/2 transform -translate-y-1/2 text-yellow-500 w-4 h-4" />
+                        <Input
+                          id="threshold"
+                          type="number"
+                          value={tempThreshold}
+                          onChange={(e) => setTempThreshold(e.target.value)}
+                          placeholder="e.g. 50"
+                          className="pl-10"
+                          min="0"
+                          max="1000"
+                        />
+                      </div>
+                      <Button
+                        onClick={() => {
+                          const threshold = tempThreshold === "" ? null : parseInt(tempThreshold);
+                          autoApprovalMutation.mutate(threshold);
+                        }}
+                        disabled={autoApprovalMutation.isPending}
+                      >
+                        Update
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setTempThreshold("");
+                          autoApprovalMutation.mutate(null);
+                        }}
+                        disabled={autoApprovalMutation.isPending}
+                      >
+                        Disable
+                      </Button>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {autoApprovalThreshold === null
+                        ? "Auto-approval is disabled. All purchases require manual approval."
+                        : `Items costing ${autoApprovalThreshold} coins or less will be automatically approved.`}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Purchase Requests */}
             <Card>
               <CardHeader>
@@ -816,26 +917,33 @@ export default function ClassEconomy() {
                     Purchase Requests
                   </span>
                   {purchaseRequests && purchaseRequests.length > 0 && (
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => bulkProcessMutation.mutate('approve')}
-                        disabled={bulkProcessMutation.isPending}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        <Check className="w-4 h-4 mr-1" />
-                        Approve All
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => bulkProcessMutation.mutate('deny')}
-                        disabled={bulkProcessMutation.isPending}
-                        variant="outline"
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <X className="w-4 h-4 mr-1" />
-                        Deny All
-                      </Button>
+                    <div className="flex items-center gap-4">
+                      {autoApprovalThreshold !== null && (
+                        <span className="text-sm text-muted-foreground">
+                          Auto-approval: ≤{autoApprovalThreshold} coins
+                        </span>
+                      )}
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => bulkProcessMutation.mutate('approve')}
+                          disabled={bulkProcessMutation.isPending}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <Check className="w-4 h-4 mr-1" />
+                          Approve All
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => bulkProcessMutation.mutate('deny')}
+                          disabled={bulkProcessMutation.isPending}
+                          variant="outline"
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <X className="w-4 h-4 mr-1" />
+                          Deny All
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </CardTitle>
@@ -863,6 +971,11 @@ export default function ClassEconomy() {
                                 <Badge variant="outline" className="text-xs">
                                   {request.animalType}
                                 </Badge>
+                                {request.status === 'approved' && request.processedBy === -1 && (
+                                  <Badge variant="default" className="text-xs bg-green-100 text-green-800">
+                                    Auto-approved
+                                  </Badge>
+                                )}
                               </div>
                               
                               <div className="text-sm text-muted-foreground mb-2">
