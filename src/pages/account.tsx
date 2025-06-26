@@ -60,27 +60,7 @@ export default function Account() {
   const [showQuizModal, setShowQuizModal] = useState(false);
   const { user, isLoading: authLoading, logout } = useAuth();
 
-  // Check authentication
-  useEffect(() => {
-    if (!authLoading && !user) {
-      setLocation("/login");
-    }
-  }, [authLoading, user, setLocation]);
-
-  // We're using the user from useAuth, so remove the duplicate query
-  // The useAuth hook already fetches the user data
-
-  // Debug logging
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log("Account state:", { 
-        user: user ? `${user.firstName} ${user.lastName}` : null, 
-        authToken: !!localStorage.getItem("authToken"), 
-        authLoading
-      });
-    }
-  }, [user, authLoading]);
-
+  // Move ALL hooks here, before any returns!
   // Profile form
   const profileForm = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -94,21 +74,6 @@ export default function Account() {
       personalityAnimal: "",
     },
   });
-
-  // Update form when user data loads
-  useEffect(() => {
-    if (user) {
-      profileForm.reset({
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
-        email: user.email || "",
-        schoolOrganization: user.schoolOrganization || "",
-        roleTitle: user.roleTitle || "",
-        howHeardAbout: user.howHeardAbout || "",
-        personalityAnimal: user.personalityAnimal || "",
-      });
-    }
-  }, [user, profileForm]);
 
   // Password form
   const passwordForm = useForm<PasswordForm>({
@@ -162,17 +127,38 @@ export default function Account() {
     },
   });
 
-  // Update form defaults when user data loads
-  if (user && !profileForm.getValues().firstName) {
-    profileForm.reset({
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      schoolOrganization: user.schoolOrganization,
-      roleTitle: user.roleTitle || "",
-      howHeardAbout: user.howHeardAbout || "",
-    });
-  }
+  // Check authentication
+  useEffect(() => {
+    if (!authLoading && !user) {
+      setLocation("/login");
+    }
+  }, [authLoading, user, setLocation]);
+
+  // Debug logging
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Account state:", { 
+        user: user ? `${user.firstName} ${user.lastName}` : null, 
+        authToken: !!localStorage.getItem("authToken"), 
+        authLoading
+      });
+    }
+  }, [user, authLoading]);
+
+  // Update form when user data loads
+  useEffect(() => {
+    if (user) {
+      profileForm.reset({
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        schoolOrganization: user.schoolOrganization || "",
+        roleTitle: user.roleTitle || "",
+        howHeardAbout: user.howHeardAbout || "",
+        personalityAnimal: user.personalityAnimal || "",
+      });
+    }
+  }, [user, profileForm]);
 
   const onProfileSubmit = (data: ProfileForm) => {
     updateProfileMutation.mutate(data);
