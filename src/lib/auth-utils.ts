@@ -35,21 +35,10 @@ export function checkAuthStateOnLoad() {
   const token = localStorage.getItem("authToken");
   const refreshToken = localStorage.getItem("refreshToken");
   
-  // If we have tokens but they're both expired, clear everything
-  if (token && refreshToken) {
-    if (isTokenExpired(token) && isTokenExpired(refreshToken)) {
-      console.log('Both tokens expired, clearing authentication state');
-      clearAuthState();
-      return false;
-    }
-  }
+  // TEMPORARILY DISABLED: Token expiration check
+  // The Supabase JWTs might have different expiration handling
+  // TODO: Implement proper token refresh logic
   
-  // If we have an auth token but no refresh token, that's an inconsistent state
-  if (token && !refreshToken) {
-    console.log('Inconsistent auth state, clearing tokens');
-    clearAuthState();
-    return false;
-  }
-  
+  // For now, just check if we have a token
   return !!token;
 }
