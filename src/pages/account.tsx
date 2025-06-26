@@ -92,6 +92,10 @@ export default function Account() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/me"] });
+      // Force refresh the user data in useAuth
+      if (window.location.pathname === '/account') {
+        window.location.reload();
+      }
       toast({
         title: "Profile Updated",
         description: "Your profile has been successfully updated.",
