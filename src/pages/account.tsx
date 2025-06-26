@@ -57,35 +57,17 @@ export default function Account() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("profile");
   const [showQuizModal, setShowQuizModal] = useState(false);
+  const { user, isLoading: authLoading, logout } = useAuth();
 
   // Check authentication
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    
-    if (!token) {
+    if (!authLoading && !user) {
       setLocation("/login");
-      return;
     }
-  }, [setLocation]);
+  }, [authLoading, user, setLocation]);
 
-  // Fetch user profile
-  const { data: user, isLoading, error } = useQuery<UserProfile>({
-    queryKey: ["/api/me"],
-    queryFn: async () => {
-      const token = localStorage.getItem("authToken");
-      const response = await fetch(api("/api/me"), {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error("Failed to fetch user data");
-      }
-      return response.json();
-    },
-    enabled: !!localStorage.getItem("authToken"),
-    retry: 1,
-  });
+  // We're using the user from useAuth, so remove the duplicate query
+  // The useAuth hook already fetches the user data
 
   // Debug logging
   useEffect(() => {
@@ -93,11 +75,10 @@ export default function Account() {
       console.log("Account state:", { 
         user: user ? `${user.firstName} ${user.lastName}` : null, 
         authToken: !!localStorage.getItem("authToken"), 
-        isLoading, 
-        error: error?.message || 'no error'
+        authLoading
       });
     }
-  }, [user, isLoading, error]);
+  }, [user, authLoading]);
 
   // Profile form
   const profileForm = useForm<ProfileForm>({
@@ -201,16 +182,10 @@ export default function Account() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("user");
-    
-    // Dispatch custom event to update router state
-    window.dispatchEvent(new Event('authTokenChanged'));
-    
-    setLocation("/");
+    logout();
   };
 
-  if (isLoading) {
+  if (authLoading || !user) {
     return (
       <div className="min-h-screen">
         <Header isAuthenticated={true} onLogout={handleLogout} />
@@ -228,7 +203,7 @@ export default function Account() {
     <div className="min-h-screen">
       <Header 
         isAuthenticated={true} 
-        user={user ? { firstName: user.firstName, lastName: user.lastName } : undefined}
+        user={user}
         onLogout={handleLogout} 
       />
       
