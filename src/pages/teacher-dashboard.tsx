@@ -23,7 +23,7 @@ import { QuestionIcon } from "@/components/QuestionIcon";
 import { TeacherQuizModal } from "@/components/TeacherQuizModal";
 
 interface User {
-  id: number;
+  id: string;  // Changed from number to string (UUID)
   firstName: string;
   lastName: string;
   email: string;
@@ -32,18 +32,16 @@ interface User {
 }
 
 interface ClassData {
-  id: number;
+  id: string;  // Changed from number to string (UUID)
   name: string;
-  code: string;
-  submissionCount: number;
+  passportCode: string;
+  studentCount: number;
   createdAt: string;
-  iconEmoji?: string;
-  iconColor?: string;
 }
 
 export default function TeacherDashboard() {
   const [, setLocation] = useLocation();
-  const [deleteClassId, setDeleteClassId] = useState<number | null>(null);
+  const [deleteClassId, setDeleteClassId] = useState<string | null>(null);
   const [showQuizModal, setShowQuizModal] = useState(false);
   const { toast } = useToast();
   const { user, isLoading: authLoading, logout, refreshUser } = useAuth();
@@ -78,11 +76,11 @@ export default function TeacherDashboard() {
   });
 
   // Fetch lesson progress for each class
-  const { data: classProgress = {} } = useQuery<Record<number, number[]>>({
+  const { data: classProgress = {} } = useQuery<Record<string, number[]>>({
     queryKey: ["classProgress", classes?.map((c: any) => c.id)],
     queryFn: async () => {
       if (!classes) return {};
-      const progressData: Record<number, number[]> = {};
+      const progressData: Record<string, number[]> = {};
       const token = localStorage.getItem("authToken");
       
       await Promise.all(
@@ -131,8 +129,8 @@ export default function TeacherDashboard() {
     logout();
   };
 
-  const copyClassLink = (code: string) => {
-    const url = `${window.location.origin}/q/${code}`;
+  const copyClassLink = (passportCode: string) => {
+    const url = `${window.location.origin}/q/${passportCode}`;
     navigator.clipboard.writeText(url);
     toast({
       title: "Link copied!",
@@ -141,7 +139,7 @@ export default function TeacherDashboard() {
   };
 
   const deleteClassMutation = useMutation({
-    mutationFn: async (classId: number) => {
+    mutationFn: async (classId: string) => {
       if (process.env.NODE_ENV === 'development') {
         console.log("Starting delete mutation for class:", classId);
       }
@@ -173,7 +171,7 @@ export default function TeacherDashboard() {
     },
   });
 
-  const handleDeleteClass = async (classId: number) => {
+  const handleDeleteClass = async (classId: string) => {
     if (process.env.NODE_ENV === 'development') {
       console.log("handleDeleteClass called with classId:", classId);
     }
@@ -382,10 +380,9 @@ export default function TeacherDashboard() {
                       <CardContent className="p-6">
                         <div className="flex items-start gap-3 mb-4">
                           <div 
-                            className="w-12 h-12 rounded-full flex items-center justify-center text-xl flex-shrink-0"
-                            style={{ backgroundColor: cls.iconColor || "#c5d49f" }}
+                            className="w-12 h-12 rounded-full flex items-center justify-center text-xl flex-shrink-0 bg-blue-100"
                           >
-                            {cls.iconEmoji || "📚"}
+                            📚
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center justify-between mb-1">
@@ -396,7 +393,7 @@ export default function TeacherDashboard() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => copyClassLink(cls.code)}
+                                  onClick={() => copyClassLink(cls.passportCode)}
                                   title="Copy class link"
                                 >
                                   <Clipboard className="h-4 w-4" />
@@ -414,10 +411,9 @@ export default function TeacherDashboard() {
                             <p className="font-body text-muted-foreground">
                               Class Code:{" "}
                               <span 
-                                className="font-semibold"
-                                style={{ color: cls.iconColor || "#c5d49f" }}
+                                className="font-semibold text-blue-600"
                               >
-                                {cls.code}
+                                {cls.passportCode}
                               </span>
                             </p>
                           </div>
@@ -426,17 +422,17 @@ export default function TeacherDashboard() {
                         <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mb-4 space-y-4">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm text-gray-600 dark:text-gray-300">
-                              Total Submissions
+                              Total Students
                             </span>
                             <span className="text-xl font-bold text-primary">
-                              {cls.submissionCount}
+                              {cls.studentCount}
                             </span>
                           </div>
                           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                             <div
                               className="bg-primary h-2 rounded-full transition-all duration-300"
                               style={{
-                                width: `${Math.min((cls.submissionCount / 25) * 100, 100)}%`,
+                                width: `${Math.min((cls.studentCount / 25) * 100, 100)}%`,
                               }}
                             ></div>
                           </div>
@@ -521,10 +517,7 @@ export default function TeacherDashboard() {
                 classes?.find((cls: ClassData) => cls.id === deleteClassId)
                   ?.name
               }
-              "? This will permanently remove all{" "}
-              {classes?.find((cls: ClassData) => cls.id === deleteClassId)
-                ?.submissionCount || 0}{" "}
-              student submissions. This action cannot be undone.
+              "? This will permanently remove the class and all associated data. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

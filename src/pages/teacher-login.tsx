@@ -49,11 +49,22 @@ export default function TeacherLogin() {
     },
     onSuccess: async (data) => {
       console.log("Login success! Data received:", data);
+      console.log("About to call login function with:", {
+        token: data.token?.substring(0, 20) + '...',
+        user: data.user,
+        hasRefreshToken: !!data.refreshToken
+      });
+      
+      // Let's manually set it first to test
+      console.log('Manually setting authToken...');
+      localStorage.setItem('authToken', data.token);
+      console.log('Token after manual set:', localStorage.getItem('authToken')?.substring(0, 20) + '...');
+      
       login(data.token, data.user, data.refreshToken);
       
       // Check what was stored
       console.log("After login, localStorage contains:");
-      console.log("- authToken:", localStorage.getItem("authToken"));
+      console.log("- authToken:", localStorage.getItem("authToken")?.substring(0, 20) + '...');
       console.log("- user:", localStorage.getItem("user"));
       console.log("- refreshToken:", localStorage.getItem("refreshToken"));
       

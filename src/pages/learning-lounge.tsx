@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CheckCircle, Clock, BookOpen, Users, Target, ListChecks, ArrowLeft, PlayCircle, Printer, FileText } from "lucide-react";
-import { lessons, type Lesson } from "@shared/lessons";
+import { lessons, type Lesson, type Activity } from "@shared/lessons";
 import { apiRequest } from "@/lib/queryClient";
 import { LoadingSpinner } from "@/components/loading-spinner";
 
@@ -15,7 +15,7 @@ export default function LearningLounge() {
   const queryClient = useQueryClient();
   const [selectedLesson, setSelectedLesson] = useState<number | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [classId, setClassId] = useState<number | null>(null);
+  const [classId, setClassId] = useState<string | null>(null);
   const [className, setClassName] = useState<string | null>(null);
 
   useEffect(() => {
@@ -30,12 +30,12 @@ export default function LearningLounge() {
     const urlParams = new URLSearchParams(window.location.search);
     const classIdParam = urlParams.get("classId");
     if (classIdParam) {
-      setClassId(parseInt(classIdParam));
+      setClassId(classIdParam);
     }
   }, [setLocation]);
 
   // Fetch class name if classId is provided
-  const { data: classData } = useQuery<{ id: number; name: string; code: string; teacherId: number; iconEmoji?: string; iconColor?: string }>({
+  const { data: classData } = useQuery<{ id: string; name: string; passportCode: string; teacherId: string; iconEmoji?: string; iconColor?: string }>({
     queryKey: [`/api/classes/${classId}`],
     enabled: !!token && !!classId,
   });
@@ -101,7 +101,7 @@ export default function LearningLounge() {
   }
 
   return (
-    <div className="min-h-screen p-4">
+    <div className="min-h-screen bg-white p-4">
       <div className="max-w-6xl mx-auto">
         <Card className="mb-8">
           <CardContent className="p-4">
@@ -140,7 +140,7 @@ export default function LearningLounge() {
         </Card>
 
         <div className="grid gap-6">
-          {lessons.slice(0, 2).map((lesson) => (
+          {lessons.map((lesson) => (
             <LessonCard
               key={lesson.id}
               lesson={lesson}
@@ -188,16 +188,16 @@ function LessonCard({ lesson, isComplete, onSelect, onMarkComplete, isMarkingCom
             <CardDescription className="text-base">{lesson.description}</CardDescription>
             
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 text-[#BAC97D]">
                 <Clock className="h-4 w-4" />
                 {lesson.duration}
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 text-[#85B2C8]">
                 <Users className="h-4 w-4" />
                 Class Activity
               </div>
-              {lesson.id === 1 && (
-                <div className="flex items-center gap-1">
+              {lesson.materialsNeeded.some(m => m.toLowerCase().includes('worksheet')) && (
+                <div className="flex items-center gap-1 text-[#FF8070]">
                   <FileText className="h-4 w-4" />
                   Includes Worksheet
                 </div>
@@ -245,7 +245,7 @@ function LessonCard({ lesson, isComplete, onSelect, onMarkComplete, isMarkingCom
                   <ul className="space-y-1">
                     {lesson.objectives.slice(0, 2).map((objective, index) => (
                       <li key={index} className="flex items-start gap-2">
-                        <CheckCircle className="h-4 w-4 mt-0.5 text-green-600 flex-shrink-0" />
+                        <CheckCircle className="h-4 w-4 mt-0.5 text-[#829B79] flex-shrink-0" />
                         <span className="text-sm">{objective}</span>
                       </li>
                     ))}
@@ -295,13 +295,12 @@ function LessonDetailView({ lesson, isComplete, onMarkComplete, onBack, isMarkin
   const [, setLocation] = useLocation();
   
   const handlePrintWorksheet = () => {
-    if (lesson.id === 1) {
-      setLocation("/pre-assessment");
-    }
+    // For now, open the pre-assessment page for any worksheet-related lesson
+    setLocation("/pre-assessment");
   };
 
   return (
-    <div className="min-h-screen p-4">
+    <div className="min-h-screen bg-white p-4">
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <Button
@@ -314,7 +313,7 @@ function LessonDetailView({ lesson, isComplete, onMarkComplete, onBack, isMarkin
           </Button>
           
           <div className="flex gap-2">
-            {lesson.id === 1 && (
+            {lesson.materialsNeeded.some(m => m.toLowerCase().includes('worksheet')) && (
               <Button
                 onClick={handlePrintWorksheet}
                 variant="outline"
@@ -356,15 +355,15 @@ function LessonDetailView({ lesson, isComplete, onMarkComplete, onBack, isMarkin
             </div>
             
             <div className="flex flex-wrap gap-4 pt-4">
-              <Badge variant="secondary" className="flex items-center gap-1">
+              <Badge variant="secondary" className="flex items-center gap-1 bg-[#BAC97D] text-gray-800 border-0">
                 <Clock className="h-3 w-3" />
                 {lesson.duration}
               </Badge>
-              <Badge variant="secondary" className="flex items-center gap-1">
+              <Badge variant="secondary" className="flex items-center gap-1 bg-[#85B2C8] text-white border-0">
                 <Users className="h-3 w-3" />
                 Class Activity
               </Badge>
-              <Badge variant="secondary" className="flex items-center gap-1">
+              <Badge variant="secondary" className="flex items-center gap-1 bg-[#FF8070] text-white border-0">
                 <Target className="h-3 w-3" />
                 {lesson.objectives.length} Objectives
               </Badge>
@@ -387,72 +386,149 @@ function LessonDetailView({ lesson, isComplete, onMarkComplete, onBack, isMarkin
 }
 
 function LessonSectionsView({ lesson }: { lesson: Lesson }) {
-  const sections = [
-    { key: 'overview', title: 'Overview', icon: BookOpen, color: 'blue' },
-    { key: 'engage', title: 'Engage', icon: Users, color: 'green' },
-    { key: 'explore', title: 'Explore', icon: Target, color: 'purple' },
-    { key: 'explain', title: 'Explain', icon: ListChecks, color: 'orange' },
-    { key: 'elaborate', title: 'Elaborate', icon: CheckCircle, color: 'teal' },
+  // Check if lesson has activities (new structure) or sections (old structure)
+  if (!lesson.activities) {
+    return (
+      <div className="space-y-6">
+        <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950">
+          <CardHeader>
+            <CardTitle>Lesson content is being updated</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 dark:text-gray-400">This lesson is currently being migrated to the new format. Please check back soon.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show all 4 activities
+  const activities = [
+    { key: 'activity1', data: lesson.activities.activity1, color: 'green', number: 1 },
+    { key: 'activity2', data: lesson.activities.activity2, color: 'purple', number: 2 },
+    { key: 'activity3', data: lesson.activities.activity3, color: 'orange', number: 3 },
+    { key: 'activity4', data: lesson.activities.activity4, color: 'teal', number: 4 },
   ];
 
   return (
     <div className="space-y-6">
-      {sections.map(({ key, title, icon: Icon, color }) => {
-        const section = lesson.sections[key as keyof typeof lesson.sections];
-        const colorClasses = {
-          blue: 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950',
-          green: 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950',
-          purple: 'border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950',
-          orange: 'border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950',
-          teal: 'border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-950',
+      {/* Video placeholder for all lessons */}
+      <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <PlayCircle className="h-5 w-5" />
+            Lesson Overview Video
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="relative aspect-video bg-gray-200 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+            <div className="text-center space-y-4">
+              <PlayCircle className="h-16 w-16 text-gray-400 dark:text-gray-600 mx-auto" />
+              <p className="text-gray-600 dark:text-gray-400 font-medium">Video Coming Soon</p>
+              <p className="text-sm text-gray-500 dark:text-gray-500">{lesson.title}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {activities.map(({ key, data, color, number }) => {
+        // Using a subtle off-white background for all cards
+        const cardClassName = 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900';
+        
+        // Using brand colors from the animal palette
+        const colorAccents = {
+          green: {
+            border: 'border-l-4 border-l-[#829B79]', // Beaver green
+            badge: 'bg-[#829B79] text-white',
+            icon: 'text-[#829B79]'
+          },
+          purple: {
+            border: 'border-l-4 border-l-[#85B2C8]', // Panda blue
+            badge: 'bg-[#85B2C8] text-white',
+            icon: 'text-[#85B2C8]'
+          },
+          orange: {
+            border: 'border-l-4 border-l-[#FF8070]', // Parrot coral
+            badge: 'bg-[#FF8070] text-white',
+            icon: 'text-[#FF8070]'
+          },
+          teal: {
+            border: 'border-l-4 border-l-[#BD85C8]', // Elephant purple
+            badge: 'bg-[#BD85C8] text-white',
+            icon: 'text-[#BD85C8]'
+          }
         };
+        
+        const accent = colorAccents[color as keyof typeof colorAccents];
 
         return (
-          <Card key={key} className={colorClasses[color as keyof typeof colorClasses]}>
+          <Card key={key} className={`${cardClassName} ${accent.border}`}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Icon className="h-5 w-5" />
-                {title}
+                <ListChecks className={`h-5 w-5 ${accent.icon}`} />
+                Activity {number}: {data.title}
+                {data.optional && (
+                  <Badge variant="secondary" className="ml-2 bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-default">
+                    Optional
+                  </Badge>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Special description for Activity 4 */}
+              {key === 'activity4' && lesson.id === 1 && (
+                <p className="text-sm text-gray-600 dark:text-gray-400 italic">
+                  Extend self-awareness into the home by exploring family personality dynamics in a fun and inclusive way.
+                </p>
+              )}
+              
+              {/* Steps */}
               <div>
-                <h4 className="font-semibold mb-2">Content</h4>
-                <ul className="space-y-2">
-                  {section.content.map((item, index) => (
-                    <li key={index} className="text-sm pl-4 border-l-2 border-gray-300 dark:border-gray-600">
-                      {item}
+                <ol className="space-y-4">
+                  {data.steps.map((step, stepIndex) => (
+                    <li key={stepIndex} className="space-y-2">
+                      <div className="flex items-start gap-3">
+                        <span className="font-medium text-sm bg-white dark:bg-gray-800 px-2 py-0.5 rounded-full flex-shrink-0">
+                          {stepIndex + 1}
+                        </span>
+                        <div className="flex-1 space-y-2">
+                          <span className="text-sm">{step.instruction}</span>
+                          
+                          {/* Pro Tips for this step */}
+                          {step.tips && step.tips.length > 0 && (
+                            <div className="ml-4 p-3 bg-[#85B2C8]/10 border border-[#85B2C8]/20 rounded-lg">
+                              <h5 className="text-xs font-semibold text-[#85B2C8] mb-1">Pro Tip{step.tips.length > 1 ? 's' : ''}:</h5>
+                              <ul className="space-y-1">
+                                {step.tips.map((tip, tipIndex) => (
+                                  <li key={tipIndex} className="flex items-start gap-2">
+                                    <Target className="h-3 w-3 mt-0.5 text-[#85B2C8] flex-shrink-0" />
+                                    <span className="text-xs text-gray-700 dark:text-gray-300">{tip}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {/* Guiding Questions for this step */}
+                          {step.guidingQuestions && step.guidingQuestions.length > 0 && (
+                            <div className="ml-4 p-3 bg-[#BD85C8]/10 border border-[#BD85C8]/20 rounded-lg">
+                              <h5 className="text-xs font-semibold text-[#BD85C8] mb-1">Guiding Questions:</h5>
+                              <ul className="space-y-1">
+                                {step.guidingQuestions.map((question, qIndex) => (
+                                  <li key={qIndex} className="flex items-start gap-2">
+                                    <Users className="h-3 w-3 mt-0.5 text-[#BD85C8] flex-shrink-0" />
+                                    <span className="text-xs italic text-gray-700 dark:text-gray-300">{question}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </li>
                   ))}
-                </ul>
+                </ol>
               </div>
-
-              {section.sayStatements.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-2 text-green-700 dark:text-green-400">Key Phrases</h4>
-                  <div className="space-y-2">
-                    {section.sayStatements.map((statement, index) => (
-                      <div key={index} className="bg-green-100 dark:bg-green-900 p-3 rounded border-l-4 border-green-400">
-                        <p className="text-sm italic text-green-800 dark:text-green-200">"{statement}"</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {section.activities.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-2 text-purple-700 dark:text-purple-400">Activities</h4>
-                  <ul className="space-y-1">
-                    {section.activities.map((activity, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <PlayCircle className="h-4 w-4 mt-0.5 text-purple-600 flex-shrink-0" />
-                        <span className="text-sm">{activity}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
             </CardContent>
           </Card>
         );
@@ -475,7 +551,7 @@ function LessonSidebar({ lesson }: { lesson: Lesson }) {
           <ul className="space-y-2">
             {lesson.objectives.map((objective, index) => (
               <li key={index} className="flex items-start gap-2">
-                <CheckCircle className="h-4 w-4 mt-0.5 text-green-600 flex-shrink-0" />
+                <CheckCircle className="h-4 w-4 mt-0.5 text-[#829B79] flex-shrink-0" />
                 <span className="text-sm">{objective}</span>
               </li>
             ))}
@@ -494,7 +570,7 @@ function LessonSidebar({ lesson }: { lesson: Lesson }) {
           <ul className="space-y-1">
             {lesson.materialsNeeded.map((material, index) => (
               <li key={index} className="flex items-center gap-2">
-                <div className="h-1.5 w-1.5 bg-blue-600 rounded-full flex-shrink-0" />
+                <div className="h-1.5 w-1.5 bg-[#85B2C8] rounded-full flex-shrink-0" />
                 <span className="text-sm">{material}</span>
               </li>
             ))}
@@ -503,26 +579,147 @@ function LessonSidebar({ lesson }: { lesson: Lesson }) {
       </Card>
 
       {lesson.id === 1 && (
-        <Card className="bg-yellow-50 dark:bg-yellow-950 border-yellow-200 dark:border-yellow-800">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
+            <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              Special Resources
+              Resources
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-3">
-              This lesson includes a printable pre-assessment worksheet for students to complete.
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              Downloadable PDF resources for this lesson:
             </p>
-            <Button
-              onClick={() => window.open('/pre-assessment', '_blank')}
-              variant="outline"
-              size="sm"
-              className="w-full"
-            >
-              <Printer className="h-4 w-4 mr-1" />
-              View Worksheet
-            </Button>
+            <ul className="space-y-2">
+              <li>
+                <a href="#" className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline flex items-center gap-1">
+                  <Printer className="h-3 w-3" />
+                  Table Tent template
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline flex items-center gap-1">
+                  <Printer className="h-3 w-3" />
+                  Knowing and Loving, Me! Worksheet
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline flex items-center gap-1">
+                  <Printer className="h-3 w-3" />
+                  Parent Letter
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline flex items-center gap-1">
+                  <Printer className="h-3 w-3" />
+                  Who's in My Family Zoo Worksheet
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline flex items-center gap-1">
+                  <Printer className="h-3 w-3" />
+                  Animal Genius Quiz® Result Print-outs
+                </a>
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {lesson.id === 1 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Core Academic Influences
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Carl Jung – Theory of Psychological Types
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  Jung's work on how people perceive and decide forms the foundation of the Animal Genius Quiz®, reframed into kid-friendly animal metaphors that help students understand how they think and connect.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Zaretta Hammond – Culturally Responsive Teaching and the Brain
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  Hammond stresses the importance of identity in learning. The quiz supports her independence-building strategies by helping students name how they think, learn, and process the world.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Claude Steele – Stereotype Threat and Identity Safety
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  Steele's research shows that students thrive when their identity is valued. The Animal Genius Quiz® provides a safe, affirming starting point that reduces stereotype threat and boosts belonging.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Carol Dweck – Growth Mindset
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  Dweck reminds us identity isn't fixed. The quiz helps students see personality as a launchpad for growth, not a label.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Maurice Elias & CASEL – SEL Framework
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  This lesson builds CASEL's first competency—self-awareness—by helping students recognize their strengths and traits in a joyful, memorable way.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Debbie Miller – Reading with Meaning
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  Miller champions helping kids "see themselves as learners." The table tents and reflections give students the words to describe how they learn, right from Day 1.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Claude & Dorothy Steele – Identity-Safe Classrooms
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  Students engage more deeply when their identity is affirmed. Your first week builds this safety into the classroom through personality-based self-awareness and celebration.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}

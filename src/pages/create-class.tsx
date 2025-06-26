@@ -17,8 +17,9 @@ import Header from "@/components/header";
 // Create a standalone schema for class creation
 const createClassSchema = z.object({
   name: z.string().min(1, "Class name is required"),
-  iconEmoji: z.string().default("📚"),
-  iconColor: z.string().default("hsl(202 25% 65%)"), // Panda blue
+  subject: z.string().optional(),
+  gradeLevel: z.string().optional(),
+  schoolName: z.string().optional(),
 });
 type CreateClassData = z.infer<typeof createClassSchema>;
 
@@ -61,8 +62,9 @@ export default function CreateClass() {
     resolver: zodResolver(createClassSchema),
     defaultValues: {
       name: "",
-      iconEmoji: "📚",
-      iconColor: "hsl(202 25% 65%)", // Panda blue
+      subject: "",
+      gradeLevel: "",
+      schoolName: "",
     },
   });
 
@@ -103,8 +105,8 @@ export default function CreateClass() {
 
   // Show success page if class was created
   if (createdClass) {
-    const fullUrl = `${window.location.origin}/q/${createdClass.code}`;
-    const shortUrl = `${window.location.origin}/q/${createdClass.code}`;
+    const fullUrl = `${window.location.origin}/q/${createdClass.passportCode}`;
+    const shortUrl = `${window.location.origin}/q/${createdClass.passportCode}`;
 
     return (
       <div className="min-h-screen">
@@ -122,10 +124,9 @@ export default function CreateClass() {
             <Card className="shadow-xl">
               <CardContent className="p-8 text-center">
                 <div 
-                  className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl"
-                  style={{ backgroundColor: createdClass.iconColor || "hsl(202 25% 65%)" }}
+                  className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl bg-blue-100"
                 >
-                  {createdClass.iconEmoji || "📚"}
+                  📚
                 </div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-4">Class Created Successfully!</h2>
                 <p className="text-gray-600 mb-8">Your new class is ready for students. Here are the sharing details:</p>
@@ -139,7 +140,7 @@ export default function CreateClass() {
                       </div>
                       <div>
                         <label className="text-sm font-semibold text-gray-700">Class Code</label>
-                        <p className="text-lg font-bold text-blue-600">{createdClass.code}</p>
+                        <p className="text-lg font-bold text-blue-600">{createdClass.passportCode}</p>
                       </div>
                     </div>
 
@@ -227,36 +228,12 @@ export default function CreateClass() {
                   <div className="grid md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
-                      name="iconEmoji"
+                      name="subject"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Class Icon</FormLabel>
+                          <FormLabel>Subject (Optional)</FormLabel>
                           <FormControl>
-                            <div className="space-y-3">
-                              <div className="flex items-center gap-3 mb-3">
-                                <div 
-                                  className="w-12 h-12 rounded-full flex items-center justify-center text-xl"
-                                  style={{ backgroundColor: form.watch("iconColor") }}
-                                >
-                                  {field.value}
-                                </div>
-                                <span className="text-sm text-gray-600">Preview</span>
-                              </div>
-                              <div className="grid grid-cols-5 gap-2">
-                                {["📚", "🎓", "✏️", "🔬", "🎨", "⚗️", "📊", "🧮", "🌟", "💡"].map((emoji) => (
-                                  <button
-                                    key={emoji}
-                                    type="button"
-                                    onClick={() => field.onChange(emoji)}
-                                    className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center text-lg hover:bg-gray-50 transition-colors ${
-                                      field.value === emoji ? "border-blue-500 bg-blue-50" : "border-gray-200"
-                                    }`}
-                                  >
-                                    {emoji}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
+                            <Input placeholder="e.g. Biology, English, Math" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -265,42 +242,32 @@ export default function CreateClass() {
 
                     <FormField
                       control={form.control}
-                      name="iconColor"
+                      name="gradeLevel"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Background Color</FormLabel>
+                          <FormLabel>Grade Level (Optional)</FormLabel>
                           <FormControl>
-                            <div className="space-y-3">
-                              <div className="grid grid-cols-4 gap-2">
-                                {[
-                                  "hsl(202 25% 65%)", "hsl(334 19% 60%)", "hsl(150 30% 55%)", "hsl(32 72% 72%)",
-                                  "#8db3d4", "#b68cd4", "#d48ca8", "#90d4c5",
-                                  "#d4c590", "#a8d490", "#d490b6", "#90b6d4"
-                                ].map((color) => (
-                                  <button
-                                    key={color}
-                                    type="button"
-                                    onClick={() => field.onChange(color)}
-                                    className={`w-10 h-10 rounded-lg border-2 transition-all ${
-                                      field.value === color ? "border-gray-800 scale-110" : "border-gray-300"
-                                    }`}
-                                    style={{ backgroundColor: color }}
-                                  />
-                                ))}
-                              </div>
-                              <Input
-                                type="color"
-                                value={field.value}
-                                onChange={(e) => field.onChange(e.target.value)}
-                                className="w-full h-10"
-                              />
-                            </div>
+                            <Input placeholder="e.g. 7th Grade, High School" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
+
+                  <FormField
+                    control={form.control}
+                    name="schoolName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>School Name (Optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. Lincoln Middle School" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
                   <Card className="bg-blue-50 border-blue-200">
                     <CardContent className="p-6">

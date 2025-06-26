@@ -59,8 +59,12 @@ export function useAuth() {
   }, [serverUser]);
 
   const login = (token: string, userData: User, refreshToken?: string) => {
+    console.log('[useAuth] login called with token:', token?.substring(0, 20) + '...');
+    
     // SECURITY FIX: Only store tokens, not user data
     localStorage.setItem('authToken', token);
+    console.log('[useAuth] Token stored, verifying:', localStorage.getItem('authToken')?.substring(0, 20) + '...');
+    
     if (refreshToken) {
       localStorage.setItem('refreshToken', refreshToken);
     }

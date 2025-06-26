@@ -36,10 +36,14 @@ export function performAuthCleanup() {
   }
 
   // Check refresh token validity
-  if (refreshToken && !isValidJWT(refreshToken)) {
-    console.log("Invalid refresh token found, clearing...");
-    shouldClear = true;
+  if (refreshToken && refreshToken.includes('.')) {
+    // Only validate if it looks like a JWT (has dots)
+    if (!isValidJWT(refreshToken)) {
+      console.log("Invalid refresh token found, clearing...");
+      shouldClear = true;
+    }
   }
+  // If refresh token is just a string (like Supabase uses), that's fine
 
   if (shouldClear) {
     localStorage.removeItem("authToken");
@@ -72,23 +76,11 @@ function isValidJWT(token: string): boolean {
   }
 }
 
-// Run cleanup immediately when this module is imported
-const authState = performAuthCleanup();
-console.log('Auth cleanup complete. Valid auth state:', authState);
+// TEMPORARILY DISABLED: Aggressive auth cleanup
+// This was clearing valid Supabase tokens
+// TODO: Implement proper Supabase token refresh logic
 
-// Check if we're on a student/public page that doesn't require auth
-const isPublicPage = 
-  window.location.pathname.startsWith('/island/') ||
-  window.location.pathname.startsWith('/q/') ||
-  window.location.pathname.startsWith('/game/') ||
-  window.location.pathname === '/login' ||
-  window.location.pathname === '/register' ||
-  window.location.pathname === '/';
+// const authState = performAuthCleanup();
+// console.log('Auth cleanup complete. Valid auth state:', authState);
 
-// If we cleared auth state and we're not on a public page, redirect to login
-if (!authState && !isPublicPage) {
-  console.log('Auth state was cleared on protected page, redirecting to login...');
-  setTimeout(() => {
-    window.location.href = '/login';
-  }, 500);
-}
+console.log('Auth cleanup disabled - tokens will be validated by backend');

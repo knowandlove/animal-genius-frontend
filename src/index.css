@@ -351,4 +351,23 @@
   .animation-delay-1000 {
     animation-delay: 1000ms;
   }
+  
+  /* Rive animation fixes */
+  .rive-container {
+    background-color: transparent !important;
+  }
+  
+  .rive-container canvas {
+    background-color: transparent !important;
+  }
+  
+  /* Fix Rive canvas background */
+  canvas[data-artboard] {
+    background-color: transparent !important;
+  }
+  
+  /* Ensure Rive animations don't have black background */
+  div[style*="background-color: black"] {
+    background-color: transparent !important;
+  }
 }

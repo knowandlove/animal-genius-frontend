@@ -1,7 +1,7 @@
 // API response types for the island system
 
 export interface IslandData {
-  id: number;
+  id: string;  // Changed from number to string (UUID)
   passportCode: string;
   studentName: string;
   gradeLevel: string;
@@ -28,7 +28,7 @@ export interface IslandData {
     furniture?: any[];
   };
   className: string;
-  classId: number;
+  classId: string;  // Changed from number to string (UUID)
   completedAt: string;
 }
 
@@ -50,6 +50,6 @@ export interface WalletData {
 export interface StoreStatus {
   isOpen: boolean;
   message: string;
-  classId: number;
+  classId: string;  // Changed from number to string (UUID)
   className: string;
 }

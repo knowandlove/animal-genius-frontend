@@ -52,6 +52,7 @@ const DebugAuth = lazy(() => import("@/pages/admin/debug-auth"));
 const TestAdmin = lazy(() => import("@/pages/admin/test-admin"));
 const TestPositions = lazy(() => import("@/pages/admin/test-positions"));
 const AvatarSizeDebug = lazy(() => import("@/pages/admin/avatar-size-debug"));
+const AdminForceDelete = lazy(() => import("@/pages/admin-force-delete"));
 
 // Import the properly configured query client
 import { queryClient } from "@/lib/queryClient";
@@ -68,6 +69,11 @@ function Router() {
 
   useEffect(() => {
     console.log('[Router] Checking auth state...');
+    console.log('[Router] Current localStorage:', {
+      authToken: localStorage.getItem('authToken')?.substring(0, 20) + '...',
+      refreshToken: !!localStorage.getItem('refreshToken')
+    });
+    
     // Check and clean up authentication state first
     const hasValidAuth = checkAuthStateOnLoad();
     console.log('[Router] Has valid auth:', hasValidAuth);
@@ -92,6 +98,7 @@ function Router() {
     // Check for existing token in localStorage
     const authToken = localStorage.getItem("authToken");
     console.log('[Router] Auth token found:', !!authToken);
+    console.log('[Router] Token value:', authToken?.substring(0, 20) + '...');
     setToken(authToken);
     setIsLoading(false);
 
@@ -176,6 +183,7 @@ function Router() {
             <Route path="/admin/test-admin" component={TestAdmin} />
             <Route path="/admin/test-positions" component={TestPositions} />
             <Route path="/admin/avatar-debug" component={AvatarSizeDebug} />
+            <Route path="/admin/force-delete" component={AdminForceDelete} />
           </>
         ) : (
           <>
