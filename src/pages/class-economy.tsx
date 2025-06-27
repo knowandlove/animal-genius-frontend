@@ -133,7 +133,7 @@ export default function ClassEconomy() {
 
   // Get class data and students
   const { data: economyData, isLoading, error } = useQuery({
-    queryKey: [`/api/classes/${classId}/economy`],
+    queryKey: [`/api/classes/${classId}/analytics`],
     queryFn: async () => {
       const data = await apiRequest('GET', `/api/classes/${classId}/analytics`);
       return {
@@ -212,7 +212,7 @@ export default function ClassEconomy() {
         description: `Updated currency for ${count} student${count > 1 ? 's' : ''}`,
       });
       queryClient.invalidateQueries({
-        queryKey: [`/api/classes/${classId}/economy`],
+        queryKey: [`/api/classes/${classId}/analytics`],
       });
       setSelectedStudents(new Set());
       setBulkAmount("");
@@ -291,7 +291,7 @@ export default function ClassEconomy() {
       });
       refetchRequests();
       queryClient.invalidateQueries({
-        queryKey: [`/api/classes/${classId}/economy`],
+        queryKey: [`/api/classes/${classId}/analytics`],
       });
       // Also invalidate all student island caches to force refresh
       queryClient.invalidateQueries({
@@ -324,7 +324,7 @@ export default function ClassEconomy() {
       });
       refetchRequests();
       queryClient.invalidateQueries({
-        queryKey: [`/api/classes/${classId}/economy`],
+        queryKey: [`/api/classes/${classId}/analytics`],
       });
       // Also invalidate all student island caches to force refresh
       queryClient.invalidateQueries({
