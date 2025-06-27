@@ -45,7 +45,7 @@ interface User {
 }
 
 interface Student {
-  id: number;
+  id: string;
   studentName: string;
   gradeLevel: string;
   animalType: string;
@@ -88,7 +88,7 @@ interface Transaction {
 
 interface PurchaseRequest {
   id: number;
-  studentId: number;
+  studentId: string;
   studentName: string;
   studentBalance: number;
   passportCode: string;
@@ -119,14 +119,14 @@ export default function ClassEconomy() {
   
   // State
   const [user, setUser] = useState<User | null>(null);
-  const [selectedStudents, setSelectedStudents] = useState<Set<number>>(new Set());
+  const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
   const [filterAnimal, setFilterAnimal] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [bulkAmount, setBulkAmount] = useState("");
   const [bulkReason, setBulkReason] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "balance" | "animal">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [transactionHistoryOpen, setTransactionHistoryOpen] = useState(false);
   const [autoApprovalThreshold, setAutoApprovalThreshold] = useState<number | null>(null);
   const [tempThreshold, setTempThreshold] = useState<string>("");
@@ -192,13 +192,13 @@ export default function ClassEconomy() {
   const currencyMutation = useMutation({
     mutationFn: async ({ action, studentIds, amount, reason }: {
       action: 'give' | 'take';
-      studentIds: number[];
+      studentIds: string[];
       amount: number;
       reason: string;
     }) => {
       const promises = studentIds.map(studentId => 
         apiRequest('POST', `/api/currency/${action}`, {
-          submissionId: studentId,
+          studentId: studentId,  // Changed from submissionId to studentId
           amount,
           reason
         })
@@ -231,7 +231,7 @@ export default function ClassEconomy() {
   const autoApprovalMutation = useMutation({
     mutationFn: async (threshold: number | null) => {
       return await apiRequest('POST', '/api/currency/store/auto-approval', {
-        classId: parseInt(classId!),
+        classId: classId!,  // classId is now a UUID string, no need to parse
         threshold
       });
     },
@@ -257,7 +257,7 @@ export default function ClassEconomy() {
   const storeToggleMutation = useMutation({
     mutationFn: async (isOpen: boolean) => {
       return await apiRequest('POST', '/api/currency/store/toggle', {
-        classId: parseInt(classId!),
+        classId: classId!,  // classId is now a UUID string, no need to parse
         isOpen
       });
     },
@@ -392,7 +392,7 @@ export default function ClassEconomy() {
   }, [economyData?.students]);
 
   // Quick action handlers
-  const handleQuickGive = (studentId: number, amount: number, reason: string) => {
+  const handleQuickGive = (studentId: string, amount: number, reason: string) => {
     currencyMutation.mutate({
       action: 'give',
       studentIds: [studentId],
@@ -412,7 +412,7 @@ export default function ClassEconomy() {
     });
   };
 
-  const toggleStudentSelection = (studentId: number) => {
+  const toggleStudentSelection = (studentId: string) => {
     const newSelection = new Set(selectedStudents);
     if (newSelection.has(studentId)) {
       newSelection.delete(studentId);
@@ -439,7 +439,7 @@ export default function ClassEconomy() {
     }
   };
 
-  const handleViewHistory = (studentId: number) => {
+  const handleViewHistory = (studentId: string) => {
     console.log('Opening transaction history for student:', studentId);
     setSelectedStudentId(studentId);
     setTransactionHistoryOpen(true);

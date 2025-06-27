@@ -73,10 +73,11 @@ function LayeredAvatarRoom({
   const getAnimalImage = () => {
     const normalizedAnimal = animalType.toLowerCase().replace(' ', '-');
     
-    // Use full-body images for rooms with _full suffix
-    const animalFileName = normalizedAnimal === 'border-collie' ? 'border_collie' : normalizedAnimal;
+    // Use the correct filename format
+    const animalFileName = normalizedAnimal === 'border-collie' ? 'border_collie' : normalizedAnimal.replace('-', '_');
     
     // Use the cloud assets utility which handles the cloud/local switching
+    // Use the _full suffix for the full body animal images
     return getAssetUrl(`/images/${animalFileName}_full.png`);
   };
 

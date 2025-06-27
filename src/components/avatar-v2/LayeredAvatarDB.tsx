@@ -74,11 +74,12 @@ function LayeredAvatarDB({
   const getAnimalImage = () => {
     const normalizedAnimal = animalType.toLowerCase().replace(' ', '-');
     
-    // Use full-body images for consistency with positioning tool
-    const animalFileName = normalizedAnimal === 'border-collie' ? 'border_collie' : normalizedAnimal;
+    // Use the correct filename format with underscores
+    const animalFileName = normalizedAnimal === 'border-collie' ? 'border_collie' : normalizedAnimal.replace('-', '_');
     
     // Use the cloud assets utility which handles the cloud/local switching
-    return getAssetUrl(`/animals/full-body/${animalFileName}.png`);
+    // Use the _full suffix for the full body animal images
+    return getAssetUrl(`/images/${animalFileName}_full.png`);
   };
 
   // Get position from database or use default
