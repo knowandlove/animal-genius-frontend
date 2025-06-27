@@ -14,6 +14,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { getAssetUrl } from "@/utils/cloud-assets";
 import Header from "@/components/header";
 import { InteractivePieChart } from "@/components/interactive-pie-chart";
+import { useAuth } from '@/hooks/useAuth';
 import { Monitor, Upload, Eye, Volume2, Zap, BookOpen, MapPin, Coins, Plus, Minus, Store } from "lucide-react";
 import { CSVImportModal } from "@/components/CSVImportModal";
 
@@ -77,8 +78,10 @@ export default function ClassAnalytics() {
     string | null
   >(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [user, setUser] = useState<User | null>(null);
   const [isCSVModalOpen, setIsCSVModalOpen] = useState(false);
+  
+  // Use the auth hook to get user data
+  const { user, isAuthenticated } = useAuth();
   
   // Currency management state
   const [selectedStudent, setSelectedStudent] = useState<Submission | null>(null);
@@ -109,11 +112,6 @@ export default function ClassAnalytics() {
     if (!token) {
       setLocation("/login");
       return;
-    }
-
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
     }
   }, [setLocation]);
 
@@ -244,12 +242,12 @@ export default function ClassAnalytics() {
     selectedLearningStyle,
   ]);
 
-  // Animal color mapping and SVG paths
+  // Animal color mapping and image paths
   const animalColors: Record<string, { color: string; svg: string }> = {
-    Meerkat: { color: "#4B4959", svg: getAssetUrl("/images/meerkat.svg") },
+    Meerkat: { color: "#4B4959", svg: getAssetUrl("/images/meerkat.png") },
     Panda: { color: "#82BCC8", svg: getAssetUrl("/images/panda.png") },
     Owl: { color: "#BAC97D", svg: getAssetUrl("/images/owl.png") },
-    Beaver: { color: "#829B79", svg: getAssetUrl("/images/beaver.svg") },
+    Beaver: { color: "#829B79", svg: getAssetUrl("/images/beaver.png") },
     Elephant: { color: "#BD85C8", svg: getAssetUrl("/images/elephant.png") },
     Otter: { color: "#FACC7D", svg: getAssetUrl("/images/otter.png") },
     Parrot: { color: "#FF8070", svg: getAssetUrl("/images/parrot.png") },
@@ -263,7 +261,7 @@ export default function ClassAnalytics() {
       ([animal, count]) => {
         const animalInfo = animalColors[animal] || {
           color: "#6366F1",
-          svg: "/images/meerkat.svg",
+          svg: "/images/meerkat.png",
         };
         // Use Math.floor for Border Collie to show 10% instead of 11%
         const percentage =
@@ -908,7 +906,7 @@ export default function ClassAnalytics() {
                                       <div className="flex items-center">
                                         <div className="w-6 h-6 mr-2">
                                           <img 
-                                            src={animalColors[submission.animalType]?.svg || "/images/meerkat.svg"} 
+                                            src={animalColors[submission.animalType]?.svg || "/images/meerkat.png"} 
                                             alt={submission.animalType} 
                                             className="w-full h-full object-contain" 
                                           />

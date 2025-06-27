@@ -13,11 +13,26 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/header";
+import { CLASS_ICONS, CLASS_ICONS_MAP } from "@/components/class-icons";
+
+// Color options with brand colors
+const BACKGROUND_COLORS = [
+  { id: 'beaver-green', hex: '#829B79', label: 'Beaver Green' },
+  { id: 'panda-blue', hex: '#85B2C8', label: 'Panda Blue' },
+  { id: 'parrot-coral', hex: '#FF8070', label: 'Parrot Coral' },
+  { id: 'elephant-purple', hex: '#BD85C8', label: 'Elephant Purple' },
+  { id: 'owl-green', hex: '#BAC97D', label: 'Owl Green' },
+  { id: 'otter-orange', hex: '#FACC7D', label: 'Otter Orange' },
+  { id: 'collie-tan', hex: '#DEA77E', label: 'Collie Tan' },
+  { id: 'meerkat-gray', hex: '#4B4959', label: 'Meerkat Gray' },
+];
 
 // Create a standalone schema for class creation
 const createClassSchema = z.object({
   name: z.string().min(1, "Class name is required"),
-  subject: z.string().optional(),
+  icon: z.string().optional().default('book'),
+  backgroundColor: z.string().optional().default('#829B79'),
+  numberOfStudents: z.number().min(1, "Number of students must be at least 1").optional(),
   gradeLevel: z.string().optional(),
   schoolName: z.string().optional(),
 });
@@ -62,7 +77,9 @@ export default function CreateClass() {
     resolver: zodResolver(createClassSchema),
     defaultValues: {
       name: "",
-      subject: "",
+      icon: "book",
+      backgroundColor: "#829B79",
+      numberOfStudents: undefined,
       gradeLevel: "",
       schoolName: "",
     },
@@ -124,9 +141,13 @@ export default function CreateClass() {
             <Card className="shadow-xl">
               <CardContent className="p-8 text-center">
                 <div 
-                  className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl bg-blue-100"
+                  className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+                  style={{ backgroundColor: createdClass.backgroundColor || '#829B79' }}
                 >
-                  📚
+                  {(() => {
+                    const IconComponent = CLASS_ICONS_MAP[createdClass.icon || 'book'];
+                    return IconComponent ? <IconComponent className="w-10 h-10 text-white" /> : null;
+                  })()}
                 </div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-4">Class Created Successfully!</h2>
                 <p className="text-gray-600 mb-8">Your new class is ready for students. Here are the sharing details:</p>
@@ -187,6 +208,9 @@ export default function CreateClass() {
     );
   }
 
+  const selectedIcon = form.watch("icon");
+  const selectedColor = form.watch("backgroundColor");
+
   return (
     <div className="min-h-screen">
       <Header 
@@ -202,9 +226,17 @@ export default function CreateClass() {
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <Card className="shadow-xl">
             <CardHeader className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full mb-4 mx-auto"></div>
+              <div 
+                className="w-16 h-16 rounded-full mb-4 mx-auto flex items-center justify-center"
+                style={{ backgroundColor: selectedColor }}
+              >
+                {(() => {
+                  const IconComponent = CLASS_ICONS_MAP[selectedIcon || 'book'];
+                  return IconComponent ? <IconComponent className="w-8 h-8 text-white" /> : null;
+                })()}
+              </div>
               <CardTitle className="text-3xl font-bold text-gray-900">Create New Class</CardTitle>
-              <p className="text-gray-600">Set up a new class for your students to take the Animal Genius Quiz</p>
+              <p className="text-gray-600">Set up a new class for your students to take the Animal Genius Quiz®</p>
             </CardHeader>
             
             <CardContent className="p-8">
@@ -228,13 +260,19 @@ export default function CreateClass() {
                   <div className="grid md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
-                      name="subject"
+                      name="numberOfStudents"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Subject (Optional)</FormLabel>
+                          <FormLabel>Number of Students (Optional)</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. Biology, English, Math" {...field} />
+                            <Input 
+                              type="number" 
+                              placeholder="e.g. 25" 
+                              {...field} 
+                              onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                            />
                           </FormControl>
+                          <p className="text-sm text-gray-500">Expected number of students in this class</p>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -259,11 +297,85 @@ export default function CreateClass() {
                     control={form.control}
                     name="schoolName"
                     render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>School Name (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. Lincoln Middle School" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                  {/* Icon Selection */}
+                  <FormField
+                    control={form.control}
+                    name="icon"
+                    render={({ field }) => (
                       <FormItem>
-                        <FormLabel>School Name (Optional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. Lincoln Middle School" {...field} />
-                        </FormControl>
+                        <FormLabel>Choose Class Icon</FormLabel>
+                        <div className="grid grid-cols-6 gap-3 mt-2">
+                          {CLASS_ICONS.map(({ id, label, Icon }) => (
+                            <button
+                              key={id}
+                              type="button"
+                              onClick={() => field.onChange(id)}
+                              className={`
+                                w-full aspect-square rounded-lg flex items-center justify-center
+                                transition-all duration-200 ${
+                                  field.value === id 
+                                    ? 'ring-2 ring-offset-2 ring-blue-500 scale-110' 
+                                    : 'hover:scale-105'
+                                }
+                              `}
+                              style={{ 
+                                backgroundColor: field.value === id ? selectedColor : '#e5e7eb',
+                                color: field.value === id ? 'white' : '#6b7280'
+                              }}
+                              title={label}
+                            >
+                              <Icon className="w-6 h-6" />
+                            </button>
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Color Selection */}
+                  <FormField
+                    control={form.control}
+                    name="backgroundColor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Choose Background Color</FormLabel>
+                        <div className="grid grid-cols-4 gap-3 mt-2">
+                          {BACKGROUND_COLORS.map((color) => (
+                            <button
+                              key={color.id}
+                              type="button"
+                              onClick={() => field.onChange(color.hex)}
+                              className={`
+                                w-full h-12 rounded-lg transition-all duration-200 relative
+                                ${field.value === color.hex 
+                                  ? 'ring-2 ring-offset-2 ring-blue-500 scale-105' 
+                                  : 'hover:scale-105'
+                                }
+                              `}
+                              style={{ backgroundColor: color.hex }}
+                              title={color.label}
+                            >
+                              {field.value === color.hex && (
+                                <span className="absolute inset-0 flex items-center justify-center">
+                                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}

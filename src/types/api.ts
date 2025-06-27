@@ -29,7 +29,6 @@ export interface IslandData {
   };
   className: string;
   classId: string;  // Changed from number to string (UUID)
-  completedAt: string;
 }
 
 export interface PurchaseRequest {

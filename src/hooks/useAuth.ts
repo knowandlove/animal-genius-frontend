@@ -9,6 +9,9 @@ interface User {
   email: string;
   personalityAnimal?: string;
   isAdmin?: boolean;
+  schoolOrganization?: string;
+  roleTitle?: string;
+  howHeardAbout?: string;
 }
 
 export function useAuth() {

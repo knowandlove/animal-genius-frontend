@@ -21,6 +21,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Trash2, Clipboard } from "lucide-react";
 import { QuestionIcon } from "@/components/QuestionIcon";
 import { TeacherQuizModal } from "@/components/TeacherQuizModal";
+import { CLASS_ICONS_MAP } from "@/components/class-icons";
 
 interface User {
   id: string;  // Changed from number to string (UUID)
@@ -37,6 +38,8 @@ interface ClassData {
   passportCode: string;
   studentCount: number;
   createdAt: string;
+  icon?: string;
+  backgroundColor?: string;
 }
 
 export default function TeacherDashboard() {
@@ -182,13 +185,37 @@ export default function TeacherDashboard() {
         console.log("Token exists:", !!token);
       }
 
-      const response = await fetch(api(`/api/classes/${classId}`), {
+      // First try regular delete
+      let response = await fetch(api(`/api/classes/${classId}`), {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
+
+      // If it fails with 409 (conflict), try force delete
+      if (response.status === 409) {
+        const errorData = await response.json();
+        if (errorData.message?.includes("remove all students")) {
+          // Ask user if they want to force delete
+          const confirmForce = window.confirm(
+            "This class has students. Do you want to delete the class and all student data? This cannot be undone."
+          );
+          
+          if (confirmForce) {
+            response = await fetch(api(`/api/admin/classes/${classId}/force`), {
+              method: "DELETE",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+          } else {
+            return; // User cancelled
+          }
+        }
+      }
 
       if (process.env.NODE_ENV === 'development') {
         console.log("Delete response status:", response.status);
@@ -380,9 +407,13 @@ export default function TeacherDashboard() {
                       <CardContent className="p-6">
                         <div className="flex items-start gap-3 mb-4">
                           <div 
-                            className="w-12 h-12 rounded-full flex items-center justify-center text-xl flex-shrink-0 bg-blue-100"
+                            className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                            style={{ backgroundColor: cls.backgroundColor || '#829B79' }}
                           >
-                            📚
+                            {(() => {
+                              const IconComponent = CLASS_ICONS_MAP[cls.icon || 'book'];
+                              return IconComponent ? <IconComponent className="w-6 h-6 text-white" /> : null;
+                            })()}
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center justify-between mb-1">
@@ -480,7 +511,10 @@ export default function TeacherDashboard() {
               ) : (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-gray-400 text-2xl">📚</span>
+                    {(() => {
+                      const BookIconComponent = CLASS_ICONS_MAP['book'];
+                      return BookIconComponent ? <BookIconComponent className="w-8 h-8 text-gray-400" /> : null;
+                    })()}
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
                     No classes yet
@@ -512,12 +546,27 @@ export default function TeacherDashboard() {
               Delete Class
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "
-              {
-                classes?.find((cls: ClassData) => cls.id === deleteClassId)
-                  ?.name
-              }
-              "? This will permanently remove the class and all associated data. This action cannot be undone.
+              {(() => {
+                const classToDelete = classes?.find((cls: ClassData) => cls.id === deleteClassId);
+                const hasStudents = classToDelete && classToDelete.studentCount > 0;
+                return (
+                  <>
+                    Are you sure you want to delete "{classToDelete?.name}"? 
+                    {hasStudents && (
+                      <>
+                        <br /><br />
+                        <strong className="text-destructive">Warning:</strong> This class has {classToDelete.studentCount} student{classToDelete.studentCount !== 1 ? 's' : ''}. 
+                        Deleting this class will permanently remove all student data, quiz submissions, and progress.
+                      </>
+                    )}
+                    {!hasStudents && (
+                      <> This will permanently remove the class.</>
+                    )}
+                    <br /><br />
+                    This action cannot be undone.
+                  </>
+                );
+              })()}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
