@@ -256,7 +256,7 @@ export default function ClassAnalytics() {
 
   // Prepare pie chart data
   const pieChartData = useMemo(() => {
-    if (!analyticsData?.stats.animalDistribution) return [];
+    if (!analyticsData?.stats?.animalDistribution) return [];
     return Object.entries(analyticsData.stats.animalDistribution).map(
       ([animal, count]) => {
         const animalInfo = animalColors[animal] || {
@@ -406,7 +406,32 @@ export default function ClassAnalytics() {
     );
   }
 
-  if (!analyticsData) {
+  if (error) {
+    return (
+      <div className="min-h-screen">
+        <Header
+          isAuthenticated={!!user}
+          user={user || undefined}
+          onLogout={handleLogout}
+        />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Error Loading Class Analytics
+            </h2>
+            <p className="text-gray-600 mb-4">
+              {error instanceof Error ? error.message : 'Failed to load class data'}
+            </p>
+            <Button onClick={() => setLocation("/dashboard")}>
+              Back to Dashboard
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!analyticsData || !analyticsData.stats) {
     return (
       <div className="min-h-screen">
         <Header
@@ -509,7 +534,7 @@ export default function ClassAnalytics() {
                 <div className="flex items-center space-x-2 text-sm">
                   <span className="text-gray-600 text-[22px]">Total Submissions:</span>
                   <span className="font-bold text-blue-600 text-[27px]">
-                    {analyticsData.stats.totalSubmissions}
+                    {analyticsData?.stats?.totalSubmissions || 0}
                   </span>
                 </div>
               </div>
@@ -637,7 +662,7 @@ export default function ClassAnalytics() {
                     </div>
 
                     {/* Charts - Right Columns */}
-                    <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
                       {/* Animal Distribution Pie Chart */}
                       <div className="relative">
                         <h4 className="text-md font-medium text-gray-700 mb-3">
@@ -699,11 +724,11 @@ export default function ClassAnalytics() {
                         <div className="bg-white rounded-lg shadow-sm border p-4">
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             {Object.entries(
-                              analyticsData.stats.learningStyleDistribution ||
+                              analyticsData?.stats?.learningStyleDistribution ||
                                 {},
                             ).map(([style, count]) => {
                               const percentage =
-                                analyticsData.stats.totalSubmissions > 0
+                                analyticsData?.stats?.totalSubmissions > 0
                                   ? Math.round(
                                       (count /
                                         analyticsData.stats.totalSubmissions) *
