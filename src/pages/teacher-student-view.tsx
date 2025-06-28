@@ -26,9 +26,14 @@ export default function TeacherStudentView() {
     setToken(authToken);
   }, [setLocation]);
 
-  // Fetch real submission data
+  // Determine if we have a student ID (UUID) or submission ID (numeric)
+  const isStudentId = submissionId && submissionId.includes('-');
+  
+  // Fetch real submission data - use appropriate endpoint based on ID type
   const { data: submission, isLoading: submissionLoading } = useQuery({
-    queryKey: [`/api/submissions/${submissionId}`],
+    queryKey: isStudentId 
+      ? [`/api/teacher/students/${submissionId}`]
+      : [`/api/submissions/${submissionId}`],
     enabled: !!submissionId && !!token
   });
 
