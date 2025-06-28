@@ -90,7 +90,8 @@ export default function StoreManagementDirect() {
     
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || 'Upload failed');
+      console.error('Upload error details:', error);
+      throw new Error(error.error || error.details || error.message || 'Upload failed');
     }
     
     return response.json();
