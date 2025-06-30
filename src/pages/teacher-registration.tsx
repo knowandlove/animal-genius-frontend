@@ -52,7 +52,7 @@ export default function TeacherRegistration() {
 
   const registerMutation = useMutation({
     mutationFn: async (data: Omit<RegistrationData, "confirmPassword">) => {
-      return apiRequest("POST", "/api/register", data);
+      return apiRequest("POST", "/api/auth/register", data);
     },
     onSuccess: (data) => {
       localStorage.setItem("authToken", data.token);

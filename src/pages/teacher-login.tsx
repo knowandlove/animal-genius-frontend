@@ -36,16 +36,21 @@ export default function TeacherLogin() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginData) => {
-      return await apiRequest("POST", "/api/login", data);
+      return await apiRequest("POST", "/api/auth/login", data);
     },
     onSuccess: async (data) => {
       login(data.token, data.user, data.refreshToken);
+      
+      // Dispatch custom event to update router state
+      window.dispatchEvent(new Event('authTokenChanged'));
       
       toast({
         title: "Welcome back!",
         description: "You have been logged in successfully.",
       });
-      window.location.href = "/dashboard";
+      
+      // Use router navigation instead of window.location
+      setLocation("/dashboard");
     },
     onError: (error) => {
       toast({

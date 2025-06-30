@@ -81,7 +81,11 @@ export default function Account() {
       if (!response.ok) {
         throw new Error("Failed to fetch user data");
       }
-      return response.json();
+      const data = await response.json();
+      if (data.success && data.data) {
+        return data.data;
+      }
+      throw new Error(data.error?.message || "Failed to fetch user data");
     },
     enabled: !!localStorage.getItem("authToken"),
     retry: 1,

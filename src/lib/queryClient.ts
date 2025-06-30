@@ -8,7 +8,7 @@ async function refreshAuthToken(): Promise<string | null> {
   }
 
   try {
-    const response = await fetch(api("/api/refresh-token"), {
+    const response = await fetch(api("/api/auth/refresh-token"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

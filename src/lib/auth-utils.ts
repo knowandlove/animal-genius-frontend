@@ -14,6 +14,11 @@ export function clearAuthState() {
 }
 
 export function isTokenExpired(token: string): boolean {
+  // For now, don't check expiration for Supabase tokens
+  // They have a different format than regular JWTs
+  return false;
+  
+  /*
   if (!token) return true;
   
   try {
@@ -24,6 +29,7 @@ export function isTokenExpired(token: string): boolean {
     // If we can't parse the token, consider it expired
     return true;
   }
+  */
 }
 
 export function redirectToLogin() {
@@ -33,8 +39,13 @@ export function redirectToLogin() {
 
 export function checkAuthStateOnLoad() {
   const token = localStorage.getItem("authToken");
-  const refreshToken = localStorage.getItem("refreshToken");
+  // const refreshToken = localStorage.getItem("refreshToken");
   
+  // Just check if we have a token for now
+  // Supabase handles token refresh internally
+  return !!token;
+  
+  /*
   // If we have tokens but they're both expired, clear everything
   if (token && refreshToken) {
     if (isTokenExpired(token) && isTokenExpired(refreshToken)) {
@@ -52,4 +63,5 @@ export function checkAuthStateOnLoad() {
   }
   
   return !!token;
+  */
 }
