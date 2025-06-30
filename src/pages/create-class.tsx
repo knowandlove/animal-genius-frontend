@@ -103,8 +103,8 @@ export default function CreateClass() {
 
   // Show success page if class was created
   if (createdClass) {
-    const fullUrl = `${window.location.origin}/q/${createdClass.code}`;
-    const shortUrl = `${window.location.origin}/q/${createdClass.code}`;
+    const fullUrl = `${window.location.origin}/q/${createdClass.classCode}`;
+    const shortUrl = `${window.location.origin}/q/${createdClass.classCode}`;
 
     return (
       <div className="min-h-screen">
@@ -139,7 +139,7 @@ export default function CreateClass() {
                       </div>
                       <div>
                         <label className="text-sm font-semibold text-gray-700">Class Code</label>
-                        <p className="text-lg font-bold text-blue-600">{createdClass.code}</p>
+                        <p className="text-lg font-bold text-blue-600">{createdClass.classCode}</p>
                       </div>
                     </div>
 

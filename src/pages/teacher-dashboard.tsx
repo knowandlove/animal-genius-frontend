@@ -34,12 +34,39 @@ interface User {
 interface ClassData {
   id: number;
   name: string;
-  code: string;
-  submissionCount: number;
+  code?: string; // Some endpoints return 'code'
+  classCode?: string; // Some endpoints return 'classCode'
+  submissionCount?: number;
+  studentCount?: number; // Backend returns this instead of submissionCount
   createdAt: string;
   iconEmoji?: string;
   iconColor?: string;
+  icon?: string; // Backend returns this instead of iconEmoji
+  backgroundColor?: string; // Backend returns this instead of iconColor
 }
+
+// Map text icons to emojis
+const iconMap: Record<string, string> = {
+  'book': '📚',
+  'pencil': '✏️',
+  'star': '⭐',
+  'heart': '❤️',
+  'music': '🎵',
+  'art': '🎨',
+  'science': '🔬',
+  'math': '🔢',
+  'globe': '🌍',
+  'computer': '💻',
+  'sports': '⚽',
+  'nature': '🌿',
+  'default': '📚'
+};
+
+const getIconEmoji = (iconEmoji?: string, icon?: string): string => {
+  if (iconEmoji) return iconEmoji;
+  if (icon && iconMap[icon]) return iconMap[icon];
+  return iconMap['default'];
+};
 
 export default function TeacherDashboard() {
   const [, setLocation] = useLocation();
@@ -383,9 +410,9 @@ export default function TeacherDashboard() {
                         <div className="flex items-start gap-3 mb-4">
                           <div 
                             className="w-12 h-12 rounded-full flex items-center justify-center text-xl flex-shrink-0"
-                            style={{ backgroundColor: cls.iconColor || "#c5d49f" }}
+                            style={{ backgroundColor: cls.iconColor || cls.backgroundColor || "#c5d49f" }}
                           >
-                            {cls.iconEmoji || "📚"}
+                            {getIconEmoji(cls.iconEmoji, cls.icon)}
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center justify-between mb-1">
@@ -396,7 +423,7 @@ export default function TeacherDashboard() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => copyClassLink(cls.code)}
+                                  onClick={() => copyClassLink(cls.code || cls.classCode || '')}
                                   title="Copy class link"
                                 >
                                   <Clipboard className="h-4 w-4" />
@@ -415,9 +442,9 @@ export default function TeacherDashboard() {
                               Class Code:{" "}
                               <span 
                                 className="font-semibold"
-                                style={{ color: cls.iconColor || "#c5d49f" }}
+                                style={{ color: cls.iconColor || cls.backgroundColor || "#c5d49f" }}
                               >
-                                {cls.code}
+                                {cls.code || cls.classCode}
                               </span>
                             </p>
                           </div>
@@ -429,14 +456,14 @@ export default function TeacherDashboard() {
                               Total Submissions
                             </span>
                             <span className="text-xl font-bold text-primary">
-                              {cls.submissionCount}
+                              {cls.submissionCount || cls.studentCount || 0}
                             </span>
                           </div>
                           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                             <div
                               className="bg-primary h-2 rounded-full transition-all duration-300"
                               style={{
-                                width: `${Math.min((cls.submissionCount / 25) * 100, 100)}%`,
+                                width: `${Math.min(((cls.submissionCount || cls.studentCount || 0) / 25) * 100, 100)}%`,
                               }}
                             ></div>
                           </div>

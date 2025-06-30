@@ -137,7 +137,7 @@ export default function StudentQuiz() {
 
   // Submit quiz results
   const submitResultsMutation = useMutation({
-    mutationFn: async (submissionData: { studentName: string; gradeLevel: string; classId: number; scores: any; personalityType: string; animalType: string }) => {
+    mutationFn: async (submissionData: { studentName: string; gradeLevel: string; classId: number; scores: any; personalityType: string; animalType: string; animalGenius: string }) => {
       // Validate submission data
       if (!submissionData.studentName?.trim()) {
         throw new Error("Student name is required");
@@ -396,6 +396,7 @@ export default function StudentQuiz() {
       answers, // Include raw answers for audit trail
       personalityType: results?.mbtiType || '', // Map mbtiType to personalityType for database
       animalType: results?.animal || '',
+      animalGenius: results?.animalGenius || '', // Add the missing animalGenius field
       scores: results?.scores || { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 },
       learningStyle: results?.learningStyle || 'visual',
       learningScores: results?.learningScores || { visual: 0, auditory: 0, kinesthetic: 0, readingWriting: 0 },
