@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import LayeredAvatarPositionerWithImage from '@/components/avatar-v2/LayeredAvatarPositionerWithImage';
+import LayeredAvatarFixed from '@/components/avatar-v2/LayeredAvatarFixed';
 import { getItemFolder } from '@shared/currency-types';
 import { ANIMAL_CONFIGS, getItemScaleForAnimal } from '@/config/animal-sizing';
 import { Save, Copy, RotateCw, Download, Upload, Move, FileJson } from 'lucide-react';
@@ -66,15 +66,22 @@ export default function AvatarItemPositioner() {
   const [selectedItemData, setSelectedItemData] = useState<StoreItem | null>(null);
   
   // Fetch store items from database
-  const { data: storeItems = [], isLoading: itemsLoading } = useQuery({
+  const { data: storeItems = [], isLoading: itemsLoading, error: itemsError } = useQuery({
     queryKey: ['/api/store/admin/items'],
     queryFn: () => apiRequest('GET', '/api/store/admin/items'),
   });
+  
+  // Debug logging
+  console.log('Store items loaded:', storeItems);
+  console.log('Items loading:', itemsLoading);
+  console.log('Items error:', itemsError);
   
   // Filter only avatar items (no room furniture)
   const AVATAR_ITEMS = storeItems.filter((item: StoreItem) => 
     item.itemType === 'avatar_hat' || item.itemType === 'avatar_accessory'
   );
+  
+  console.log('Filtered avatar items:', AVATAR_ITEMS);
   
   // Update item in positioning tool
   const handleItemPositionChange = (position: PositionData) => {
@@ -148,10 +155,10 @@ export default function AvatarItemPositioner() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          item_id: selectedItem,
+          item_type: selectedItemData?.itemType || selectedItem,
           animal_type: selectedAnimal,
-          position_x: currentPosition.x,
-          position_y: currentPosition.y,
+          x_position: currentPosition.x,
+          y_position: currentPosition.y,
           scale: Math.round(currentPosition.scale * 100),
           rotation: currentPosition.rotation
         })
@@ -205,10 +212,10 @@ export default function AvatarItemPositioner() {
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
-            item_id: selectedItem,
+            item_type: selectedItemData?.itemType || selectedItem,
             animal_type: animal,
-            position_x: position.x,
-            position_y: position.y,
+            x_position: position.x,
+            y_position: position.y,
             scale: Math.round(position.scale * 100),
             rotation: position.rotation
           })
@@ -223,9 +230,13 @@ export default function AvatarItemPositioner() {
   };
 
   const exportPositions = () => {
-    // Filter out any undefined entries
+    // Filter out any undefined entries and map item IDs to item types
     const cleanedPositions = Object.entries(positions).reduce((acc, [itemId, animalPositions]) => {
       if (itemId && itemId !== 'undefined') {
+        // Find the item to get its type code
+        const item = AVATAR_ITEMS.find(i => i.id === itemId);
+        const itemTypeCode = item?.itemType || itemId;
+        
         const cleanedAnimalPositions = Object.entries(animalPositions).reduce((animalAcc, [animalType, position]) => {
           if (animalType && animalType !== 'undefined') {
             animalAcc[animalType] = position;
@@ -234,7 +245,7 @@ export default function AvatarItemPositioner() {
         }, {} as Record<string, PositionData>);
         
         if (Object.keys(cleanedAnimalPositions).length > 0) {
-          acc[itemId] = cleanedAnimalPositions;
+          acc[itemTypeCode] = cleanedAnimalPositions;
         }
       }
       return acc;
@@ -272,10 +283,10 @@ export default function AvatarItemPositioner() {
                 'Authorization': `Bearer ${token}`
               },
               body: JSON.stringify({
-                item_id: itemId,
+                item_type: itemId,
                 animal_type: animalType,
-                position_x: (position as any).x,
-                position_y: (position as any).y,
+                x_position: (position as any).x,
+                y_position: (position as any).y,
                 scale: Math.round((position as any).scale * 100),
                 rotation: (position as any).rotation
               })
@@ -331,11 +342,33 @@ export default function AvatarItemPositioner() {
 
   const progress = getProgress();
 
-  // Handle drag and drop
+  // Handle drag and drop with object-contain awareness
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!selectedItem || !selectedAnimal) return;
     
-    const rect = e.currentTarget.getBoundingClientRect();
+    const container = e.currentTarget;
+    const rect = container.getBoundingClientRect();
+    
+    // Calculate the actual image bounds within the container (for object-contain)
+    const containerWidth = rect.width;
+    const containerHeight = rect.height;
+    const aspectRatio = 1; // Assuming square avatars
+    
+    let imageWidth = containerWidth;
+    let imageHeight = containerHeight;
+    let offsetX = 0;
+    let offsetY = 0;
+    
+    if (containerWidth / containerHeight > aspectRatio) {
+      // Container wider than image
+      imageWidth = containerHeight * aspectRatio;
+      offsetX = (containerWidth - imageWidth) / 2;
+    } else {
+      // Container taller than image
+      imageHeight = containerWidth / aspectRatio;
+      offsetY = (containerHeight - imageHeight) / 2;
+    }
+    
     const startX = e.clientX;
     const startY = e.clientY;
     const startPosX = currentPosition.x;
@@ -347,9 +380,9 @@ export default function AvatarItemPositioner() {
       const deltaX = moveEvent.clientX - startX;
       const deltaY = moveEvent.clientY - startY;
       
-      // Convert pixel movement to percentage
-      const newX = Math.max(0, Math.min(100, startPosX + (deltaX / rect.width) * 100));
-      const newY = Math.max(0, Math.min(100, startPosY + (deltaY / rect.height) * 100));
+      // Convert pixel movement to percentage of the actual image size
+      const newX = Math.max(0, Math.min(100, startPosX + (deltaX / imageWidth) * 100));
+      const newY = Math.max(0, Math.min(100, startPosY + (deltaY / imageHeight) * 100));
       
       setCurrentPosition(prev => ({ ...prev, x: newX, y: newY }));
     };
@@ -652,21 +685,30 @@ export default function AvatarItemPositioner() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Live Preview</CardTitle>
-                <Badge variant="outline" className="flex items-center gap-1">
-                  <Move className="w-3 h-3" />
-                  Drag item to position
-                </Badge>
+                <div className="flex gap-2">
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Move className="w-3 h-3" />
+                    Drag item to position
+                  </Badge>
+                  <Badge variant="secondary">
+                    Room size: 250px
+                  </Badge>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div 
-                className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl p-8 flex items-center justify-center relative"
-                style={{ 
-                  minHeight: '700px',
-                  overflow: 'visible',
-                  cursor: isDragging ? 'grabbing' : 'default'
-                }}
-              >
+              <div className="space-y-4">
+                {/* Main positioning view */}
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Positioning View (600px)</h4>
+                  <div 
+                    className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl p-8 flex items-center justify-center relative"
+                    style={{ 
+                      minHeight: '700px',
+                      overflow: 'visible',
+                      cursor: isDragging ? 'grabbing' : 'default'
+                    }}
+                  >
                 <AnimatePresence mode="wait">
                   {selectedItem && selectedAnimal ? (
                     <div 
@@ -681,8 +723,12 @@ export default function AvatarItemPositioner() {
                       }}
                     >
                       {/* Base animal - full size in container */}
-                      <div className="absolute inset-0">
-                        <LayeredAvatarPositionerWithImage
+                      <div 
+                        className="absolute inset-0"
+                        onMouseDown={handleMouseDown}
+                        style={{ cursor: selectedItem ? 'move' : 'default' }}
+                      >
+                        <LayeredAvatarFixed
                           animalType={selectedAnimal}
                           selectedItem={selectedItem}
                           selectedItemImageUrl={selectedItemData?.imageUrl || selectedItemData?.imageURL}
@@ -708,6 +754,28 @@ export default function AvatarItemPositioner() {
                     </div>
                   )}
                 </AnimatePresence>
+                  </div>
+                </div>
+                
+                {/* Room size preview */}
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Room Preview (250px - actual size)</h4>
+                  <div className="bg-gradient-to-br from-blue-100 to-green-100 rounded-lg p-4 flex items-center justify-center">
+                    <div style={{ width: '250px', height: '250px', position: 'relative' }}>
+                      {selectedItem && selectedAnimal && (
+                        <LayeredAvatarFixed
+                          animalType={selectedAnimal}
+                          selectedItem={selectedItem}
+                          selectedItemImageUrl={selectedItemData?.imageUrl || selectedItemData?.imageURL}
+                          itemPosition={currentPosition}
+                          width={250}
+                          height={250}
+                          animated={false}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
               
               {/* Quick Animal Switcher */}

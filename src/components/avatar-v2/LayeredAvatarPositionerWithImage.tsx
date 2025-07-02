@@ -109,7 +109,7 @@ function LayeredAvatarPositionerWithImage({
         top: `${itemPosition.y}%`, 
         left: `${itemPosition.x}%` 
       },
-      scale: getItemScale(itemPosition.scale * 100, animalType),
+      scale: getItemScale(itemPosition.scale * 100, animalType, width),
       rotation: itemPosition.rotation,
     });
   }

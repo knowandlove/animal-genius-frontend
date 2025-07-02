@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { useIslandStore, ROOM_ITEM_LIMIT } from '@/stores/islandStore';
+import { useRef, useState, useEffect } from 'react';
+import { useRoomStore, ROOM_ITEM_LIMIT } from '@/stores/roomStore';
 import { cn } from '@/lib/utils';
 import LayeredAvatarRoom from '@/components/avatar-v2/LayeredAvatarRoom';
 import { AnimatePresence } from 'framer-motion';
@@ -16,7 +16,7 @@ interface DragState {
   currentY?: number;
 }
 
-export default function IslandRoomSticker() {
+export default function RoomSticker() {
   const roomRef = useRef<HTMLDivElement>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [showTrash, setShowTrash] = useState(false);
@@ -27,13 +27,30 @@ export default function IslandRoomSticker() {
     avatar, 
     room, 
     ui,
+    inventory,
     removeItem,
     moveItem,
+    placeItem,
     draftAvatar,
     draftRoom,
     startDragging,
     stopDragging,
-  } = useIslandStore();
+    stopArranging,
+  } = useRoomStore();
+  
+  // Listen for placeItemCenter event from room decorator
+  useEffect(() => {
+    const handlePlaceItemCenter = (event: CustomEvent) => {
+      const { itemId } = event.detail;
+      // Place item in center of room (50%, 50%)
+      placeItem(itemId, 50, 50);
+    };
+    
+    window.addEventListener('placeItemCenter', handlePlaceItemCenter as EventListener);
+    return () => {
+      window.removeEventListener('placeItemCenter', handlePlaceItemCenter as EventListener);
+    };
+  }, [placeItem]);
   
   // Use draft states when in edit modes
   const isEditingAvatar = ui.inventoryMode === 'avatar';
@@ -46,8 +63,13 @@ export default function IslandRoomSticker() {
     (a.zIndex || 0) - (b.zIndex || 0)
   );
 
+  // Get item details from inventory
+  const getItemDetails = (itemId: string) => {
+    return inventory.items.find(item => item.id === itemId);
+  };
+
   const handleItemMouseDown = (e: React.MouseEvent, item: any, displayX: number, displayY: number) => {
-    if (!isEditingRoom || !roomRef.current) return;
+    if (!isEditingRoom || !roomRef.current || !ui.isArranging) return;
     
     e.preventDefault();
     e.stopPropagation();
@@ -129,7 +151,7 @@ export default function IslandRoomSticker() {
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     
     // Place the item from inventory
-    const { placeItem } = useIslandStore.getState();
+    const { placeItem } = useRoomStore.getState();
     placeItem(ui.draggedItem.itemId, x, y);
     
     stopDragging();
@@ -170,22 +192,22 @@ export default function IslandRoomSticker() {
     return '📦';
   };
 
-  // No scaling - all items same size
+  // Dynamic scaling based on Y position (perspective effect)
   const getScaleFromY = (yPercent: number): number => {
-    return 1; // Always return scale of 1
+    // Scale from 0.4 at top (y=0) to 1.0 at bottom (y=100)
+    const minScale = 0.4;
+    const maxScale = 1.0;
+    const scale = minScale + (yPercent / 100) * (maxScale - minScale);
+    return scale;
   };
 
 
 
   return (
-    <div
-      className="relative w-full overflow-hidden rounded-lg shadow-inner bg-gray-100"
-      style={{ 
-        aspectRatio: '16/9',
-        transform: isEditingRoom ? 'scale(0.85)' : 'scale(1)',
-        transition: 'transform 0.3s ease'
-      }}
-    >
+    <>
+      <div
+        className="relative w-full h-full overflow-hidden rounded-lg shadow-inner bg-gray-100"
+      >
       <div 
         ref={roomRef}
         className="absolute inset-0 w-full h-full"
@@ -235,16 +257,36 @@ export default function IslandRoomSticker() {
             top: `${dropPreview.y}%`,
             transform: `translate(-50%, -50%) scale(${getScaleFromY(dropPreview.y)})`,
             zIndex: Math.floor(dropPreview.y * 10),
-            opacity: 0.5
+            opacity: 0.7
           }}
         >
-          <div 
-            className="bg-blue-200/50 backdrop-blur rounded-lg p-3 border-2 border-blue-400 border-dashed shadow-lg"
-          >
-            <span className="text-3xl block">
-              {getItemIcon(ui.draggedItem.itemId)}
-            </span>
-          </div>
+          {(() => {
+            const previewItem = getItemDetails(ui.draggedItem.itemId);
+            return previewItem?.imageUrl ? (
+              <img 
+                src={previewItem.imageUrl} 
+                alt={previewItem.name || ui.draggedItem.itemId}
+                className="opacity-70"
+                style={{
+                  width: 'auto',
+                  height: 'auto',
+                  maxWidth: '200px',
+                  maxHeight: '200px',
+                  filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))'
+                }}
+              />
+            ) : (
+              <div 
+                className="bg-white/80 backdrop-blur rounded-lg border-2 border-blue-400 border-dashed shadow-lg flex items-center justify-center"
+                style={{
+                  width: '80px',
+                  height: '80px'
+                }}
+              >
+                <span className="text-3xl">{getItemIcon(ui.draggedItem.itemId)}</span>
+              </div>
+            );
+          })()}
         </div>
         )}
 
@@ -257,11 +299,15 @@ export default function IslandRoomSticker() {
           const yPos = isOldGrid ? (item.y / 3) * 80 + 10 : item.y;
           
           const scale = getScaleFromY(yPos);
+          const itemDetails = getItemDetails(item.itemId);
           
           return (
             <div
               key={item.id}
-              className="absolute cursor-move transition-transform hover:scale-105"
+              className={cn(
+                "absolute transition-transform",
+                ui.isArranging ? "cursor-move hover:scale-105" : "cursor-default"
+              )}
               style={{
                 left: `${xPos}%`,
                 top: `${yPos}%`,
@@ -271,19 +317,44 @@ export default function IslandRoomSticker() {
               }}
               onMouseDown={(e) => handleItemMouseDown(e, item, xPos, yPos)}
             >
+              {/* Draggable indicator when arranging */}
+              {ui.isArranging && (
+                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-2 py-1 rounded text-xs whitespace-nowrap animate-bounce">
+                  ✋ Drag to move
+                </div>
+              )}
+              
               {/* Item Visual */}
-              <div 
-                className="bg-white/90 backdrop-blur rounded-lg p-3 select-none border-2 border-gray-200 shadow-lg"
-              >
-                <span className="text-3xl block">
-                  {getItemIcon(item.itemId)}
-                </span>
-              </div>
+              {itemDetails?.imageUrl ? (
+                <img 
+                  src={itemDetails.imageUrl} 
+                  alt={itemDetails.name || item.itemId}
+                  className="select-none"
+                  style={{
+                    width: 'auto',
+                    height: 'auto',
+                    maxWidth: '200px',
+                    maxHeight: '200px',
+                    filter: ui.isArranging ? 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.5))' : 'none'
+                  }}
+                  draggable={false}
+                />
+              ) : (
+                <div 
+                  className="bg-white/90 backdrop-blur rounded-lg select-none border-2 border-gray-200 shadow-lg flex items-center justify-center"
+                  style={{
+                    width: '80px',
+                    height: '80px'
+                  }}
+                >
+                  <span className="text-3xl">{getItemIcon(item.itemId)}</span>
+                </div>
+              )}
               
               {/* Item label */}
               {isEditingRoom && (
                 <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs bg-black/70 text-white px-2 py-1 rounded whitespace-nowrap">
-                  {item.itemId}
+                  {itemDetails?.name || item.itemId}
                 </div>
               )}
             </div>
@@ -349,5 +420,21 @@ export default function IslandRoomSticker() {
         )}
       </div>
     </div>
+    
+    {/* Save Button - Shows when arranging */}
+    {ui.isArranging && (
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50">
+        <button
+          onClick={() => stopArranging()}
+          className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg shadow-lg transition-all hover:scale-105 flex items-center gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          Save Room Layout
+        </button>
+      </div>
+    )}
+    </>
   );
 }

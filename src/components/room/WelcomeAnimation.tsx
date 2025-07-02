@@ -26,7 +26,7 @@ export default function WelcomeAnimation({ studentName, animalType, passportCode
   }, [step]);
   
   const handleSkip = () => {
-    localStorage.setItem(`island-welcomed-${passportCode}`, 'true');
+    localStorage.setItem(`room-welcomed-${passportCode}`, 'true');
     onComplete();
   };
   

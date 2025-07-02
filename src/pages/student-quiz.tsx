@@ -131,13 +131,13 @@ export default function StudentQuiz() {
 
   // Get class information
   const { data: classInfo, isLoading: classLoading } = useQuery<ClassInfo>({
-    queryKey: [`/api/classes/code/${classCode}`],
+    queryKey: [`/api/classes/class-code/${classCode}`],
     enabled: !!classCode,
   });
 
   // Submit quiz results
   const submitResultsMutation = useMutation({
-    mutationFn: async (submissionData: { studentName: string; gradeLevel: string; classId: number; scores: any; personalityType: string; animalType: string; animalGenius: string }) => {
+    mutationFn: async (submissionData: { studentName: string; gradeLevel: string; classId: number; scores: any; personalityType: string; animalType: string; geniusType: string }) => {
       // Validate submission data
       if (!submissionData.studentName?.trim()) {
         throw new Error("Student name is required");
@@ -149,7 +149,7 @@ export default function StudentQuiz() {
         throw new Error("Class ID is required");
       }
       
-      return apiRequest('POST', '/api/quiz-submissions', submissionData);
+      return apiRequest('POST', '/api/quiz/submissions', submissionData);
     },
     onSuccess: (data) => {
       console.log('Quiz submission response:', data);
@@ -185,13 +185,13 @@ export default function StudentQuiz() {
       if (data && data.passportCode) {
         console.log('Received passport code:', data.passportCode);
         
-        // Store results for the island welcome page
+        // Store results for the room welcome page
         sessionStorage.setItem('quizResults', JSON.stringify(quizResultsData));
         
         // Show success message with passport code
         toast({
           title: "Your Passport Code",
-          description: `${data.passportCode} - Save this to visit your island anytime!`,
+          description: `${data.passportCode} - Save this to visit your room anytime!`,
           duration: 10000, // Show for 10 seconds
         });
         
@@ -206,7 +206,7 @@ export default function StudentQuiz() {
         // Show message to ask teacher
         toast({
           title: "Results Saved!",
-          description: "Ask your teacher for your passport code to visit your island.",
+          description: "Ask your teacher for your passport code to visit your room.",
           duration: 10000,
         });
       } else {
@@ -214,7 +214,7 @@ export default function StudentQuiz() {
         console.error('Incomplete response from server:', data);
         toast({
           title: "⚠️ Important",
-          description: "Your results were saved, but no passport code was generated. Please ask your teacher for your passport code to access your island.",
+          description: "Your results were saved, but no passport code was generated. Please ask your teacher for your passport code to access your room.",
           variant: "destructive",
         });
       }
@@ -396,7 +396,7 @@ export default function StudentQuiz() {
       answers, // Include raw answers for audit trail
       personalityType: results?.mbtiType || '', // Map mbtiType to personalityType for database
       animalType: results?.animal || '',
-      animalGenius: results?.animalGenius || '', // Add the missing animalGenius field
+      geniusType: results?.animalGenius || '', // Map animalGenius to geniusType for API
       scores: results?.scores || { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 },
       learningStyle: results?.learningStyle || 'visual',
       learningScores: results?.learningScores || { visual: 0, auditory: 0, kinesthetic: 0, readingWriting: 0 },
@@ -588,10 +588,10 @@ export default function StudentQuiz() {
                   {submissionData.passportCode}
                 </div>
                 <p className="text-sm text-green-700 mt-2">
-                  Save this code! You'll need it to visit your island.
+                  Save this code! You'll need it to visit your room.
                 </p>
                 <Button 
-                  onClick={() => setLocation(`/island/${submissionData.passportCode}`)}
+                  onClick={() => setLocation(`/room/${submissionData.passportCode}`)}
                   className="mt-3 bg-green-600 hover:bg-green-700"
                 >
                   🏝️ Visit Your Island Now

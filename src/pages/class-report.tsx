@@ -56,9 +56,9 @@ export default function ClassReport() {
     class: { name: string };
     stats: {
       totalSubmissions: number;
-      geniusDistribution: { Thinker: number; Feeler: number; Doer: number };
+      geniusTypeDistribution: { Thinker: number; Feeler: number; Doer: number };
     };
-    insights: {
+    insights?: {
       mayGetOverlooked: Array<{ name: string; animal: string; submissionId: number }>;
       needConnection: Array<{ name: string; animal: string; submissionId: number }>;
       needChangeWarnings: Array<{ name: string; animal: string; submissionId: number }>;
@@ -88,9 +88,9 @@ export default function ClassReport() {
     name: typedAnalytics.class.name,
     totalStudents: typedAnalytics.stats?.totalSubmissions || 0,
     collaborationData: [
-      { name: "Thinkers", value: typedAnalytics.stats?.geniusDistribution?.Thinker || 0, color: "#8B5CF6" },
-      { name: "Feelers", value: typedAnalytics.stats?.geniusDistribution?.Feeler || 0, color: "#10B981" },
-      { name: "Doers", value: typedAnalytics.stats?.geniusDistribution?.Doer || 0, color: "#F59E0B" }
+      { name: "Thinkers", value: typedAnalytics.stats?.geniusTypeDistribution?.Thinker || 0, color: "#8B5CF6" },
+      { name: "Feelers", value: typedAnalytics.stats?.geniusTypeDistribution?.Feeler || 0, color: "#10B981" },
+      { name: "Doers", value: typedAnalytics.stats?.geniusTypeDistribution?.Doer || 0, color: "#F59E0B" }
     ],
     dynamicDuos: typedPairings?.dynamicDuos?.map(duo => ({
       student1: `${duo.student1.name} (${duo.student1.animal})`,
@@ -112,10 +112,10 @@ export default function ClassReport() {
       submissionId: worker.submissionId
     })) || [],
     insights: {
-      mayGetOverlooked: typedAnalytics.insights?.mayGetOverlooked || [],
-      needConnection: typedAnalytics.insights?.needConnection || [],
-      needChangeWarnings: typedAnalytics.insights?.needChangeWarnings || [],
-      needThinkTime: typedAnalytics.insights?.needThinkTime || []
+      mayGetOverlooked: typedAnalytics?.insights?.mayGetOverlooked || [],
+      needConnection: typedAnalytics?.insights?.needConnection || [],
+      needChangeWarnings: typedAnalytics?.insights?.needChangeWarnings || [],
+      needThinkTime: typedAnalytics?.insights?.needThinkTime || []
     }
   } : null;
 

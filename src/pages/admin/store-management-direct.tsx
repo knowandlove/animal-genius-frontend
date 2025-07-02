@@ -39,9 +39,10 @@ const ITEM_TYPES = [
 ];
 
 const RARITIES = [
-  { value: 'common', label: 'Common', color: 'bg-gray-500' },
+  { value: 'common', label: 'Common', color: 'bg-green-500' },
   { value: 'rare', label: 'Rare', color: 'bg-blue-500' },
-  { value: 'legendary', label: 'Legendary', color: 'bg-yellow-500' },
+  { value: 'epic', label: 'Epic', color: 'bg-purple-500' },
+  { value: 'legendary', label: 'Legendary', color: 'bg-orange-500' },
 ];
 
 export default function StoreManagementDirect() {

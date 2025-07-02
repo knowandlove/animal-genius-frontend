@@ -50,8 +50,8 @@ const animalEmojis: Record<string, string> = {
 
 function LayeredAvatarRoom({
   animalType,
-  width = 600,  // Changed default to 600
-  height = 600, // Changed default to 600
+  width,
+  height,
   items = {},
   onClick,
   className,
@@ -59,11 +59,27 @@ function LayeredAvatarRoom({
   storeCatalog, // Optional prop to use instead of context
 }: LayeredAvatarRoomProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [containerSize, setContainerSize] = useState({ width: 300, height: 300 });
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   // Get store data from context OR use provided catalog
   const contextStoreItems = useStoreItems();
   const storeItems = storeCatalog || contextStoreItems;
   const itemPositions = useItemPositions();
+
+  // Measure container size
+  React.useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setContainerSize({ width: rect.width, height: rect.height });
+      }
+    };
+
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
 
   const handleClick = () => {
     onClick?.();
@@ -105,7 +121,9 @@ function LayeredAvatarRoom({
   };
 
   // Calculate size ratio for scale-aware positioning
-  const sizeRatio = width / AVATAR_RENDER_CONFIG.standardContainerSize;
+  // Use provided width or fall back to measured size
+  const effectiveWidth = width || containerSize.width || 300;
+  const sizeRatio = effectiveWidth / AVATAR_RENDER_CONFIG.standardContainerSize;
 
   // Build layers array
   const layers: AvatarLayer[] = [
@@ -136,38 +154,34 @@ function LayeredAvatarRoom({
     // Determine z-index based on slot
     const zIndex = slot === 'hat' ? 10 : slot === 'glasses' ? 8 : 7;
     
-    if (dbPosition) {
-      layers.push({
-        id: `${slot}-${itemId}`,
-        src: imagePath,
-        emoji: '🎩',
-        zIndex: zIndex,
-        position: { 
-          top: `${dbPosition.y}%`, 
-          left: `${dbPosition.x}%` 
-        },
-        scale: getItemScale(dbPosition.scale * 100, animalType) * sizeRatio,
-        rotation: dbPosition.rotation,
-      });
-    } else {
-      // Fallback to default center position
-      layers.push({
-        id: `${slot}-${itemId}`,
-        src: imagePath,
-        emoji: '🎩',
-        zIndex: zIndex,
-        position: { 
-          top: '50%', 
-          left: '50%' 
-        },
-        scale: 0.5 * sizeRatio,
-        rotation: 0,
-      });
-    }
+    // Use database position if available, otherwise use default positions
+    const position = dbPosition ? {
+      top: `${dbPosition.y}%`,
+      left: `${dbPosition.x}%`
+    } : {
+      // Default positions for each slot type
+      top: slot === 'hat' ? '20%' : slot === 'glasses' ? '35%' : '50%',
+      left: '50%'
+    };
+    
+    const scale = dbPosition 
+      ? getItemScale(dbPosition.scale * 100, animalType, effectiveWidth)
+      : (slot === 'hat' ? 0.8 : 0.6) * sizeRatio; // Default scales
+    
+    layers.push({
+      id: `${slot}-${itemId}`,
+      src: imagePath,
+      emoji: '🎩',
+      zIndex: zIndex,
+      position,
+      scale,
+      rotation: dbPosition?.rotation || 0,
+    });
   });
 
   return (
     <div
+      ref={containerRef}
       className={cn(
         'relative cursor-pointer transition-all duration-300 w-full h-full',
         isHovered && 'scale-105',

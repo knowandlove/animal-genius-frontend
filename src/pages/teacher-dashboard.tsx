@@ -156,6 +156,7 @@ export default function TeacherDashboard() {
 
   const handleLogout = () => {
     logout();
+    // The useEffect will handle the redirect when user becomes null
   };
 
   const copyClassLink = (code: string) => {
@@ -163,7 +164,16 @@ export default function TeacherDashboard() {
     navigator.clipboard.writeText(url);
     toast({
       title: "Link copied!",
-      description: "Class link has been copied to clipboard.",
+      description: "Quiz link has been copied to clipboard.",
+    });
+  };
+  
+  const copyClassIslandLink = (code: string) => {
+    const url = `${window.location.origin}/class/${code}`;
+    navigator.clipboard.writeText(url);
+    toast({
+      title: "Island link copied!",
+      description: "Class Island link has been copied to clipboard.",
     });
   };
 
@@ -502,6 +512,23 @@ export default function TeacherDashboard() {
                             }
                           >
                             Learning Lounge
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() =>
+                              setLocation(`/teacher/class/${cls.id}/island`)
+                            }
+                            className="bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100"
+                          >
+                            🏝️ Class Island
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => copyClassIslandLink(cls.code || cls.classCode || '')}
+                            className="bg-gradient-to-r from-green-50 to-blue-50 hover:from-green-100 hover:to-blue-100"
+                          >
+                            <Clipboard className="h-4 w-4 mr-2" />
+                            Copy Island Link
                           </Button>
                         </div>
                       </CardContent>

@@ -7,6 +7,7 @@ interface StoreDataContextType {
   itemPositions: any[] | undefined;
   isLoading: boolean;
   error: Error | null;
+  refetchPositions: () => void;
 }
 
 const StoreDataContext = createContext<StoreDataContextType | undefined>(undefined);
@@ -29,12 +30,25 @@ export function StoreDataProvider({ children }: { children: ReactNode }) {
   const { 
     data: itemPositions,
     isLoading: isLoadingPositions,
-    error: positionsError
+    error: positionsError,
+    refetch: refetchPositions
   } = useQuery({
-    queryKey: ['/api/item-positions'],
-    queryFn: () => apiRequest('GET', '/api/item-positions'),
-    staleTime: 1000 * 60 * 10, // Cache for 10 minutes
+    queryKey: ['/api/item-positions-normalized'],
+    queryFn: () => apiRequest('GET', '/api/item-positions-normalized'),
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes to reduce API calls
     cacheTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
+    refetchOnWindowFocus: true, // Refetch when window gains focus
+    refetchOnMount: false, // Don't refetch on every mount to reduce API calls
+    onSuccess: (data) => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Fetched item positions from API:', {
+        timestamp: new Date().toISOString(),
+        count: data?.length,
+        hatPositions: data?.filter((p: any) => p.item_id === 'b0d64da3-d5f1-41d5-8fb8-25b48c6cf2e4'),
+        sample: data?.slice(0, 3)
+      });
+      }
+    }
   });
 
   const contextValue: StoreDataContextType = {
@@ -42,6 +56,7 @@ export function StoreDataProvider({ children }: { children: ReactNode }) {
     itemPositions,
     isLoading: isLoadingStore || isLoadingPositions,
     error: storeError || positionsError,
+    refetchPositions: () => refetchPositions(),
   };
 
   return (
@@ -71,12 +86,3 @@ export function useItemPositions() {
   return itemPositions;
 }
 
-// Hook to invalidate store data cache
-export function useInvalidateStoreData() {
-  const queryClient = useQueryClient();
-  
-  return () => {
-    queryClient.invalidateQueries({ queryKey: ['/api/store/catalog'] });
-    queryClient.invalidateQueries({ queryKey: ['/api/item-positions'] });
-  };
-}

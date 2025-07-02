@@ -32,19 +32,24 @@ async function refreshAuthToken(): Promise<string | null> {
 async function throwIfResNotOk(res: Response, originalUrl?: string, originalOptions?: RequestInit): Promise<Response | void> {
   if (!res.ok) {
     let errorMessage = res.statusText;
+    let errorDetails: any = {};
     try {
       const jsonResponse = await res.json();
       errorMessage = jsonResponse.message || res.statusText;
+      errorDetails = jsonResponse;
       
-      // Check if this is a student endpoint that shouldn't require auth
+      // Check if this is a student endpoint
       const isStudentEndpoint = originalUrl && (
-        originalUrl.includes('/api/island/') ||
-        originalUrl.includes('/api/island-page-data/') ||
+        originalUrl.includes('/api/room/') ||
+        originalUrl.includes('/api/room-page-data/') ||
         originalUrl.includes('/api/store/catalog')
       );
       
-      // Handle token expiration by attempting refresh (but not for student endpoints)
-      if ((res.status === 401 || res.status === 403) && errorMessage.includes("token") && !isStudentEndpoint) {
+      // Check if we have a token (meaning we're a teacher trying to access a student endpoint)
+      const hasToken = !!localStorage.getItem("authToken");
+      
+      // Handle token expiration by attempting refresh (but not for unauthenticated student access)
+      if ((res.status === 401 || res.status === 403) && errorMessage.includes("token") && hasToken && !isStudentEndpoint) {
         const newToken = await refreshAuthToken();
         
         if (newToken && originalUrl) {
@@ -65,7 +70,9 @@ async function throwIfResNotOk(res: Response, originalUrl?: string, originalOpti
         }
         
         // If refresh failed or retry failed, clear auth and redirect
-        console.log('Token refresh failed, clearing authentication and redirecting to login');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Token refresh failed, clearing authentication and redirecting to login');
+        }
         localStorage.removeItem("authToken");
         localStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
@@ -82,7 +89,12 @@ async function throwIfResNotOk(res: Response, originalUrl?: string, originalOpti
         // Use default statusText if all parsing fails
       }
     }
-    throw new Error(errorMessage);
+    
+    // Create an error with status code
+    const error: any = new Error(errorMessage);
+    error.status = res.status;
+    error.details = errorDetails;
+    throw error;
   }
 }
 
@@ -93,27 +105,26 @@ export async function apiRequest(
 ): Promise<any> {
   const token = localStorage.getItem("authToken");
   
-  // Check if this is a student endpoint that shouldn't require auth
-  const isStudentEndpoint = 
-    url.includes('/api/island/') ||
-    url.includes('/api/island-page-data/') ||
-    url.includes('/api/store/catalog');
-  
-  console.log('[AUTH DEBUG] Request to:', url);
-  console.log('[AUTH DEBUG] Is student endpoint:', isStudentEndpoint);
-  console.log('[AUTH DEBUG] Has token:', !!token);
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[AUTH DEBUG] Request to:', url);
+    console.log('[AUTH DEBUG] Has token:', !!token);
+  }
   
   const headers: Record<string, string> = {};
   if (data && !(data instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
   
-  // Only add auth header if we have a token AND it's not a student endpoint
-  if (token && !isStudentEndpoint) {
+  // Always add auth header if we have a token - this allows teachers to access student rooms
+  if (token) {
     headers["Authorization"] = `Bearer ${token}`;
-    console.log('[AUTH DEBUG] Adding auth header');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[AUTH DEBUG] Adding auth header');
+    }
   } else {
-    console.log('[AUTH DEBUG] NOT adding auth header');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[AUTH DEBUG] No token available');
+    }
   }
 
   const requestOptions = {
@@ -147,16 +158,10 @@ export const getQueryFn: <T>(options: {
     const token = localStorage.getItem("authToken");
     const url = queryKey[0] as string;
     
-    // Check if this is a student endpoint that shouldn't require auth
-    const isStudentEndpoint = 
-      url.includes('/api/island/') ||
-      url.includes('/api/island-page-data/') ||
-      url.includes('/api/store/catalog');
-    
     const headers: Record<string, string> = {};
     
-    // Only add auth header if we have a token AND it's not a student endpoint
-    if (token && !isStudentEndpoint) {
+    // Always add auth header if we have a token - this allows teachers to access student rooms
+    if (token) {
       headers["Authorization"] = `Bearer ${token}`;
     }
 

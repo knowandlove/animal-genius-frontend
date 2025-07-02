@@ -30,15 +30,17 @@ const NotFound = lazy(() => import("@/pages/not-found"));
 const GameJoin = lazy(() => import("@/pages/game-join"));
 const GameLobby = lazy(() => import("@/pages/game-lobby"));
 const GamePlay = lazy(() => import("@/pages/game-play"));
-const StudentIsland = lazy(() => import("@/pages/StudentIsland-v4"));
+const StudentRoom = lazy(() => import("@/pages/StudentRoom"));
+const ClassIsland = lazy(() => import("@/pages/ClassIsland"));
 const GameCreate = lazy(() => import("@/pages/teacher/game-create"));
 const TeacherGameDashboard = lazy(() => import("@/pages/teacher/game-dashboard"));
 const ColorPreview = lazy(() => import("@/pages/color-preview"));
 const ClassEconomy = lazy(() => import("@/pages/class-economy"));
 const AvatarTest = lazy(() => import("@/pages/avatar-test"));
-const AvatarTestV2 = lazy(() => import("@/pages/avatar-test-v2"));
+// const AvatarTestV2 = lazy(() => import("@/pages/avatar-test-v2")); // Moved to .cleanup
 const AvatarEditor = lazy(() => import("@/pages/avatar-editor"));
 const AvatarItemPositioner = lazy(() => import("@/pages/admin/avatar-item-positioner"));
+const AvatarItemPositionerNormalized = lazy(() => import("@/pages/admin/avatar-item-positioner-normalized"));
 // const AddStoreItem = lazy(() => import("@/pages/admin/add-store-item")); // Removed - use StoreManagement instead
 const StoreManagement = lazy(() => import("@/pages/admin/store-management-direct"));
 const AnimalSizer = lazy(() => import("@/pages/admin/animal-sizer"));
@@ -49,6 +51,7 @@ const DebugAuth = lazy(() => import("@/pages/admin/debug-auth"));
 const TestAdmin = lazy(() => import("@/pages/admin/test-admin"));
 const TestPositions = lazy(() => import("@/pages/admin/test-positions"));
 const AvatarSizeDebug = lazy(() => import("@/pages/admin/avatar-size-debug"));
+const UploadDebug = lazy(() => import("@/pages/admin/upload-debug"));
 
 // Import the properly configured query client
 import { queryClient } from "@/lib/queryClient";
@@ -116,8 +119,11 @@ function Router() {
         <Route path="/q/:classCode" component={StudentQuiz} />
         <Route path="/results/:submissionId" component={QuizResults} />
         
-        {/* Student island route - always available */}
-        <Route path="/island/:passportCode" component={StudentIsland} />
+        {/* Student room routes */}
+        <Route path="/room/:passportCode" component={StudentRoom} />
+        <Route path="/student-room/:passportCode" component={StudentRoom} />
+        <Route path="/class/:classCode" component={ClassIsland} />
+        <Route path="/class-island" component={ClassIsland} />
         
         {/* Game routes - always available */}
         <Route path="/game/join" component={GameJoin} />
@@ -126,7 +132,7 @@ function Router() {
         
         {/* Test/Development routes - always available */}
         <Route path="/avatar-test" component={AvatarTest} />
-        <Route path="/avatar-test-v2" component={AvatarTestV2} />
+        {/* <Route path="/avatar-test-v2" component={AvatarTestV2} /> */}
         <Route path="/avatar-editor" component={AvatarEditor} />
         
         {/* Authentication routes - always available */}
@@ -154,8 +160,10 @@ function Router() {
             <Route path="/admin" component={AdminPanel} />
             <Route path="/teacher/game/create" component={GameCreate} />
             <Route path="/teacher/game/:gameId" component={TeacherGameDashboard} />
+            <Route path="/teacher/class/:classId/island" component={ClassIsland} />
             <Route path="/colors" component={ColorPreview} />
             <Route path="/admin/item-positioner" component={AvatarItemPositioner} />
+            <Route path="/admin/item-positioner-normalized" component={AvatarItemPositionerNormalized} />
             {/* <Route path="/admin/add-item" component={AddStoreItem} /> */}
             <Route path="/admin/store" component={StoreManagement} />
             <Route path="/admin/animal-sizer" component={AnimalSizer} />
@@ -166,6 +174,7 @@ function Router() {
             <Route path="/admin/test-admin" component={TestAdmin} />
             <Route path="/admin/test-positions" component={TestPositions} />
             <Route path="/admin/avatar-debug" component={AvatarSizeDebug} />
+            <Route path="/admin/upload-debug" component={UploadDebug} />
           </>
         ) : (
           <>

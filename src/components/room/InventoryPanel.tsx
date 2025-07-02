@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Wand2, Home, Minimize2, Maximize2, GripVertical, ChevronRight, ChevronLeft, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useIslandStore } from "@/stores/islandStore";
-import UnifiedInventoryPanel from "@/components/island/UnifiedInventoryPanel";
+import { useRoomStore } from "@/stores/roomStore";
+import UnifiedInventoryPanel from "@/components/room/UnifiedInventoryPanel";
 
 interface InventoryPanelProps {
   editingMode: 'avatar' | 'room' | null;
@@ -13,11 +13,18 @@ interface InventoryPanelProps {
 }
 
 const InventoryPanel: React.FC<InventoryPanelProps> = ({ editingMode, isMobile }) => {
-  const closeInventory = useIslandStore((state) => state.closeInventory);
-  const undo = useIslandStore((state) => state.undo);
-  const canUndo = useIslandStore((state) => state.canUndo());
-  const isSaving = useIslandStore((state) => state.ui.isSaving);
+  const closeInventory = useRoomStore((state) => state.closeInventory);
+  const openInventory = useRoomStore((state) => state.openInventory);
+  const isInventoryOpen = useRoomStore((state) => state.ui.isInventoryOpen);
+  const isSaving = useRoomStore((state) => state.ui.isSaving);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  
+  // Reset collapsed state when inventory closes
+  React.useEffect(() => {
+    if (!isInventoryOpen) {
+      setIsCollapsed(false);
+    }
+  }, [isInventoryOpen]);
 
   // Mobile: Slide-up panel
   if (isMobile) {
@@ -58,26 +65,14 @@ const InventoryPanel: React.FC<InventoryPanelProps> = ({ editingMode, isMobile }
                   <span>Saving...</span>
                 </div>
               )}
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={undo}
-                  disabled={!canUndo}
-                  className="hover:bg-gray-100 disabled:opacity-50"
-                  title="Undo last change"
-                >
-                  <Undo2 className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={closeInventory}
-                  className="hover:bg-gray-100"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={closeInventory}
+                className="hover:bg-gray-100"
+              >
+                <X className="w-4 h-4" />
+              </Button>
             </div>
           </div>
 
@@ -105,48 +100,52 @@ const InventoryPanel: React.FC<InventoryPanelProps> = ({ editingMode, isMobile }
       {/* Desktop Sidebar Container - includes panel and arrow button */}
       <motion.div
         className="fixed right-0 top-0 h-full z-50 flex"
-        initial={{ x: '100%' }}
-        animate={{ x: isCollapsed ? 'calc(100% - 1rem)' : 0 }}
-        exit={{ x: '100%' }}
+        initial={{ x: 'calc(100% - 1rem)' }}
+        animate={{ x: isInventoryOpen ? (isCollapsed ? 'calc(100% - 2rem)' : 0) : 'calc(100% - 1rem)' }}
         transition={{ 
           type: "spring", 
           damping: 25, 
           stiffness: 300 
         }}
       >
-        {/* Edge Collapse/Expand Button */}
+        {/* Edge Collapse/Expand Button - Always visible */}
         <motion.button
           className={cn(
             "absolute top-1/2 -translate-y-1/2 -left-4 w-4 h-16 flex items-center justify-center hover:w-5 transition-all rounded-l-lg shadow-md",
-            editingMode === 'avatar' ? "bg-purple-600 hover:bg-purple-700" : "bg-blue-600 hover:bg-blue-700"
+            editingMode === 'avatar' ? "bg-purple-600 hover:bg-purple-700" : editingMode === 'room' ? "bg-blue-600 hover:bg-blue-700" : "bg-purple-600 hover:bg-purple-700"
           )}
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          title={isCollapsed ? "Open panel" : "Collapse panel"}
+          onClick={() => {
+            if (!isInventoryOpen) {
+              // Open to last editing mode or default to avatar
+              openInventory(editingMode || 'avatar');
+            } else if (isCollapsed) {
+              setIsCollapsed(false);
+            } else {
+              setIsCollapsed(true);
+            }
+          }}
+          title={!isInventoryOpen ? "Open panel" : (isCollapsed ? "Expand panel" : "Collapse panel")}
         >
-          {isCollapsed ? (
-            <ChevronLeft className="w-3 h-3 text-white" />
-          ) : (
-            <ChevronRight className="w-3 h-3 text-white" />
-          )}
+          <ChevronLeft className="w-3 h-3 text-white" />
         </motion.button>
 
-        {/* Desktop Sidebar Panel */}
-        <div className="w-[280px] h-full bg-white shadow-2xl flex flex-col">
+        {/* Desktop Sidebar Panel - Always visible */}
+        <div className="w-[280px] h-full bg-white shadow-2xl flex flex-col overflow-hidden">
           {/* Header with Collapse Button */}
           <div className={cn(
             "flex items-center justify-between p-4",
             editingMode === 'avatar' ? "bg-purple-600" : "bg-blue-600"
           )}>
-            <div className="flex items-center gap-2 text-white">
+            <div className="flex items-center gap-2 text-white min-w-0">
               {editingMode === 'avatar' ? (
                 <>
-                  <Wand2 className="w-5 h-5" />
-                  <h2 className="text-lg font-semibold">Customize Avatar</h2>
+                  <Wand2 className="w-5 h-5 flex-shrink-0" />
+                  <h2 className="text-lg font-semibold whitespace-nowrap">Customize Avatar</h2>
                 </>
               ) : (
                 <>
-                  <Home className="w-5 h-5" />
-                  <h2 className="text-lg font-semibold">Decorate Room</h2>
+                  <Home className="w-5 h-5 flex-shrink-0" />
+                  <h2 className="text-lg font-semibold whitespace-nowrap">Decorate Room</h2>
                 </>
               )}
             </div>
@@ -158,34 +157,24 @@ const InventoryPanel: React.FC<InventoryPanelProps> = ({ editingMode, isMobile }
                   <span>Saving...</span>
                 </div>
               )}
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={undo}
-                  disabled={!canUndo}
-                  className="hover:bg-white/20 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Undo last change"
-                >
-                  <Undo2 className="w-5 h-5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={closeInventory}
-                  className="hover:bg-white/20 text-white"
-                  title="Close panel"
-                >
-                  <X className="w-5 h-5" />
-                </Button>
-              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={closeInventory}
+                className="hover:bg-white/20 text-white"
+                title="Close panel"
+              >
+                <X className="w-5 h-5" />
+              </Button>
             </div>
           </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-hidden">
-            <UnifiedInventoryPanel />
-          </div>
+          {/* Content - Only show when inventory is open */}
+          {isInventoryOpen && (
+            <div className="flex-1 overflow-hidden">
+              <UnifiedInventoryPanel />
+            </div>
+          )}
         </div>
       </motion.div>
     </>

@@ -12,7 +12,9 @@ export function performAuthCleanup() {
 
   // Check if we have incomplete auth state
   if (authToken && !refreshToken) {
-    console.log("Found auth token without refresh token, clearing...");
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Found auth token without refresh token, clearing...");
+    }
     shouldClear = true;
   }
 
@@ -22,22 +24,29 @@ export function performAuthCleanup() {
       const payload = JSON.parse(atob(authToken.split('.')[1]));
       const currentTime = Math.floor(Date.now() / 1000);
       
-      // If token is expired and we don't have a valid refresh token
+      // If token is expired and we don't have a refresh token
       if (payload.exp < currentTime) {
-        if (!refreshToken || !isValidJWT(refreshToken)) {
-          console.log("Auth token expired with no valid refresh token, clearing...");
+        if (!refreshToken) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log("Auth token expired with no refresh token, clearing...");
+          }
           shouldClear = true;
         }
       }
     } catch (error) {
-      console.log("Malformed auth token found, clearing...");
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Malformed auth token found, clearing...");
+      }
       shouldClear = true;
     }
   }
 
-  // Check refresh token validity
-  if (refreshToken && !isValidJWT(refreshToken)) {
-    console.log("Invalid refresh token found, clearing...");
+  // Note: Supabase refresh tokens are not JWTs, they're simple strings
+  // So we just check if it exists, not if it's a valid JWT
+  if (refreshToken && typeof refreshToken !== 'string') {
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Invalid refresh token found, clearing...");
+    }
     shouldClear = true;
   }
 
@@ -46,7 +55,9 @@ export function performAuthCleanup() {
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
     sessionStorage.clear();
-    console.log("Authentication state cleared due to invalid tokens");
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Authentication state cleared due to invalid tokens");
+    }
     return false;
   }
 
@@ -72,23 +83,7 @@ function isValidJWT(token: string): boolean {
   }
 }
 
-// Run cleanup immediately when this module is imported
-const authState = performAuthCleanup();
-console.log('Auth cleanup complete. Valid auth state:', authState);
-
-// Check if we're on a student/public page that doesn't require auth
-const isPublicPage = 
-  window.location.pathname.startsWith('/island/') ||
-  window.location.pathname.startsWith('/q/') ||
-  window.location.pathname.startsWith('/game/') ||
-  window.location.pathname === '/login' ||
-  window.location.pathname === '/register' ||
-  window.location.pathname === '/';
-
-// If we cleared auth state and we're not on a public page, redirect to login
-if (!authState && !isPublicPage) {
-  console.log('Auth state was cleared on protected page, redirecting to login...');
-  setTimeout(() => {
-    window.location.href = '/login';
-  }, 500);
+// Only run cleanup if we detect a problem - don't be aggressive
+if (process.env.NODE_ENV === 'development') {
+  console.log('Auth cleanup module loaded - will only clear if tokens are clearly invalid');
 }

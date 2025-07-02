@@ -1,11 +1,11 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Shirt, Home } from 'lucide-react';
-import { useIslandStore } from '@/stores/islandStore';
+import { useRoomStore } from "@/stores/roomStore";
 
 const EditorControls = React.memo(() => {
-  const inventoryMode = useIslandStore((state) => state.ui.inventoryMode);
-  const setInventoryMode = useIslandStore((state) => state.setInventoryMode);
+  const inventoryMode = useRoomStore((state) => state.ui.inventoryMode);
+  const setInventoryMode = useRoomStore((state) => state.setInventoryMode);
 
   const handleAvatarClick = React.useCallback(() => {
     setInventoryMode(inventoryMode === 'avatar' ? null : 'avatar');

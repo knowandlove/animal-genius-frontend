@@ -146,7 +146,8 @@ function LayeredAvatarDB({
       top: `${dbPosition.y}%`,
       left: `${dbPosition.x}%`
     } : {
-      top: '50%',
+      // Default positions for each slot type
+      top: slot === 'hat' ? '20%' : slot === 'glasses' ? '35%' : '50%',
       left: '50%'
     };
     
@@ -156,7 +157,9 @@ function LayeredAvatarDB({
       emoji: '🎩', // Generic fallback emoji
       zIndex,
       position,
-      scale: dbPosition ? getItemScale(dbPosition.scale * 100, animalType) : 0.5,
+      scale: dbPosition 
+        ? getItemScale(dbPosition.scale * 100, animalType, width) 
+        : (slot === 'hat' ? 0.5 : 0.4), // Default scales based on slot
       rotation: dbPosition?.rotation || 0,
     });
   });

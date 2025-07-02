@@ -19,7 +19,7 @@ function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T &
   return debounced as T & { cancel: () => void };
 }
 
-// Types for our Animal Crossing-style island
+// Types for our Animal Crossing-style room
 export type AnimalType = string; // e.g., 'dolphin', 'elephant', etc.
 export type ItemId = string;
 export type RoomTheme = 'wood' | 'modern' | 'cozy' | 'space' | 'underwater' | 'blank';
@@ -62,12 +62,12 @@ export interface UndoHistoryItem {
   type: 'avatar' | 'room';
   timestamp: Date;
   state: {
-    avatar?: IslandStore['avatar'];
-    room?: IslandStore['room'];
+    avatar?: RoomStore['avatar'];
+    room?: RoomStore['room'];
   };
 }
 
-export interface IslandStore {
+export interface RoomStore {
   // Player data
   passportCode: string;
   playerName: string;
@@ -146,9 +146,9 @@ export interface IslandStore {
   placeItem: (itemId: ItemId, x: number, y: number) => void;
   moveItem: (placedItemId: string, x: number, y: number) => void;
   removeItem: (placedItemId: string) => void;
-  setInventoryFilter: (filter: IslandStore['inventory']['filter']) => void;
+  setInventoryFilter: (filter: RoomStore['inventory']['filter']) => void;
   selectInventoryItem: (itemId: ItemId | undefined) => void;
-  setUIMode: (mode: IslandStore['ui']['mode']) => void;
+  setUIMode: (mode: RoomStore['ui']['mode']) => void;
   setInventoryMode: (mode: InventoryMode) => void;
   openInventory: (mode: EditingMode) => void;
   closeInventory: () => void;
@@ -166,15 +166,21 @@ export interface IslandStore {
   undo: () => void;
   canUndo: () => boolean;
   isDirty: () => boolean;
+  saveDraftChanges: () => void;
+  discardDraftChanges: () => void;
+  clearAvatar: () => void;
+  clearRoom: () => void;
+  startArranging: () => void;
+  stopArranging: () => void;
 }
 
 // Create the debounced save function outside the store
 const debouncedSave = debounce(() => {
-  useIslandStore.getState().saveToServer();
+  useRoomStore.getState().saveToServer();
 }, 2000);
 
 // Create the store with auto-save functionality
-export const useIslandStore = create<IslandStore>()(
+export const useRoomStore = create<RoomStore>()(
   subscribeWithSelector((set, get) => ({
     // Initial state
     passportCode: '',
@@ -212,6 +218,7 @@ export const useIslandStore = create<IslandStore>()(
       isSaving: false,
       saveError: null,
       pendingModeChange: null,
+      isArranging: false,
     },
     
     draftAvatar: {
@@ -282,11 +289,16 @@ export const useIslandStore = create<IslandStore>()(
         },
       });
       
-      console.log('Island store initialized:', {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Room store initialized:', {
+        animalType: data.animalType,
+        equipped: equipped,
+        draftAvatar: get().draftAvatar,
         room: get().room,
         draftRoom: get().draftRoom,
         inventory: get().inventory
       });
+      }
     },
     
     setBalance: (balance) => set({ balance }),
@@ -326,7 +338,9 @@ export const useIslandStore = create<IslandStore>()(
     },
     
     placeItem: (itemId, x, y) => {
-      console.log('placeItem called with:', { itemId, x, y });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('placeItem called with:', { itemId, x, y });
+      }
       
       const state = get();
       
@@ -383,8 +397,8 @@ export const useIslandStore = create<IslandStore>()(
         undoHistory: newHistory,
       });
       
-      // Auto-save after placing
-      get().saveToServer();
+      // Use debounced save after placing
+      debouncedSave();
     },
     
     removeItem: (placedItemId) => {
@@ -441,8 +455,8 @@ export const useIslandStore = create<IslandStore>()(
         undoHistory: newHistory,
       });
       
-      // Auto-save
-      get().saveToServer();
+      // Use debounced save
+      debouncedSave();
     },
     
     setInventoryFilter: (filter) => {
@@ -500,8 +514,8 @@ export const useIslandStore = create<IslandStore>()(
         undoHistory: newHistory,
       });
       
-      // Auto-save
-      get().saveToServer();
+      // Use debounced save
+      debouncedSave();
     },
     
     updateDraftRoom: (placedItems) => {
@@ -514,26 +528,78 @@ export const useIslandStore = create<IslandStore>()(
     },
     
     updateRoomColors: (wallColor, floorColor) => {
+      const state = get();
+      
+      // Save current state to undo history
+      const undoItem: UndoHistoryItem = {
+        type: 'room',
+        timestamp: new Date(),
+        state: {
+          room: { 
+            ...state.room,
+            wallColor: state.room.wallColor,
+            floorColor: state.room.floorColor,
+          }
+        }
+      };
+      
+      const newHistory = [undoItem, ...state.undoHistory.slice(0, state.maxUndoSteps - 1)];
+      
+      // Update both room and draft
       set((state) => ({
+        room: {
+          ...state.room,
+          ...(wallColor !== undefined && { wallColor }),
+          ...(floorColor !== undefined && { floorColor }),
+        },
         draftRoom: {
           ...state.draftRoom,
           ...(wallColor !== undefined && { wallColor }),
           ...(floorColor !== undefined && { floorColor }),
         },
+        undoHistory: newHistory,
       }));
+      
+      // Use debounced save
+      debouncedSave();
     },
     
     updateRoomPatterns: (wallPattern, floorPattern) => {
+      const state = get();
+      
+      // Save current state to undo history
+      const undoItem: UndoHistoryItem = {
+        type: 'room',
+        timestamp: new Date(),
+        state: {
+          room: { 
+            ...state.room,
+            wallPattern: state.room.wallPattern,
+            floorPattern: state.room.floorPattern,
+          }
+        }
+      };
+      
+      const newHistory = [undoItem, ...state.undoHistory.slice(0, state.maxUndoSteps - 1)];
+      
+      // Update both room and draft
       set((state) => ({
+        room: {
+          ...state.room,
+          ...(wallPattern !== undefined && { wallPattern }),
+          ...(floorPattern !== undefined && { floorPattern }),
+        },
         draftRoom: {
           ...state.draftRoom,
           ...(wallPattern !== undefined && { wallPattern }),
           ...(floorPattern !== undefined && { floorPattern }),
         },
+        undoHistory: newHistory,
       }));
+      
+      // Use debounced save
+      debouncedSave();
     },
-    
-
     
     startDragging: (item) => {
       set((state) => ({
@@ -602,12 +668,12 @@ export const useIslandStore = create<IslandStore>()(
       try {
         if (state.ui.editingMode === 'avatar') {
           // Save current avatar state
-          await apiRequest('POST', `/api/island/${state.passportCode}/avatar`, {
+          await apiRequest('POST', `/api/room/${state.passportCode}/avatar`, {
             equipped: state.avatar.equipped,
           });
         } else if (state.ui.editingMode === 'room') {
           // Save current room state
-          await apiRequest('POST', `/api/island/${state.passportCode}/room`, {
+          await apiRequest('POST', `/api/room/${state.passportCode}/room`, {
             theme: state.room.theme,
             wallColor: state.room.wallColor,
             floorColor: state.room.floorColor,
@@ -621,7 +687,7 @@ export const useIslandStore = create<IslandStore>()(
           ui: { ...state.ui, lastSaved: new Date(), isSaving: false, saveError: null },
         }));
       } catch (error) {
-        console.error('Failed to save island state:', error);
+        console.error('Failed to save room state:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to save changes';
         set((state) => ({
           ui: { ...state.ui, isSaving: false, saveError: errorMessage },
@@ -699,7 +765,7 @@ export const useIslandStore = create<IslandStore>()(
         ui: {
           ...state.ui,
           isInventoryOpen: false,
-          // Keep editingMode and inventoryMode active so changes persist
+          // Keep editingMode active so we remember what was open
           // editingMode: null,
           // inventoryMode: null,
         },
@@ -735,8 +801,8 @@ export const useIslandStore = create<IslandStore>()(
         });
       }
       
-      // Save the undo action
-      get().saveToServer();
+      // Use debounced save for undo action
+      debouncedSave();
     },
     
     canUndo: () => {
@@ -753,13 +819,141 @@ export const useIslandStore = create<IslandStore>()(
       }
       return false;
     },
+    
+    saveDraftChanges: () => {
+      const state = get();
+      // Save immediately
+      state.saveToServer();
+    },
+    
+    discardDraftChanges: () => {
+      const state = get();
+      if (state.ui.editingMode === 'avatar') {
+        // Revert draft to current avatar state
+        set({
+          draftAvatar: {
+            equipped: { ...state.avatar.equipped },
+          },
+        });
+      } else if (state.ui.editingMode === 'room') {
+        // Revert draft to current room state
+        set({
+          draftRoom: {
+            ...state.room,
+            placedItems: [...state.room.placedItems],
+          },
+        });
+      }
+      // Close the inventory
+      state.closeInventory();
+    },
+    
+    clearAvatar: () => {
+      const state = get();
+      
+      // Save current state to undo history
+      const undoItem: UndoHistoryItem = {
+        type: 'avatar',
+        timestamp: new Date(),
+        state: {
+          avatar: { ...state.avatar, equipped: { ...state.avatar.equipped } }
+        }
+      };
+      
+      const newHistory = [undoItem, ...state.undoHistory.slice(0, state.maxUndoSteps - 1)];
+      
+      // Clear all equipped items
+      set({
+        avatar: {
+          ...state.avatar,
+          equipped: {},
+        },
+        draftAvatar: {
+          equipped: {},
+        },
+        undoHistory: newHistory,
+      });
+      
+      // Use debounced save
+      debouncedSave();
+    },
+    
+    clearRoom: () => {
+      const state = get();
+      
+      // Save current state to undo history
+      const undoItem: UndoHistoryItem = {
+        type: 'room',
+        timestamp: new Date(),
+        state: {
+          room: { ...state.room, placedItems: [...state.room.placedItems] }
+        }
+      };
+      
+      const newHistory = [undoItem, ...state.undoHistory.slice(0, state.maxUndoSteps - 1)];
+      
+      // Return all placed items to inventory
+      const itemsToReturn = state.room.placedItems.map(placedItem => {
+        const existingItem = state.inventory.items.find(item => item.id === placedItem.itemId);
+        return existingItem || {
+          id: placedItem.itemId,
+          name: 'Returned Item',
+          type: 'room_furniture' as const,
+          cost: 0,
+          description: 'Item returned from room',
+          rarity: 'common' as const,
+          quantity: 1,
+          obtainedAt: new Date()
+        };
+      });
+      
+      // Update room and inventory
+      set({
+        room: {
+          ...state.room,
+          placedItems: [],
+        },
+        draftRoom: {
+          ...state.draftRoom,
+          placedItems: [],
+        },
+        inventory: {
+          ...state.inventory,
+          items: [...state.inventory.items, ...itemsToReturn],
+        },
+        undoHistory: newHistory,
+      });
+      
+      // Use debounced save
+      debouncedSave();
+    },
+    
+    startArranging: () => {
+      set((state) => ({
+        ui: {
+          ...state.ui,
+          isArranging: true,
+        },
+      }));
+    },
+    
+    stopArranging: () => {
+      set((state) => ({
+        ui: {
+          ...state.ui,
+          isArranging: false,
+        },
+      }));
+      // Save when exiting arranging mode
+      get().saveToServer();
+    },
   }))
 );
 
-// Note: Auto-save is now handled immediately on each action (placeItem, removeItem, etc.)
-// No need for debounced saving since we want instant feedback
+// Note: Auto-save now uses debounced saving (2 second delay) to reduce API calls
+// This prevents excessive backend writes during rapid user interactions
 
 // Make store accessible in development for testing
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  (window as any).useIslandStore = useIslandStore;
+  (window as any).useRoomStore = useRoomStore;
 }

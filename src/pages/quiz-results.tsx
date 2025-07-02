@@ -226,7 +226,7 @@ export default function QuizResults() {
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 mt-2">
-                    Save this code to visit your island anytime!
+                    Save this code to visit your room anytime!
                   </p>
                 </div>
                 
@@ -245,7 +245,7 @@ export default function QuizResults() {
                 )}
                 
                 <Button 
-                  onClick={() => setLocation(`/island/${result.passportCode}`)}
+                  onClick={() => setLocation(`/room/${result.passportCode}`)}
                   className="mt-2"
                   size="lg"
                 >

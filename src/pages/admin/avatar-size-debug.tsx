@@ -180,10 +180,10 @@ export default function AvatarDebug() {
             </CardContent>
           </Card>
 
-          {/* Island Room View (504x504) */}
+          {/* Room View (504x504) */}
           <Card>
             <CardHeader>
-              <CardTitle>Island Room (600×600)</CardTitle>
+              <CardTitle>Room (600×600)</CardTitle>
               <p className="text-sm text-muted-foreground">In-room display</p>
             </CardHeader>
             <CardContent>

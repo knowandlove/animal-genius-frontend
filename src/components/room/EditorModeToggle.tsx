@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Wand2, Home, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useIslandStore } from "@/stores/islandStore";
+import { useRoomStore } from "@/stores/roomStore";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useParams } from "wouter";
@@ -12,42 +12,38 @@ const EditorModeToggle: React.FC = () => {
   const { passportCode } = useParams();
   const queryClient = useQueryClient();
   
-  const editingMode = useIslandStore((state) => state.ui.editingMode);
-  const isInventoryOpen = useIslandStore((state) => state.ui.isInventoryOpen);
-  const openInventory = useIslandStore((state) => state.openInventory);
-  const closeInventory = useIslandStore((state) => state.closeInventory);
-  const isDirty = useIslandStore((state) => state.isDirty);
-  const saveDraftToServer = useIslandStore((state) => state.saveDraftToServer);
-  const cancelDraft = useIslandStore((state) => state.cancelDraft);
+  const editingMode = useRoomStore((state) => state.ui.editingMode);
+  const isInventoryOpen = useRoomStore((state) => state.ui.isInventoryOpen);
+  const openInventory = useRoomStore((state) => state.openInventory);
+  const closeInventory = useRoomStore((state) => state.closeInventory);
+  const isDirty = useRoomStore((state) => state.isDirty);
+  const saveToServer = useRoomStore((state) => state.saveToServer);
+  const discardDraftChanges = useRoomStore((state) => state.discardDraftChanges);
 
   // Save mutations
   const saveAvatarMutation = useMutation({
     mutationFn: (data: any) => 
-      apiRequest('POST', `/api/island/${passportCode}/avatar`, data),
+      apiRequest('POST', `/api/room/${passportCode}/avatar`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/island-page-data/${passportCode}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/room-page-data/${passportCode}`] });
     },
   });
 
   const saveRoomMutation = useMutation({
     mutationFn: (data: any) => 
-      apiRequest('POST', `/api/island/${passportCode}/room`, data),
+      apiRequest('POST', `/api/room/${passportCode}/room`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/island-page-data/${passportCode}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/room-page-data/${passportCode}`] });
     },
   });
 
   const handleSave = async () => {
-    const result = await saveDraftToServer(
-      editingMode === 'avatar' ? saveAvatarMutation : saveRoomMutation
-    );
-    if (result) {
-      closeInventory();
-    }
+    await saveToServer();
+    closeInventory();
   };
 
   const handleCancel = () => {
-    cancelDraft();
+    discardDraftChanges();
     closeInventory();
   };
 

@@ -19,7 +19,7 @@ export function ProtectedStudentRoute({ children }: ProtectedStudentRouteProps) 
 
   const checkSession = async () => {
     try {
-      const response = await apiRequest('/api/island/check-session');
+      const response = await apiRequest('/api/room/check-session');
       if (response.authenticated) {
         setIsAuthenticated(true);
       }

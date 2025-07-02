@@ -86,31 +86,6 @@ interface Transaction {
   };
 }
 
-interface PurchaseRequest {
-  id: number;
-  studentId: number;
-  studentName: string;
-  studentBalance: number;
-  passportCode: string;
-  animalType: string;
-  itemType: string;
-  itemId: string;
-  itemName: string;
-  itemDescription: string;
-  itemRarity: string;
-  cost: number;
-  status: string;
-  requestedAt: string;
-  balanceAfterPurchase: number;
-  avatarData?: {
-    equipped?: {
-      hat?: string;
-      glasses?: string;
-      accessory?: string;
-    };
-  };
-}
-
 export default function ClassEconomy() {
   const { classId } = useParams();
   const [, setLocation] = useLocation();
@@ -142,15 +117,11 @@ export default function ClassEconomy() {
     enabled: !!classId,
   });
 
-  // Get purchase requests for the class
-  const { data: purchaseRequests, isLoading: isLoadingRequests, refetch: refetchRequests } = useQuery({
-    queryKey: [`/api/classes/${classId}/purchase-requests`],
-    queryFn: async () => {
-      return await apiRequest('GET', `/api/classes/${classId}/purchase-requests`);
-    },
+  // Get store status
+  const { data: storeStatus } = useQuery({
+    queryKey: [`/api/classes/${classId}/store-status`],
+    queryFn: () => apiRequest('GET', `/api/classes/${classId}/store-status`),
     enabled: !!classId,
-    refetchInterval: 5000, // Poll every 5 seconds for new requests
-    refetchIntervalInBackground: true, // Keep polling even when tab is not focused
   });
 
   // Get transaction history for selected student
@@ -171,6 +142,36 @@ export default function ClassEconomy() {
     enabled: !!selectedStudentId && transactionHistoryOpen,
   });
 
+  // Toggle store mutation
+  const toggleStoreMutation = useMutation({
+    mutationFn: async (isOpen: boolean) => {
+      return apiRequest('POST', '/api/currency/store/toggle', {
+        classId,
+        isOpen
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: storeStatus?.isOpen ? "Store closed successfully" : "Store opened successfully",
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/classes/${classId}/store-status`],
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to toggle store status",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const toggleStore = (isOpen: boolean) => {
+    toggleStoreMutation.mutate(isOpen);
+  };
+
   // Currency mutations
   const currencyMutation = useMutation({
     mutationFn: async ({ action, studentIds, amount, reason }: {
@@ -181,7 +182,7 @@ export default function ClassEconomy() {
     }) => {
       const promises = studentIds.map(studentId => 
         apiRequest('POST', `/api/currency/${action}`, {
-          submissionId: studentId,
+          studentId: studentId,
           amount,
           reason
         })
@@ -205,94 +206,6 @@ export default function ClassEconomy() {
       toast({
         title: "Error",
         description: error.message || "Failed to update currency",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Store toggle mutation
-  const storeToggleMutation = useMutation({
-    mutationFn: async (isOpen: boolean) => {
-      return await apiRequest('POST', '/api/currency/store/toggle', {
-        classId: parseInt(classId!),
-        isOpen
-      });
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Success",
-        description: data.message,
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to toggle store",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Purchase request approval/denial mutation
-  const processPurchaseMutation = useMutation({
-    mutationFn: async ({ requestId, action }: { requestId: number; action: 'approve' | 'deny' }) => {
-      return await apiRequest('POST', '/api/purchase-requests/process', {
-        requestId,
-        action
-      });
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Success",
-        description: data.message,
-      });
-      refetchRequests();
-      queryClient.invalidateQueries({
-        queryKey: [`/api/classes/${classId}/economy`],
-      });
-      // Also invalidate all student island caches to force refresh
-      queryClient.invalidateQueries({
-        queryKey: [`/api/island-page-data/`],
-        exact: false,
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to process request",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Bulk approve all requests
-  const bulkProcessMutation = useMutation({
-    mutationFn: async (action: 'approve' | 'deny') => {
-      const requestIds = purchaseRequests?.map((r: PurchaseRequest) => r.id) || [];
-      return await apiRequest('POST', '/api/purchase-requests/bulk-process', {
-        requestIds,
-        action
-      });
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Success",
-        description: data.message,
-      });
-      refetchRequests();
-      queryClient.invalidateQueries({
-        queryKey: [`/api/classes/${classId}/economy`],
-      });
-      // Also invalidate all student island caches to force refresh
-      queryClient.invalidateQueries({
-        queryKey: [`/api/island-page-data/`],
-        exact: false,
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to process requests",
         variant: "destructive",
       });
     },
@@ -775,172 +688,87 @@ export default function ClassEconomy() {
           </TabsContent>
 
           <TabsContent value="store" className="space-y-6">
-            {/* Store Management Tab */}
+            {/* Store Control */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Store className="w-5 h-5" />
-                  Store Controls
+                  Store Control
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-4">
-                  <Button
-                    onClick={() => storeToggleMutation.mutate(true)}
-                    disabled={storeToggleMutation.isPending}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    Open Store
-                  </Button>
-                  <Button
-                    onClick={() => storeToggleMutation.mutate(false)}
-                    disabled={storeToggleMutation.isPending}
-                    variant="outline"
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    Close Store
-                  </Button>
-                  <p className="text-sm text-muted-foreground">
-                    Control when students can browse and request items from the store.
-                  </p>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex-1">
+                    <h3 className="font-semibold">Store Status</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Control when students can access the store
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {storeStatus?.isOpen ? (
+                      <Badge className="bg-green-100 text-green-800">
+                        <Check className="w-3 h-3 mr-1" />
+                        Open
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary">
+                        <X className="w-3 h-3 mr-1" />
+                        Closed
+                      </Badge>
+                    )}
+                    <Button
+                      onClick={() => toggleStore(!storeStatus?.isOpen)}
+                      disabled={toggleStoreMutation.isPending}
+                      variant={storeStatus?.isOpen ? "destructive" : "default"}
+                    >
+                      {toggleStoreMutation.isPending ? (
+                        <LoadingSpinner className="w-4 h-4" />
+                      ) : storeStatus?.isOpen ? (
+                        <>
+                          <X className="w-4 h-4 mr-2" />
+                          Close Store
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4 mr-2" />
+                          Open Store
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Purchase Requests */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <ShoppingCart className="w-5 h-5" />
-                    Purchase Requests
-                  </span>
-                  {purchaseRequests && purchaseRequests.length > 0 && (
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => bulkProcessMutation.mutate('approve')}
-                        disabled={bulkProcessMutation.isPending}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        <Check className="w-4 h-4 mr-1" />
-                        Approve All
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => bulkProcessMutation.mutate('deny')}
-                        disabled={bulkProcessMutation.isPending}
-                        variant="outline"
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <X className="w-4 h-4 mr-1" />
-                        Deny All
-                      </Button>
-                    </div>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoadingRequests ? (
-                  <div className="flex items-center justify-center py-8">
-                    <LoadingSpinner />
-                    <span className="ml-2">Loading purchase requests...</span>
+                {/* Store Information */}
+                <div className="flex items-center gap-4 p-4 bg-green-50 rounded-lg">
+                  <Check className="w-5 h-5 text-green-600" />
+                  <div>
+                    <p className="font-medium">Direct Purchase System</p>
+                    <p className="text-sm text-muted-foreground">
+                      Students can buy items instantly with their coins. No approval needed.
+                    </p>
                   </div>
-                ) : purchaseRequests && purchaseRequests.length > 0 ? (
-                  <div className="space-y-3">
-                    {purchaseRequests.map((request: PurchaseRequest) => (
-                      <Card key={request.id} className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-3">
-                            <MiniAvatar 
-                              animalType={request.animalType} 
-                              equipped={request.avatarData?.equipped}
-                              size={40}
-                            />
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium">{request.studentName}</span>
-                                <Badge variant="outline" className="text-xs">
-                                  {request.animalType}
-                                </Badge>
-                              </div>
-                              
-                              <div className="text-sm text-muted-foreground mb-2">
-                                Wants to buy: <span className="font-medium text-foreground">{request.itemName}</span>
-                              </div>
-                              
-                              <div className="flex items-center gap-4 text-sm">
-                                <div className="flex items-center gap-1">
-                                  <Coins className="w-3 h-3 text-yellow-600" />
-                                  <span>Cost: {request.cost}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <span className="text-muted-foreground">Balance:</span>
-                                  <span className={request.balanceAfterPurchase < 0 ? "text-red-600 font-medium" : ""}>
-                                    {request.studentBalance} → {request.balanceAfterPurchase}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1 text-muted-foreground">
-                                  <Clock className="w-3 h-3" />
-                                  <span>{format(new Date(request.requestedAt), "MMM d 'at' h:mm a")}</span>
-                                </div>
-                              </div>
-                              
-                              {request.itemRarity && (
-                                <Badge 
-                                  variant={request.itemRarity === 'rare' ? 'default' : 'secondary'}
-                                  className="mt-2 text-xs"
-                                >
-                                  {request.itemRarity}
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              onClick={() => processPurchaseMutation.mutate({ 
-                                requestId: request.id, 
-                                action: 'approve' 
-                              })}
-                              disabled={processPurchaseMutation.isPending || request.balanceAfterPurchase < 0}
-                              className="bg-green-600 hover:bg-green-700"
-                            >
-                              <Check className="w-4 h-4" />
-                              Approve
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => processPurchaseMutation.mutate({ 
-                                requestId: request.id, 
-                                action: 'deny' 
-                              })}
-                              disabled={processPurchaseMutation.isPending}
-                              variant="outline"
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <X className="w-4 h-4" />
-                              Deny
-                            </Button>
-                          </div>
-                        </div>
-                        
-                        {request.balanceAfterPurchase < 0 && (
-                          <div className="mt-3 p-2 bg-red-50 rounded text-sm text-red-600">
-                            ⚠️ Student doesn't have enough coins for this purchase
-                          </div>
-                        )}
-                      </Card>
-                    ))}
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                  <div>
+                    <h4 className="font-medium mb-2">How it works:</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>• Open or close the store anytime</li>
+                      <li>• Students can only shop when store is open</li>
+                      <li>• Purchases are instant (no approval needed)</li>
+                      <li>• Track all purchases in transaction history</li>
+                    </ul>
                   </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <ShoppingCart className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                    <p>No pending purchase requests</p>
-                    <p className="text-sm mt-1">Requests will appear here when students want to buy items</p>
+                  <div>
+                    <h4 className="font-medium mb-2">Benefits:</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>• Control when students can shop</li>
+                      <li>• Create special shopping events</li>
+                      <li>• No approval queue to manage</li>
+                      <li>• Students get items instantly</li>
+                    </ul>
                   </div>
-                )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -961,53 +789,37 @@ export default function ClassEconomy() {
               )}
             </DialogTitle>
           </DialogHeader>
-          
-          {historyError ? (
-            <div className="text-center py-8 text-red-600">
-              <p>Error loading transaction history:</p>
-              <p className="text-sm">{(historyError as Error).message}</p>
-            </div>
-          ) : isLoadingHistory ? (
-            <div className="flex items-center justify-center py-8">
-              <LoadingSpinner />
-              <span className="ml-2">Loading history...</span>
-            </div>
-          ) : (
-            <ScrollArea className="h-[500px] pr-4">
-              {transactionHistory && transactionHistory.length > 0 ? (
-                <div className="space-y-2">
-                  {transactionHistory.map((transaction: Transaction) => (
-                    <Card key={transaction.id} className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-3">
-                          <div className="mt-1">
-                            {getTransactionIcon(transaction.transactionType)}
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-medium">{transaction.reason || "No reason provided"}</p>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                              <span>{format(new Date(transaction.createdAt), "MMM d, yyyy 'at' h:mm a")}</span>
-                              {transaction.teacher && (
-                                <span>by {transaction.teacher.firstName} {transaction.teacher.lastName}</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className={`font-bold text-lg ${getTransactionColor(transaction.amount)}`}>
-                          {transaction.amount > 0 ? "+" : ""}{transaction.amount}
-                        </div>
+          <ScrollArea className="mt-4">
+            {isLoadingHistory ? (
+              <div className="flex items-center justify-center py-8">
+                <LoadingSpinner />
+                <span className="ml-2">Loading transaction history...</span>
+              </div>
+            ) : transactionHistory && transactionHistory.length > 0 ? (
+              <div className="space-y-2">
+                {transactionHistory.map((transaction: any) => (
+                  <div key={transaction.id} className="p-3 border rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {getTransactionIcon(transaction.transactionType)}
+                        <span className="font-medium">{transaction.description}</span>
                       </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <History className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                  <p>No transaction history yet</p>
-                </div>
-              )}
-            </ScrollArea>
-          )}
+                      <span className={`font-bold ${getTransactionColor(transaction.amount)}`}>
+                        {transaction.amount > 0 ? '+' : ''}{transaction.amount}
+                      </span>
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {format(new Date(transaction.createdAt), "MMM d, yyyy 'at' h:mm a")}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">
+                No transaction history available
+              </p>
+            )}
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>

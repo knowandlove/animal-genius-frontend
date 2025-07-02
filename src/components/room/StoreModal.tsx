@@ -165,21 +165,15 @@ export default function StoreModal({
                       <span className="text-sm font-semibold">{item.cost}</span>
                     </div>
                     
-                    {hasPendingRequest(item.id) ? (
-                      <Badge variant="outline" className="text-xs">
-                        Pending
-                      </Badge>
-                    ) : (
-                      <Button
-                        size="sm"
-                        className="h-7 text-xs"
-                        disabled={availableBalance < item.cost}
-                        variant={availableBalance >= item.cost ? 'default' : 'secondary'}
-                        onClick={() => onPurchaseClick(item)}
-                      >
-                        {availableBalance >= item.cost ? 'Buy' : 'Need $'}
-                      </Button>
-                    )}
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs"
+                      disabled={availableBalance < item.cost}
+                      variant={availableBalance >= item.cost ? 'default' : 'secondary'}
+                      onClick={() => onPurchaseClick(item)}
+                    >
+                      {availableBalance >= item.cost ? 'Buy Now' : 'Need Coins'}
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -196,7 +190,7 @@ export default function StoreModal({
         <DialogHeader className="px-6 pt-6">
           <DialogTitle className="text-2xl flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-purple-600" />
-            Island Store
+            Room Store
           </DialogTitle>
           <DialogDescription>
             {storeStatus?.isOpen ? (

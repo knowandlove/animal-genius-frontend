@@ -71,10 +71,10 @@ export default function CreateClass() {
       const token = localStorage.getItem("authToken");
       return apiRequest("POST", "/api/classes", data);
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setCreatedClass(data);
       // Invalidate classes cache to show new class immediately
-      queryClient.invalidateQueries({ queryKey: ["/api/classes"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/classes"] });
       toast({
         title: "Class Created Successfully!",
         description: `Your class "${data.name}" is ready for students.`,

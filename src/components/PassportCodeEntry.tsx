@@ -42,7 +42,7 @@ export function PassportCodeEntry() {
     setIsLoading(true);
 
     try {
-      const response = await apiRequest('/api/island/authenticate', {
+      const response = await apiRequest('/api/room/authenticate', {
         method: 'POST',
         body: JSON.stringify({ passportCode: code })
       });
@@ -51,8 +51,8 @@ export function PassportCodeEntry() {
         // Save to session storage for convenience
         sessionStorage.setItem('lastPassportCode', code);
         
-        // Redirect to island
-        navigate('/island');
+        // Redirect to room
+        navigate('/room');
       }
     } catch (err: any) {
       setError(err.error || 'Invalid passport code. Please try again.');
@@ -83,9 +83,9 @@ export function PassportCodeEntry() {
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-green-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Welcome to Your Island! 🏝️</CardTitle>
+          <CardTitle className="text-2xl">Welcome to Your Room! 🏠</CardTitle>
           <CardDescription>
-            Enter your passport code to visit your island
+            Enter your passport code to visit your room
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -128,7 +128,7 @@ export function PassportCodeEntry() {
               ) : (
                 <>
                   <LogIn className="mr-2 h-4 w-4" />
-                  Enter Island
+                  Enter Room
                 </>
               )}
             </Button>

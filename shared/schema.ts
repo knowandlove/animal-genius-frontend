@@ -27,7 +27,7 @@ export const users = pgTable("users", {
 export const classes = pgTable("classes", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  code: varchar("code", { length: 6 }).notNull().unique(),
+  classCode: varchar("class_code", { length: 6 }).notNull().unique(),
   teacherId: integer("teacher_id").notNull(),
   iconEmoji: text("icon_emoji").default("📚"),
   iconColor: text("icon_color").default("#c5d49f"),
@@ -54,7 +54,7 @@ export const quizSubmissions = pgTable("quiz_submissions", {
   answers: jsonb("answers").notNull(),
   personalityType: varchar("personality_type", { length: 4 }).notNull(),
   animalType: text("animal_type").notNull(),
-  animalGenius: text("animal_genius").default("Feeler").notNull(),
+  geniusType: text("genius_type").default("Feeler").notNull(),
   scores: jsonb("scores").notNull(),
   learningStyle: text("learning_style").notNull(),
   learningScores: jsonb("learning_scores").notNull(),

@@ -517,7 +517,7 @@ export default function AdminPanel() {
                   </CardHeader>
                   <CardContent>
                     <Button
-                      onClick={() => setLocation("/admin/item-positioner")}
+                      onClick={() => setLocation("/admin/item-positioner-normalized")}
                       className="w-full bg-blue-600 hover:bg-blue-700"
                     >
                       Open Positioning Tools

@@ -34,7 +34,7 @@ export default function Landing() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginData) => {
-      return await apiRequest("POST", "/api/login", data);
+      return await apiRequest("POST", "/api/auth/login", data);
     },
     onSuccess: async (data) => {
       login(data.token, data.user, data.refreshToken);
@@ -43,7 +43,12 @@ export default function Landing() {
         title: "Welcome back!",
         description: "You have been logged in successfully.",
       });
-      window.location.href = "/dashboard";
+      
+      // Dispatch auth token changed event and add delay for state to settle
+      window.dispatchEvent(new Event('authTokenChanged'));
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 100);
     },
     onError: (error) => {
       toast({

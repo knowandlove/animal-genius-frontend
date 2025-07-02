@@ -77,8 +77,16 @@ export function InventoryModal({
                         onClick={() => !isEquipPending && onEquipItem('hat', isEquipped ? null : item.id)}
                       >
                         <CardContent className="p-4 text-center">
-                          <div className="w-16 h-16 mx-auto mb-2 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <span className="text-3xl">🎩</span>
+                          <div className="w-16 h-16 mx-auto mb-2 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                            {item.imageUrl ? (
+                              <img 
+                                src={item.imageUrl} 
+                                alt={item.name}
+                                className="w-full h-full object-contain"
+                              />
+                            ) : (
+                              <span className="text-3xl">🎩</span>
+                            )}
                           </div>
                           <h4 className="font-semibold text-sm">{item.name}</h4>
                           <Badge variant={item.rarity === 'rare' ? 'default' : 'outline'} className="mt-1 text-xs">
@@ -121,8 +129,16 @@ export function InventoryModal({
                         onClick={() => !isEquipPending && onEquipItem('glasses', isEquipped ? null : item.id)}
                       >
                         <CardContent className="p-4 text-center">
-                          <div className="w-16 h-16 mx-auto mb-2 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <span className="text-3xl">🕶️</span>
+                          <div className="w-16 h-16 mx-auto mb-2 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                            {item.imageUrl ? (
+                              <img 
+                                src={item.imageUrl} 
+                                alt={item.name}
+                                className="w-full h-full object-contain"
+                              />
+                            ) : (
+                              <span className="text-3xl">🕶️</span>
+                            )}
                           </div>
                           <h4 className="font-semibold text-sm">{item.name}</h4>
                           <Badge variant={item.rarity === 'rare' ? 'default' : 'outline'} className="mt-1 text-xs">
@@ -165,8 +181,16 @@ export function InventoryModal({
                         onClick={() => !isEquipPending && onEquipItem('accessory', isEquipped ? null : item.id)}
                       >
                         <CardContent className="p-4 text-center">
-                          <div className="w-16 h-16 mx-auto mb-2 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <span className="text-3xl">💎</span>
+                          <div className="w-16 h-16 mx-auto mb-2 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                            {item.imageUrl ? (
+                              <img 
+                                src={item.imageUrl} 
+                                alt={item.name}
+                                className="w-full h-full object-contain"
+                              />
+                            ) : (
+                              <span className="text-3xl">💎</span>
+                            )}
                           </div>
                           <h4 className="font-semibold text-sm">{item.name}</h4>
                           <Badge variant={item.rarity === 'rare' ? 'default' : 'outline'} className="mt-1 text-xs">

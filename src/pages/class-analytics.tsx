@@ -31,6 +31,7 @@ interface Submission {
   personalityType: string;
   animalType: string;
   animalGenius: string;
+  geniusType: string; // Add both for compatibility
   learningStyle: string;
   learningScores: {
     visual: number;
@@ -57,7 +58,8 @@ interface ClassAnalyticsData {
     animalDistribution: Record<string, number>;
     personalityDistribution: Record<string, number>;
     learningStyleDistribution: Record<string, number>;
-    animalGeniusDistribution: Record<string, number>;
+    animalGeniusDistribution?: Record<string, number>;
+    geniusTypeDistribution?: Record<string, number>;
   };
   submissions: Submission[];
 }
@@ -124,7 +126,7 @@ export default function ClassAnalytics() {
     error,
   } = useQuery<ClassAnalyticsData>({
     queryKey: [`/api/classes/${classId}/analytics`],
-    enabled: !!classId,
+    enabled: !!classId && !!localStorage.getItem("authToken"),
   });
 
   // Delete submission mutation
@@ -223,7 +225,7 @@ export default function ClassAnalytics() {
           submission.personalityType[0] === "E") ||
         (selectedPersonality === "I" && submission.personalityType[0] === "I");
       const matchesGenius =
-        !selectedGenius || submission.animalGenius === selectedGenius;
+        !selectedGenius || (submission.geniusType || submission.animalGenius) === selectedGenius;
       const matchesLearningStyle =
         !selectedLearningStyle ||
         submission.learningStyle === selectedLearningStyle;
@@ -337,7 +339,7 @@ export default function ClassAnalytics() {
   // Prepare Animal Genius pie chart data
   const animalGeniusPieChartData = useMemo(() => {
     if (
-      !analyticsData?.stats.animalGeniusDistribution ||
+      !(analyticsData?.stats.geniusTypeDistribution || analyticsData?.stats.animalGeniusDistribution) ||
       !analyticsData?.stats.totalSubmissions
     )
       return [];
@@ -348,7 +350,7 @@ export default function ClassAnalytics() {
       Doer: "#F59E0B",
     };
 
-    return Object.entries(analyticsData.stats.animalGeniusDistribution)
+    return Object.entries(analyticsData.stats.geniusTypeDistribution || analyticsData.stats.animalGeniusDistribution || {})
       .map(([genius, count]) => ({
         name: genius,
         value: count,
@@ -360,6 +362,7 @@ export default function ClassAnalytics() {
       }))
       .filter((item) => item.value > 0);
   }, [
+    analyticsData?.stats.geniusTypeDistribution,
     analyticsData?.stats.animalGeniusDistribution,
     analyticsData?.stats.totalSubmissions,
   ]);
@@ -408,7 +411,7 @@ export default function ClassAnalytics() {
     );
   }
 
-  if (!analyticsData) {
+  if (error || !analyticsData) {
     return (
       <div className="min-h-screen">
         <Header
@@ -422,9 +425,13 @@ export default function ClassAnalytics() {
               Class Not Found
             </h2>
             <p className="text-gray-600 mb-4">
-              The class you're looking for doesn't exist or you don't have
-              access to it.
+              {error ? (error as any).message : "The class you're looking for doesn't exist or you don't have access to it."}
             </p>
+            {classId && (
+              <p className="text-sm text-gray-500 mb-4">
+                Class ID: {classId}
+              </p>
+            )}
             <Button onClick={() => setLocation("/dashboard")}>
               Back to Dashboard
             </Button>
@@ -924,16 +931,16 @@ export default function ClassAnalytics() {
                                         className="px-2 py-1 text-xs font-semibold rounded-full text-white"
                                         style={{
                                           backgroundColor:
-                                            submission.animalGenius ===
+                                            (submission.geniusType || submission.animalGenius) ===
                                             "Thinker"
                                               ? "#8B5CF6"
-                                              : submission.animalGenius ===
+                                              : (submission.geniusType || submission.animalGenius) ===
                                                   "Feeler"
                                                 ? "#10B981"
                                                 : "#F59E0B",
                                         }}
                                       >
-                                        {submission.animalGenius}
+                                        {submission.geniusType || submission.animalGenius || 'Unknown'}
                                       </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface User {
   id: number;
@@ -13,6 +13,9 @@ interface User {
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasInitialized, setHasInitialized] = useState(false);
+  const mountedRef = useRef(true);
+  const queryClient = useQueryClient();
 
   // Load user from localStorage on mount
   useEffect(() => {
@@ -26,10 +29,15 @@ export function useAuth() {
         localStorage.removeItem("user");
       }
     }
+    setHasInitialized(true);
     setIsLoading(false);
+    
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
-  // Sync with server if token exists
+  // Sync with server if token exists - only enable after initial load
   const { data: serverUser } = useQuery<User>({
     queryKey: ["/api/me"],
     queryFn: async () => {
@@ -44,14 +52,16 @@ export function useAuth() {
       }
       return response.json();
     },
-    enabled: !!localStorage.getItem("authToken") && !user,
+    enabled: hasInitialized && !!localStorage.getItem("authToken") && !user,
     retry: 1,
     staleTime: 5 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // Update user state when server data loads
   useEffect(() => {
-    if (serverUser) {
+    if (serverUser && mountedRef.current) {
       setUser(serverUser);
       localStorage.setItem("user", JSON.stringify(serverUser));
     }
@@ -65,13 +75,23 @@ export function useAuth() {
     }
     setUser(userData);
     setIsLoading(false);
+    
+    // Dispatch event for same-window listeners
+    window.dispatchEvent(new Event('authTokenChanged'));
   };
 
   const logout = () => {
+    // Clear all queries to prevent any ongoing requests
+    queryClient.cancelQueries();
+    queryClient.clear();
+    
     localStorage.removeItem("authToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
     setUser(null);
+    
+    // Dispatch event for same-window listeners
+    window.dispatchEvent(new Event('authTokenChanged'));
   };
 
   const refreshUser = async () => {
