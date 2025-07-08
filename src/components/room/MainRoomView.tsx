@@ -2,8 +2,6 @@ import React from "react";
 import NormalizedAvatar from "@/components/avatar-v2/NormalizedAvatar";
 import RoomSticker from "@/components/room/RoomSticker";
 import { useRoomStore } from "@/stores/roomStore";
-import { motion } from "framer-motion";
-import { useMediaQuery } from "@/hooks/use-media-query";
 
 interface MainRoomViewProps {
   room: {
@@ -23,6 +21,7 @@ const MainRoomView: React.FC<MainRoomViewProps> = ({ room, storeCatalog, passpor
   const avatarSize = 250; // Fixed size for consistency
 
   return (
+    <>
     <div 
       className="absolute inset-0 flex items-center justify-center p-4 pt-20" 
       id="main-room-container"
@@ -59,6 +58,7 @@ const MainRoomView: React.FC<MainRoomViewProps> = ({ room, storeCatalog, passpor
         </div>
       </div>
     </div>
+    </>
   );
 };
 

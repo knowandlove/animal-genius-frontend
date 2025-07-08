@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import { useRoomStore, ROOM_ITEM_LIMIT } from "@/stores/roomStore";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { authenticateStudent, isAuthError, isPermissionError } from "@/lib/student-auth";
+import { authenticateStudent, checkSession, isAuthError, isPermissionError } from "@/lib/student-auth";
 import { useStoreData } from "@/contexts/StoreDataContext";
 
 // Import new components
@@ -32,6 +32,10 @@ import CollapsedInventoryTab from "@/components/room/CollapsedInventoryTab";
 import PassportCodeDialog from "@/components/room/PassportCodeDialog";
 import AccessDeniedMessage from "@/components/room/AccessDeniedMessage";
 import RoomSettingsButton from "@/components/room/RoomSettingsButton";
+import { SaveStatusIndicator } from "@/components/room/SaveStatusIndicator";
+import RoomViewers from "@/components/room/RoomViewers";
+import { useRoomViewers } from "@/hooks/useRoomViewers";
+import { v4 as uuidv4 } from 'uuid';
 
 interface StoreItem {
   id: string;
@@ -64,8 +68,6 @@ interface PageData {
   };
   wallet: {
     total: number;
-    pending: number;
-    available: number;
   };
   storeStatus: {
     isOpen: boolean;
@@ -74,7 +76,6 @@ interface PageData {
     className: string;
   };
   storeCatalog: StoreItem[];
-  purchaseRequests: any[];
   access?: {
     canView: boolean;
     canEdit: boolean;
@@ -95,17 +96,39 @@ export default function StudentRoom() {
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [accessDeniedReason, setAccessDeniedReason] = useState<'private' | 'invite_only' | 'different_class' | 'unknown' | null>(null);
+  const [authenticatedViewerName, setAuthenticatedViewerName] = useState<string | null>(null);
+  
+  // Viewer tracking
+  const [viewerId] = useState(() => {
+    // Try to get existing viewer ID from sessionStorage or create a new one
+    const existingId = sessionStorage.getItem('viewer-id');
+    if (existingId) return existingId;
+    
+    const newId = uuidv4();
+    sessionStorage.setItem('viewer-id', newId);
+    return newId;
+  });
 
   // Room store
   const initializeFromServerData = useRoomStore((state) => state.initializeFromServerData);
   const isInventoryOpen = useRoomStore((state) => state.ui.isInventoryOpen);
   const editingMode = useRoomStore((state) => state.ui.editingMode);
+  const isArranging = useRoomStore((state) => state.ui.isArranging);
 
   // Get store data context for refresh
   const { refetchPositions } = useStoreData();
 
   // Check if we're on mobile
   const isMobile = useMediaQuery("(max-width: 768px)");
+  
+  // Check for authenticated session on mount
+  useEffect(() => {
+    checkSession().then(session => {
+      if (session.isAuthenticated && session.studentName) {
+        setAuthenticatedViewerName(session.studentName);
+      }
+    });
+  }, []);
   
   // Listen for store open event (triggered after handling unsaved changes)
   useEffect(() => {
@@ -124,9 +147,6 @@ export default function StudentRoom() {
       if (e.shiftKey && e.key === 'R') {
         e.preventDefault();
         refetchPositions();
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Refreshing item positions...');
-        }
       }
     };
 
@@ -141,11 +161,6 @@ export default function StudentRoom() {
       try {
         return await apiRequest('GET', `/api/room-page-data/${passportCode}`);
       } catch (err: any) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Room fetch error:', err);
-          console.log('Error status:', err?.status);
-          console.log('Is auth error:', isAuthError(err));
-        }
         
         // Handle authentication errors
         if (isAuthError(err)) {
@@ -172,20 +187,41 @@ export default function StudentRoom() {
     retry: false, // Don't auto-retry auth errors
   });
 
+  // Initialize room viewer tracking - must be called before any conditional returns
+  const { viewers } = useRoomViewers({
+    passportCode: passportCode || '',
+    viewerId,
+    viewerName: authenticatedViewerName || 'Anonymous',
+    enabled: !!pageData && !!passportCode
+  });
+
   // Initialize room store when data loads
   useEffect(() => {
     if (pageData) {
-      const { room, storeCatalog, purchaseRequests } = pageData;
+      console.log('StudentRoom - pageData received:', pageData);
+      const { room, storeCatalog, access, pet } = pageData;
+      
+      console.log('StudentRoom - Extracted pet data:', {
+        pet,
+        hasPosition: !!pet?.position,
+        position: pet?.position,
+        assetUrl: pet?.pet?.assetUrl,
+        petName: pet?.customName
+      });
       
       // Create a map of store items for quick lookup
       const itemMap = new Map<string, StoreItem>();
-      storeCatalog.forEach(item => {
-        itemMap.set(item.id, item);
-      });
+      if (storeCatalog && Array.isArray(storeCatalog)) {
+        storeCatalog.forEach(item => {
+          itemMap.set(item.id, item);
+        });
+      }
       
-      // Convert owned items to inventory format using the store catalog
-      const inventoryItems: any[] = [];
-      if (room.avatarData?.owned) {
+      // Use inventory items from the room data (already properly formatted from backend)
+      const inventoryItems = room.inventoryItems || [];
+      
+      // If we have the old format, convert it (for backwards compatibility)
+      if (!inventoryItems.length && room.avatarData?.owned) {
         room.avatarData.owned.forEach((itemId: string) => {
           const item = itemMap.get(itemId);
           if (item) {
@@ -198,27 +234,14 @@ export default function StudentRoom() {
         });
       }
       
-      // Add approved purchase requests that aren't in owned yet (in case of sync issues)
-      const approvedItems = purchaseRequests
-        .filter(req => req.status === 'approved')
-        .map(req => req.itemId);
-      
-      approvedItems.forEach(itemId => {
-        if (!room.avatarData?.owned?.includes(itemId)) {
-          const item = itemMap.get(itemId);
-          if (item && !inventoryItems.find(i => i.id === itemId)) {
-            inventoryItems.push({
-              ...item,
-              quantity: 1,
-              obtainedAt: new Date()
-            });
-          }
-        }
-      });
+      console.log('StudentRoom - Initializing with pet data:', pet);
       
       initializeFromServerData({
         ...room,
-        inventoryItems
+        passportCode: passportCode || room.passportCode, // Ensure passport code is passed
+        inventoryItems,
+        canEdit: access?.canEdit || false, // Pass edit permission to store
+        pet // Pass pet data to store
       });
       
       // Check if this is first visit
@@ -247,8 +270,7 @@ export default function StudentRoom() {
               currencyBalance: data.newBalance
             },
             wallet: {
-              ...old.wallet,
-              available: data.newBalance
+              total: data.newBalance
             }
           };
         }
@@ -286,28 +308,24 @@ export default function StudentRoom() {
     }
   };
 
-  // Direct purchases - no pending requests anymore
-  const hasPendingRequest = (itemId: string) => {
-    return false; // Always false with direct purchase system
-  };
 
   // Debug logging - must be before any conditional returns
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('StudentRoom state:', {
-        isLoading,
-        error,
-        showAuthDialog,
-        accessDeniedReason,
-        hasPageData: !!pageData
-      });
-    }
   }, [isLoading, error, showAuthDialog, accessDeniedReason, pageData]);
 
   const handleAuthenticate = async (code: string) => {
     try {
       setAuthError(null);
-      await authenticateStudent(code);
+      const authResult = await authenticateStudent(code);
+      
+      // Set the authenticated viewer name
+      if (authResult.studentName) {
+        setAuthenticatedViewerName(authResult.studentName);
+      }
+      
+      // Small delay to ensure cookie is set before refetching
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // Refetch room data after successful authentication
       await refetch();
       setShowAuthDialog(false);
@@ -406,7 +424,7 @@ export default function StudentRoom() {
     return null;
   }
 
-  const { room, wallet, storeStatus, storeCatalog, access } = pageData;
+  const { room, wallet, storeStatus, storeCatalog = [], access } = pageData;
   const canEdit = access?.canEdit ?? false; // Default to false for security
 
   return (
@@ -434,11 +452,16 @@ export default function StudentRoom() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  {room.studentName}'s Room
+                  {canEdit ? `${room.studentName}'s Room` : `Visiting ${room.studentName}'s Room`}
                 </h1>
                 <Badge variant="secondary" className="text-xs sm:text-sm hidden sm:inline-flex">
                   {room.animalType} • {room.className}
                 </Badge>
+                {!canEdit && (
+                  <Badge variant="outline" className="text-xs sm:text-sm">
+                    👀 View Only
+                  </Badge>
+                )}
               </div>
               <Button
                 variant="outline"
@@ -495,38 +518,72 @@ export default function StudentRoom() {
           passportCode={passportCode || ''}
         />
 
-        {/* Bottom Left Info - Coins and Room Items */}
-        <div className="absolute bottom-4 sm:bottom-8 left-4 sm:left-8 z-30">
-          <div className="space-y-2">
-            {/* Coin Balance */}
-            <div className="flex items-center gap-2 bg-yellow-100 rounded-full px-3 py-1.5 shadow-md">
-              <Coins className="w-4 h-4 text-yellow-600" />
-              <span className="font-bold text-sm">{wallet.total}</span>
-              {wallet.pending > 0 && (
-                <span className="text-xs text-yellow-700">({wallet.available} available)</span>
+        {/* Save Status Indicator */}
+        {canEdit && <SaveStatusIndicator />}
+        
+        {/* Room Viewers */}
+        <RoomViewers viewers={viewers} className="absolute top-20 left-4" />
+        
+        {/* Visitor Mode Indicator */}
+        {!canEdit && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="absolute bottom-4 sm:bottom-8 left-1/2 transform -translate-x-1/2 z-20"
+          >
+            <div className="bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 shadow-md flex items-center gap-2">
+              <span className="text-sm text-gray-600">👀 You're visiting this room</span>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Bottom Right Info - Coins and Room Items - Only show for owners */}
+        {canEdit && (
+          <div className="absolute bottom-4 sm:bottom-8 right-4 sm:right-8 z-30">
+            <div className="space-y-2 items-end flex flex-col">
+              {/* Coin Balance */}
+              <div className="flex items-center gap-2 bg-yellow-100 rounded-full px-3 py-1.5 shadow-md">
+                <Coins className="w-4 h-4 text-yellow-600" />
+                <span className="font-bold text-sm">{wallet.total}</span>
+              </div>
+              
+              {/* Room Items Count - Only show when room inventory is open */}
+              {isInventoryOpen && editingMode === 'room' && (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="flex items-center gap-2 bg-blue-100 rounded-full px-3 py-1.5 shadow-md"
+                >
+                  <Home className="w-4 h-4 text-blue-600" />
+                  <span className="font-bold text-sm">
+                    {useRoomStore.getState().draftRoom.placedItems.length} / {ROOM_ITEM_LIMIT}
+                  </span>
+                </motion.div>
               )}
             </div>
-            
-            {/* Room Items Count - Only show when room inventory is open */}
-            {isInventoryOpen && editingMode === 'room' && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="flex items-center gap-2 bg-blue-100 rounded-full px-3 py-1.5 shadow-md"
-              >
-                <Home className="w-4 h-4 text-blue-600" />
-                <span className="font-bold text-sm">
-                  {useRoomStore.getState().draftRoom.placedItems.length} / {ROOM_ITEM_LIMIT}
-                </span>
-              </motion.div>
-            )}
           </div>
-        </div>
+        )}
 
         {/* Action Buttons - Under the Room */}
         <div className="absolute bottom-4 sm:bottom-8 left-1/2 transform -translate-x-1/2 z-30">
           <div className="flex items-center gap-2 sm:gap-4">
+            {/* Save Layout Button - Shows when arranging room */}
+            {canEdit && isArranging && (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => useRoomStore.getState().stopArranging()}
+                className="px-4 py-2 sm:px-6 sm:py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full shadow-lg transition-all flex items-center gap-2"
+                title="Save Room Layout"
+              >
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-sm sm:text-base">Save Layout</span>
+              </motion.button>
+            )}
+            
             {/* Customize Avatar Button - Only show if can edit */}
             {canEdit && (
               <motion.button
@@ -645,8 +702,8 @@ export default function StudentRoom() {
           </div>
         </div>
 
-        {/* Always show inventory panel on desktop - it handles its own collapsed state */}
-        {!isMobile && (
+        {/* Always show inventory panel on desktop - but only for owners */}
+        {!isMobile && canEdit && (
           <InventoryPanel
             editingMode={editingMode}
             isMobile={isMobile}
@@ -654,9 +711,9 @@ export default function StudentRoom() {
           />
         )}
         
-        {/* Only show on mobile when inventory is open */}
+        {/* Only show on mobile when inventory is open - and only for owners */}
         <AnimatePresence>
-          {isInventoryOpen && isMobile && (
+          {isInventoryOpen && isMobile && canEdit && (
             <InventoryPanel
               editingMode={editingMode}
               isMobile={isMobile}
@@ -665,19 +722,21 @@ export default function StudentRoom() {
           )}
         </AnimatePresence>
 
-        {/* Store Modal */}
-        <StoreModal
-          open={showStore}
-          onOpenChange={setShowStore}
-          storeStatus={storeStatus}
-          storeCatalog={storeCatalog}
-          availableBalance={wallet.available}
-          hasPendingRequest={hasPendingRequest}
-          onPurchaseClick={handlePurchaseClick}
-        />
+        {/* Store Modal - Only for owners */}
+        {canEdit && (
+          <StoreModal
+            open={showStore}
+            onOpenChange={setShowStore}
+            storeStatus={storeStatus}
+            storeCatalog={storeCatalog}
+            availableBalance={wallet.total}
+            onPurchaseClick={handlePurchaseClick}
+          />
+        )}
 
-        {/* Purchase Confirmation Dialog */}
-        <Dialog open={showPurchaseDialog} onOpenChange={setShowPurchaseDialog}>
+        {/* Purchase Confirmation Dialog - Only for owners */}
+        {canEdit && (
+          <Dialog open={showPurchaseDialog} onOpenChange={setShowPurchaseDialog}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Confirm Purchase</DialogTitle>
@@ -702,16 +761,16 @@ export default function StudentRoom() {
                     <span className="font-semibold text-lg">{selectedItem.cost} coins</span>
                   </div>
                   <div className="text-sm">
-                    <div>Current balance: <span className="font-semibold">{wallet.available}</span> coins</div>
+                    <div>Current balance: <span className="font-semibold">{wallet.total}</span> coins</div>
                     <div className={cn(
                       "mt-1",
-                      wallet.available - selectedItem.cost < 0 ? "text-red-600" : "text-green-600"
+                      wallet.total - selectedItem.cost < 0 ? "text-red-600" : "text-green-600"
                     )}>
-                      After purchase: <span className="font-semibold">{wallet.available - selectedItem.cost}</span> coins
+                      After purchase: <span className="font-semibold">{wallet.total - selectedItem.cost}</span> coins
                     </div>
                   </div>
                 </div>
-                {wallet.available < selectedItem.cost && (
+                {wallet.total < selectedItem.cost && (
                   <Alert className="bg-red-50 border-red-200">
                     <AlertDescription className="text-red-800">
                       You don't have enough coins for this purchase.
@@ -726,9 +785,9 @@ export default function StudentRoom() {
               </Button>
               <Button 
                 onClick={confirmPurchase} 
-                disabled={purchaseMutation.isPending || (selectedItem ? wallet.available < selectedItem.cost : false)}
+                disabled={purchaseMutation.isPending || (selectedItem ? wallet.total < selectedItem.cost : false)}
                 className={cn(
-                  selectedItem && wallet.available >= selectedItem.cost 
+                  selectedItem && wallet.total >= selectedItem.cost 
                     ? "bg-green-600 hover:bg-green-700" 
                     : ""
                 )}
@@ -748,6 +807,7 @@ export default function StudentRoom() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        )}
       </div>
     </>
   );

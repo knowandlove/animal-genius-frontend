@@ -29,9 +29,9 @@ export default function AvatarCustomizer({
 
   // Categorize owned items
   const categorizedItems = {
-    hat: ownedItems.filter(id => id.includes('explorer') || id.includes('safari')),
-    glasses: ownedItems.filter(id => id.includes('blind') || id.includes('heart') || id.includes('glass')),
-    accessory: ownedItems.filter(id => id.includes('bow') || id.includes('necklace'))
+    hat: (ownedItems || []).filter(id => id.includes('explorer') || id.includes('safari')),
+    glasses: (ownedItems || []).filter(id => id.includes('blind') || id.includes('heart') || id.includes('glass')),
+    accessory: (ownedItems || []).filter(id => id.includes('bow') || id.includes('necklace'))
   };
 
   const handleEquipLocal = (slot: string, itemId: string | null) => {

@@ -1,0 +1,42 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dragon body -->
+  <ellipse cx="50" cy="65" rx="22" ry="25" fill="#9B59B6"/>
+  
+  <!-- Dragon head -->
+  <ellipse cx="50" cy="35" rx="16" ry="18" fill="#8E44AD"/>
+  
+  <!-- Horns -->
+  <path d="M 40 25 L 38 18 L 42 22 Z" fill="#F39C12"/>
+  <path d="M 60 25 L 62 18 L 58 22 Z" fill="#F39C12"/>
+  
+  <!-- Wings (small, hatchling style) -->
+  <path d="M 28 50 Q 15 45 20 60 Q 25 55 28 58 Z" fill="#BF73D8" stroke="#8E44AD" stroke-width="1"/>
+  <path d="M 72 50 Q 85 45 80 60 Q 75 55 72 58 Z" fill="#BF73D8" stroke="#8E44AD" stroke-width="1"/>
+  
+  <!-- Eyes -->
+  <ellipse cx="44" cy="35" rx="4" ry="5" fill="#E74C3C"/>
+  <ellipse cx="56" cy="35" rx="4" ry="5" fill="#E74C3C"/>
+  <ellipse cx="44" cy="36" rx="2" ry="3" fill="#000000"/>
+  <ellipse cx="56" cy="36" rx="2" ry="3" fill="#000000"/>
+  <circle cx="45" cy="35" r="1" fill="#FFFFFF"/>
+  <circle cx="57" cy="35" r="1" fill="#FFFFFF"/>
+  
+  <!-- Nostrils -->
+  <ellipse cx="47" cy="42" rx="1.5" ry="2" fill="#4A235A"/>
+  <ellipse cx="53" cy="42" rx="1.5" ry="2" fill="#4A235A"/>
+  
+  <!-- Belly scales -->
+  <ellipse cx="50" cy="60" rx="12" ry="15" fill="#BF73D8"/>
+  <line x1="50" y1="48" x2="50" y2="72" stroke="#8E44AD" stroke-width="1"/>
+  <line x1="44" y1="52" x2="56" y2="52" stroke="#8E44AD" stroke-width="1"/>
+  <line x1="44" y1="58" x2="56" y2="58" stroke="#8E44AD" stroke-width="1"/>
+  <line x1="44" y1="64" x2="56" y2="64" stroke="#8E44AD" stroke-width="1"/>
+  <line x1="44" y1="70" x2="56" y2="70" stroke="#8E44AD" stroke-width="1"/>
+  
+  <!-- Tail -->
+  <path d="M 50 85 Q 45 90 50 95 Q 55 90 50 85" fill="#9B59B6"/>
+  
+  <!-- Egg shell pieces (to show it's a hatchling) -->
+  <path d="M 35 80 L 32 85 L 38 84 Z" fill="#FFFFFF" stroke="#CCCCCC" stroke-width="1"/>
+  <path d="M 65 82 L 62 87 L 68 86 Z" fill="#FFFFFF" stroke="#CCCCCC" stroke-width="1"/>
+</svg>

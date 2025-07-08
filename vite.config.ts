@@ -12,6 +12,7 @@ export default defineConfig({
       "@shared": path.resolve(__dirname, "shared"),
     },
   },
+  assetsInclude: ['**/*.wasm'],
   build: {
     outDir: "dist",
     emptyOutDir: true,

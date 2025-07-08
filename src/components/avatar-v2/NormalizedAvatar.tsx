@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, CSSProperties, useMemo } from 'reac
 import { cn } from '@/lib/utils';
 import { getAssetUrl } from '@/utils/cloud-assets';
 import { useStoreItems, useItemPositions } from '@/contexts/StoreDataContext';
+import AvatarItemRenderer from './AvatarItemRenderer';
 import { 
   NormalizedPosition,
   ImageBounds,
@@ -62,7 +63,8 @@ export default function NormalizedAvatar({
       items,
       width,
       height,
-      isPositioningTool: !!onItemDrag
+      isPositioningTool: !!onItemDrag,
+      itemPosition: itemPosition // Add this to see position changes
     });
     }
     
@@ -75,7 +77,8 @@ export default function NormalizedAvatar({
   
   // Get store data
   const contextStoreItems = useStoreItems();
-  const storeItems = storeCatalog || contextStoreItems;
+  const storeItems = Array.isArray(storeCatalog) ? storeCatalog : 
+                     Array.isArray(contextStoreItems) ? contextStoreItems : [];
   const itemPositions = useItemPositions();
   
   // Track when positions data changes
@@ -85,7 +88,7 @@ export default function NormalizedAvatar({
         console.log('itemPositions updated:', {
         timestamp: new Date().toISOString(),
         count: itemPositions.length,
-        hatPositions: itemPositions.filter((p: any) => p.item_id === 'b0d64da3-d5f1-41d5-8fb8-25b48c6cf2e4')
+        hatPositions: itemPositions ? itemPositions.filter((p: any) => p.item_id === 'b0d64da3-d5f1-41d5-8fb8-25b48c6cf2e4') : []
       });
       }
     }
@@ -103,15 +106,17 @@ export default function NormalizedAvatar({
       console.log('Building positionsMap from itemPositions:', {
       timestamp: new Date().toISOString(),
       count: itemPositions.length,
-      hatCount: itemPositions.filter((p: any) => p.item_id === 'b0d64da3-d5f1-41d5-8fb8-25b48c6cf2e4').length,
-      firstFew: itemPositions.slice(0, 3)
+      hatCount: itemPositions ? itemPositions.filter((p: any) => p.item_id === 'b0d64da3-d5f1-41d5-8fb8-25b48c6cf2e4').length : 0,
+      firstFew: itemPositions ? itemPositions.slice(0, 3) : []
     });
     }
     const map: Record<string, any> = {};
-    itemPositions.forEach((pos: any) => {
-      const key = `${pos.item_id}-${pos.animal_type}`;
-      map[key] = pos;
-    });
+    if (itemPositions && Array.isArray(itemPositions)) {
+      itemPositions.forEach((pos: any) => {
+        const key = `${pos.item_id}-${pos.animal_type}`;
+        map[key] = pos;
+      });
+    }
     if (process.env.NODE_ENV === 'development') {
       console.log('Built positionsMap:', {
       timestamp: new Date().toISOString(),
@@ -123,10 +128,12 @@ export default function NormalizedAvatar({
   }, [itemPositions]);
   
   const storeItemsMap = useMemo(() => {
-    if (!storeItems) return {};
+    if (!storeItems || !Array.isArray(storeItems)) return {};
     const map: Record<string, any> = {};
     storeItems.forEach((item: any) => {
-      map[item.id] = item;
+      if (item && item.id) {
+        map[item.id] = item;
+      }
     });
     return map;
   }, [storeItems]);
@@ -259,20 +266,19 @@ export default function NormalizedAvatar({
     if (!onItemDrag || !imageBounds) return;
     
     e.preventDefault();
-    const startX = e.clientX;
-    const startY = e.clientY;
     
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const rect = containerRef.current!.getBoundingClientRect();
-      const relativeX = moveEvent.clientX - rect.left;
-      const relativeY = moveEvent.clientY - rect.top;
+      const mouseX = moveEvent.clientX - rect.left;
+      const mouseY = moveEvent.clientY - rect.top;
       
-      // Convert to normalized coordinates
+      // For dragging, we want the mouse position to be the anchor point position
+      // Convert mouse position to normalized coordinates within the image bounds
       const normalizedX = Math.max(0, Math.min(1, 
-        (relativeX - imageBounds.left) / imageBounds.width
+        (mouseX - imageBounds.left) / imageBounds.width
       ));
       const normalizedY = Math.max(0, Math.min(1,
-        (relativeY - imageBounds.top) / imageBounds.height
+        (mouseY - imageBounds.top) / imageBounds.height
       ));
       
       onItemDrag({ x: normalizedX, y: normalizedY });
@@ -292,13 +298,52 @@ export default function NormalizedAvatar({
     itemId: string,
     slot: string,
     position: NormalizedPosition,
-    imageUrl: string
+    imageUrl: string,
+    riveUrl?: string,
+    assetType: 'image' | 'rive' = 'image'
   ) => {
-    if (!imageBounds) return null;
+    try {
+      if (!imageBounds) return null;
+      
+      if (process.env.NODE_ENV === 'development' && slot === 'positioning') {
+        console.log('RENDER ITEM CALLED:', {
+          itemId,
+          slot,
+          assetType,
+          hasImageUrl: !!imageUrl,
+          hasRiveUrl: !!riveUrl,
+          imageBounds: !!imageBounds
+        });
+      }
     
-    // Convert normalized position to pixels
-    const pixelPos = normalizedToPixels(position.x, position.y, imageBounds);
-    const itemSize = calculateItemSize(position.scale, imageBounds);
+    // Calculate where we want the anchor point to be (in pixels)
+    const anchorPointPixels = normalizedToPixels(position.x, position.y, imageBounds);
+    
+    // For both Rive and images, we'll use CSS scale transform
+    // This ensures consistent positioning behavior
+    const baseSize = Math.max(imageBounds.width, imageBounds.height) * 0.3;
+    const itemSize = { width: baseSize, height: baseSize };
+    const actualScale = position.scale;
+    
+    // Calculate top-left position
+    // Always use base size for position calculation, scale is handled by transform
+    const topLeftX = anchorPointPixels.x - (itemSize.width * position.anchorX);
+    const topLeftY = anchorPointPixels.y - (itemSize.height * position.anchorY);
+    
+    // Debug logging for positioning tool scale changes
+    if (onItemDrag && process.env.NODE_ENV === 'development') {
+      console.log('POSITIONING TOOL - Item positioning:', {
+        itemId,
+        scale: position.scale,
+        itemSize,
+        actualScale,
+        anchorPoint: { x: position.anchorX, y: position.anchorY },
+        anchorPixels: anchorPointPixels,
+        topLeft: { x: topLeftX, y: topLeftY },
+        imageBounds,
+        transformOrigin: getTransformOrigin(position.anchorX, position.anchorY)
+      });
+    }
     
     // Debug logging for room display
     if (!onItemDrag && process.env.NODE_ENV === 'development' && slot === 'hat') {
@@ -308,7 +353,7 @@ export default function NormalizedAvatar({
         slot,
         imageBounds,
         normalizedPos: position,
-        pixelPos,
+        anchorPixels: anchorPointPixels,
         itemSize,
         containerSize: { width, height }
       });
@@ -316,27 +361,41 @@ export default function NormalizedAvatar({
     
     const style: CSSProperties = {
       position: 'absolute',
-      left: `${pixelPos.x}px`,
-      top: `${pixelPos.y}px`,
+      left: `${topLeftX}px`,
+      top: `${topLeftY}px`,
       width: `${itemSize.width}px`,
-      height: 'auto',
-      transform: getItemTransform(position),
+      height: `${itemSize.height}px`,
+      // Always use CSS transform for consistent behavior
+      transform: `scale(${actualScale}) rotate(${position.rotation}deg)`,
       transformOrigin: getTransformOrigin(position.anchorX, position.anchorY),
       zIndex: slot === 'hat' ? 10 : slot === 'glasses' ? 8 : 7,
       transition: animated ? 'all 0.3s ease' : undefined,
-      cursor: onItemDrag ? 'move' : 'default',
+      cursor: onItemDrag ? 'move' : (assetType === 'rive' ? 'pointer' : 'default'),
+      pointerEvents: assetType === 'rive' && !onItemDrag ? 'auto' : undefined,
     };
     
-    return (
-      <img
-        key={itemId} // itemId already includes position key from caller
-        src={imageUrl}
-        alt=""
-        style={style}
-        draggable={false}
-        onMouseDown={onItemDrag ? handleMouseDown : undefined}
-      />
-    );
+      return (
+        <AvatarItemRenderer
+          key={itemId} // itemId already includes position key from caller
+          itemId={itemId}
+          imageUrl={imageUrl}
+          riveUrl={riveUrl}
+          assetType={assetType}
+          style={style}
+          onMouseDown={onItemDrag ? handleMouseDown : undefined}
+          animated={animated}
+        />
+      );
+    } catch (error) {
+      console.error('Error rendering item:', {
+        itemId,
+        slot,
+        error,
+        position,
+        imageBounds
+      });
+      return null;
+    }
   };
   
   return (
@@ -363,8 +422,24 @@ export default function NormalizedAvatar({
       />
       
       {/* Items for positioning tool */}
-      {selectedItem && selectedItemImageUrl && itemPosition && imageBounds && (
-        renderItem(
+      {selectedItem && selectedItemImageUrl && itemPosition && imageBounds && (() => {
+        // For positioning tool, check if this is a Rive item
+        const storeItem = storeCatalog?.find((item: any) => item.id === selectedItem);
+        const assetType = storeItem?.assetType || 'image';
+        const riveUrl = storeItem?.riveUrl;
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('POSITIONER ITEM CHECK:', {
+            selectedItem,
+            storeItem,
+            assetType,
+            hasRiveUrl: !!riveUrl,
+            riveUrl,
+            imageUrl: selectedItemImageUrl
+          });
+        }
+        
+        return renderItem(
           selectedItem,
           'positioning',
           {
@@ -375,13 +450,15 @@ export default function NormalizedAvatar({
             anchorX: itemPosition.anchorX ?? DEFAULT_ANCHORS.hat.x,
             anchorY: itemPosition.anchorY ?? DEFAULT_ANCHORS.hat.y,
           },
-          selectedItemImageUrl
-        )
-      )}
+          selectedItemImageUrl,
+          riveUrl,
+          assetType as 'image' | 'rive'
+        );
+      })()}
       
       {/* Items for regular display - key includes positionsMap length to force re-render when positions load */}
-      {!selectedItem && Object.entries(items).map(([slot, itemId]) => {
-        if (!itemId || !imageBounds) return null;
+      {!selectedItem && imageBounds && items && Object.entries(items).map(([slot, itemId]) => {
+        if (!itemId) return null;
         
         if (process.env.NODE_ENV === 'development') {
           console.log('Rendering item slot:', {
@@ -393,12 +470,37 @@ export default function NormalizedAvatar({
         });
         }
         
-        // Get store item and its image URL first
+        // Get store item and its asset URLs
         const storeItem = storeItemsMap[itemId];
-        if (!storeItem?.imageUrl) {
+        if (!storeItem) {
           if (process.env.NODE_ENV === 'development') {
             console.log('No store item found for:', itemId);
           }
+          return null;
+        }
+        
+        // Debug log the store item data
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🎨 ROOM DISPLAY - Store Item Data:', {
+            id: storeItem.id,
+            name: storeItem.name,
+            assetType: storeItem.assetType,
+            imageUrl: storeItem.imageUrl,
+            riveUrl: storeItem.riveUrl,
+            hasAssetType: 'assetType' in storeItem,
+            hasRiveUrl: 'riveUrl' in storeItem,
+            fullItem: storeItem
+          });
+        }
+        
+        // Determine asset type and URLs
+        const assetType = storeItem.assetType || 'image';
+        const imageUrl = storeItem.imageUrl;
+        const riveUrl = storeItem.riveUrl;
+        
+        // Must have at least one valid URL
+        if (!imageUrl && !riveUrl) {
+          console.warn('No valid asset URL for item:', itemId);
           return null;
         }
         
@@ -435,7 +537,14 @@ export default function NormalizedAvatar({
         
         // Use a key that includes position data to force re-render when position changes
         const positionKey = position ? `${position.x}-${position.y}-${position.scale}` : 'default';
-        return renderItem(`${itemId}-${positionKey}`, slot, position, storeItem.imageUrl);
+        return renderItem(
+          `${itemId}-${positionKey}`, 
+          slot, 
+          position, 
+          imageUrl || '', 
+          riveUrl,
+          assetType as 'image' | 'rive'
+        );
       })}
     </div>
   );

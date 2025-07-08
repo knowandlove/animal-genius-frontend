@@ -1,6 +1,7 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { preloadMultipleRiveFiles } from '@/utils/rive-runtime-loader';
 
 interface StoreDataContextType {
   storeItems: any[] | undefined;
@@ -44,12 +45,27 @@ export function StoreDataProvider({ children }: { children: ReactNode }) {
         console.log('Fetched item positions from API:', {
         timestamp: new Date().toISOString(),
         count: data?.length,
-        hatPositions: data?.filter((p: any) => p.item_id === 'b0d64da3-d5f1-41d5-8fb8-25b48c6cf2e4'),
+        hatPositions: data && Array.isArray(data) ? data.filter((p: any) => p.item_id === 'b0d64da3-d5f1-41d5-8fb8-25b48c6cf2e4') : [],
         sample: data?.slice(0, 3)
       });
       }
     }
   });
+  
+  // Preload RIVE files when store items are loaded
+  useEffect(() => {
+    if (storeItems && Array.isArray(storeItems) && storeItems.length > 0) {
+      // Find all items with RIVE animations
+      const riveUrls = storeItems
+        .filter((item: any) => item.riveUrl && item.assetType === 'rive')
+        .map((item: any) => item.riveUrl);
+      
+      if (riveUrls.length > 0) {
+        console.log(`Preloading ${riveUrls.length} RIVE files...`);
+        preloadMultipleRiveFiles(riveUrls);
+      }
+    }
+  }, [storeItems]);
 
   const contextValue: StoreDataContextType = {
     storeItems,

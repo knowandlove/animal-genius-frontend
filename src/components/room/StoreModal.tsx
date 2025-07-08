@@ -5,9 +5,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { HardHat, Glasses, Gem, Sofa, Package, Palette, Sparkles, Coins } from 'lucide-react';
+import { HardHat, Glasses, Gem, Sofa, Package, Palette, Sparkles, Coins, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { usePetCatalog } from '@/hooks/usePets';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { useRoomStore } from '@/stores/roomStore';
+import { LoadingSpinner } from '@/components/loading-spinner';
 
 interface StoreModalProps {
   open: boolean;
@@ -15,7 +20,6 @@ interface StoreModalProps {
   storeStatus: any;
   storeCatalog: any[];
   availableBalance: number;
-  hasPendingRequest: (itemId: string) => boolean;
   onPurchaseClick: (item: any) => void;
 }
 
@@ -25,37 +29,68 @@ export default function StoreModal({
   storeStatus,
   storeCatalog,
   availableBalance,
-  hasPendingRequest,
   onPurchaseClick
 }: StoreModalProps) {
-  const [activeTab, setActiveTab] = useState('hats');
+  const [activeTab, setActiveTab] = useState('pets');
+  const queryClient = useQueryClient();
+  const pet = useRoomStore((state) => state.pet);
+  const passportCode = useRoomStore((state) => state.passportCode);
+  
+  // Fetch pet catalog
+  const { data: petCatalog, isLoading: petsLoading } = usePetCatalog();
+  
+  // Pet purchase mutation
+  const purchasePetMutation = useMutation({
+    mutationFn: async ({ petId, petName }: { petId: string; petName: string }) => {
+      console.log('Purchasing pet:', { petId, customName: petName });
+      return apiRequest('POST', '/api/pets/purchase', { 
+        petId,
+        customName: petName 
+      });
+    },
+    onSuccess: (data) => {
+      // Update local pet state
+      useRoomStore.getState().setPet(data.pet);
+      
+      // Refresh room data
+      queryClient.invalidateQueries({ queryKey: [`/api/room-page-data/${passportCode}`] });
+      
+      // Show success message
+      alert(`🎉 Congratulations! You've adopted ${data.pet.customName}!`);
+    },
+    onError: (error: any) => {
+      console.error('Pet purchase error:', error);
+      const errorMessage = error.details ? 
+        `${error.message}: ${JSON.stringify(error.details)}` : 
+        (error.message || 'Failed to purchase pet');
+      alert(`❌ ${errorMessage}`);
+    }
+  });
 
-  // Debug log
-  console.log('Store Catalog:', storeCatalog);
-  console.log('Sample item with image:', storeCatalog?.[0]);
-  console.log('Items with images:', storeCatalog?.filter(item => item.imageUrl).length, 'of', storeCatalog?.length);
-
+  // Ensure storeCatalog is an array
+  const catalog = Array.isArray(storeCatalog) ? storeCatalog : [];
+  
   // Categorize items by type
   const categorizedItems = {
-    hats: storeCatalog?.filter(item => item.type === 'avatar_hat') || [],
-    glasses: storeCatalog?.filter(item => 
+    hats: catalog.filter(item => item.type === 'avatar_hat'),
+    glasses: catalog.filter(item => 
       item.type === 'avatar_accessory' && 
       (item.name?.toLowerCase().includes('glass') || 
        item.name?.toLowerCase().includes('blind') || 
        item.name?.toLowerCase().includes('heart') ||
        item.name?.toLowerCase().includes('shade'))
-    ) || [],
-    accessories: storeCatalog?.filter(item => 
+    ),
+    accessories: catalog.filter(item => 
       item.type === 'avatar_accessory' && 
       !item.name?.toLowerCase().includes('glass') && 
       !item.name?.toLowerCase().includes('blind') && 
       !item.name?.toLowerCase().includes('heart') &&
       !item.name?.toLowerCase().includes('shade')
-    ) || [],
-    furniture: storeCatalog?.filter(item => item.type === 'room_furniture') || [],
-    objects: storeCatalog?.filter(item => item.type === 'room_decoration') || [],
-    wallpaper: storeCatalog?.filter(item => item.type === 'room_wallpaper') || [],
-    flooring: storeCatalog?.filter(item => item.type === 'room_flooring') || []
+    ),
+    furniture: catalog.filter(item => item.type === 'room_furniture'),
+    objects: catalog.filter(item => item.type === 'room_decoration'),
+    wallpaper: catalog.filter(item => item.type === 'room_wallpaper'),
+    flooring: catalog.filter(item => item.type === 'room_flooring')
   };
 
   const getItemEmoji = (item: any) => {
@@ -87,6 +122,17 @@ export default function StoreModal({
     if (item.type === 'room_flooring') return '🟫';
     return '💎';
   };
+  
+  const getPetEmoji = (species: string) => {
+    const s = species.toLowerCase();
+    if (s.includes('cat')) return '🐱';
+    if (s.includes('dog')) return '🐶';
+    if (s.includes('dragon')) return '🐲';
+    if (s.includes('unicorn')) return '🦄';
+    if (s.includes('bird')) return '🦜';
+    if (s.includes('fish')) return '🐠';
+    return '🐾';
+  };
 
   const getRarityColor = (rarity: string) => {
     switch (rarity) {
@@ -94,6 +140,134 @@ export default function StoreModal({
       case 'rare': return 'bg-purple-500';
       default: return 'bg-gray-400';
     }
+  };
+
+  const renderPetGrid = () => {
+    if (petsLoading) {
+      return (
+        <div className="text-center py-12">
+          <LoadingSpinner />
+          <p className="text-sm mt-4">Loading available pets...</p>
+        </div>
+      );
+    }
+    
+    if (pet) {
+      return (
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">{getPetEmoji(pet.pet?.species || '')}</div>
+          <h3 className="text-lg font-semibold mb-2">You already have a pet!</h3>
+          <p className="text-sm text-muted-foreground">
+            {pet.customName} is waiting for you in your room.
+          </p>
+          <p className="text-xs text-muted-foreground mt-2">
+            Multiple pets coming in a future update!
+          </p>
+        </div>
+      );
+    }
+    
+    if (!petCatalog || petCatalog.length === 0) {
+      return (
+        <div className="text-center py-12 text-gray-500">
+          <p className="text-sm">No pets available yet!</p>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="grid grid-cols-2 gap-4">
+        {petCatalog.map((pet) => (
+          <motion.div
+            key={pet.id}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Card className={cn(
+              "transition-all cursor-pointer",
+              availableBalance >= pet.cost 
+                ? 'hover:border-purple-300 hover:shadow-md' 
+                : 'opacity-60'
+            )}>
+              <CardContent className="p-4">
+                <div className="relative">
+                  {/* Rarity badge */}
+                  {pet.rarity !== 'common' && (
+                    <Badge className={cn(
+                      "absolute -top-2 -right-2 text-xs px-2",
+                      getRarityColor(pet.rarity)
+                    )}>
+                      {pet.rarity === 'legendary' ? '⭐ Legendary' : '★ Rare'}
+                    </Badge>
+                  )}
+                  
+                  {/* Pet display */}
+                  <div className="aspect-square bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                    {pet.assetUrl ? (
+                      <img 
+                        src={pet.assetUrl} 
+                        alt={pet.name}
+                        className="w-full h-full object-contain p-4"
+                      />
+                    ) : (
+                      <span className="text-6xl">{getPetEmoji(pet.species)}</span>
+                    )}
+                  </div>
+                  
+                  {/* Pet info */}
+                  <h4 className="font-semibold text-lg mb-1">{pet.name}</h4>
+                  <p className="text-xs text-muted-foreground mb-1">Species: {pet.species}</p>
+                  <p className="text-sm text-muted-foreground mb-3">{pet.description}</p>
+                  
+                  {/* Stats preview */}
+                  <div className="space-y-1 mb-3">
+                    <div className="flex items-center justify-between text-xs">
+                      <span>Hunger decay:</span>
+                      <span className="font-medium">{pet.baseStats.hungerDecayRate}/hour</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span>Happiness decay:</span>
+                      <span className="font-medium">{pet.baseStats.happinessDecayRate}/hour</span>
+                    </div>
+                  </div>
+                  
+                  {/* Price and action */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      <Coins className="w-4 h-4 text-yellow-600" />
+                      <span className="font-semibold">{pet.cost}</span>
+                    </div>
+                    
+                    <Button
+                      size="sm"
+                      disabled={availableBalance < pet.cost || purchasePetMutation.isPending}
+                      variant={availableBalance >= pet.cost ? 'default' : 'secondary'}
+                      onClick={() => {
+                        const petName = prompt(`What would you like to name your ${pet.name}?`, pet.name);
+                        if (petName && petName.trim()) {
+                          purchasePetMutation.mutate({ 
+                            petId: pet.id, 
+                            petName: petName.trim() 
+                          });
+                        }
+                      }}
+                    >
+                      {purchasePetMutation.isPending ? (
+                        <><LoadingSpinner className="w-3 h-3 mr-1" /> Adopting...</>
+                      ) : availableBalance >= pet.cost ? (
+                        'Adopt'
+                      ) : (
+                        'Need Coins'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+    );
   };
 
   const renderItemGrid = (items: any[], emptyMessage: string) => {
@@ -192,25 +366,31 @@ export default function StoreModal({
             <Sparkles className="w-6 h-6 text-purple-600" />
             Room Store
           </DialogTitle>
-          <DialogDescription>
-            {storeStatus?.isOpen ? (
-              <span className="flex items-center gap-2">
-                <Badge className="bg-green-100 text-green-800">Open</Badge>
-                {storeStatus.message}
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <Badge className="bg-red-100 text-red-800">Closed</Badge>
-                Store is currently closed
-              </span>
-            )}
+          <DialogDescription asChild>
+            <div>
+              {storeStatus?.isOpen ? (
+                <span className="flex items-center gap-2">
+                  <Badge className="bg-green-100 text-green-800">Open</Badge>
+                  {storeStatus.message}
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Badge className="bg-red-100 text-red-800">Closed</Badge>
+                  Store is currently closed
+                </span>
+              )}
+            </div>
           </DialogDescription>
         </DialogHeader>
         
         {storeStatus?.isOpen && storeCatalog && (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
             <div className="px-6 py-4">
-              <TabsList className="grid w-full grid-cols-7">
+              <TabsList className="grid w-full grid-cols-8">
+                <TabsTrigger value="pets" className="flex items-center gap-1">
+                  <Heart className="w-4 h-4" />
+                  <span className="hidden lg:inline">Pets</span>
+                </TabsTrigger>
                 <TabsTrigger value="hats" className="flex items-center gap-1">
                   <HardHat className="w-4 h-4" />
                   <span className="hidden lg:inline">Hats</span>
@@ -243,6 +423,10 @@ export default function StoreModal({
             </div>
 
             <ScrollArea className="flex-1 px-6 pb-6">
+              <TabsContent value="pets" className="mt-0">
+                {renderPetGrid()}
+              </TabsContent>
+              
               <TabsContent value="hats" className="mt-0">
                 {renderItemGrid(categorizedItems.hats, "No hats available in the store yet!")}
               </TabsContent>

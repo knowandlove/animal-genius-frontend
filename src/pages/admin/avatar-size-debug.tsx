@@ -9,8 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import LayeredAvatarRoom from '@/components/avatar-v2/LayeredAvatarRoom';
-import LayeredAvatarPositionerWithImage from '@/components/avatar-v2/LayeredAvatarPositionerWithImage';
+// import LayeredAvatarRoom from '@/components/avatar-v2/LayeredAvatarRoom';
+// import LayeredAvatarPositionerWithImage from '@/components/avatar-v2/LayeredAvatarPositionerWithImage';
 import { ANIMAL_CONFIGS } from '@/config/animal-sizing';
 import { getAnimalScale, AVATAR_RENDER_CONFIG } from '@/utils/avatar-render';
 import { Ruler, Info } from 'lucide-react';
@@ -129,12 +129,15 @@ export default function AvatarDebug() {
                       <div className="absolute inset-0 border-8 border-red-500 opacity-20" />
                     </div>
                   )}
-                  <LayeredAvatarPositionerWithImage
+                  {/* <LayeredAvatarPositionerWithImage
                     animalType={selectedAnimal}
                     width={600}
                     height={600}
                     animated={false}
-                  />
+                  /> */}
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    <p>Component not available</p>
+                  </div>
                 </div>
                 <div className="mt-4 text-sm space-y-1">
                   <p>Container: 600×600px</p>
@@ -164,12 +167,15 @@ export default function AvatarDebug() {
                       <div className="absolute inset-0 border-8 border-red-500 opacity-20" />
                     </div>
                   )}
-                  <LayeredAvatarRoom
+                  {/* <LayeredAvatarRoom
                     animalType={selectedAnimal}
                     width={600}
                     height={600}
                     animated={false}
-                  />
+                  /> */}
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    <p>Component not available</p>
+                  </div>
                 </div>
                 <div className="mt-4 text-sm space-y-1">
                   <p>Container: 600×600px</p>
@@ -199,12 +205,15 @@ export default function AvatarDebug() {
                       <div className="absolute inset-0 border-8 border-red-500 opacity-20" />
                     </div>
                   )}
-                  <LayeredAvatarRoom
+                  {/* <LayeredAvatarRoom
                     animalType={selectedAnimal}
                     width={600}
                     height={600}
                     animated={false}
-                  />
+                  /> */}
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    <p>Component not available</p>
+                  </div>
                 </div>
                 <div className="mt-4 text-sm space-y-1">
                   <p>Container: 600×600px</p>

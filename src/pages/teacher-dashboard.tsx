@@ -21,6 +21,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Trash2, Clipboard } from "lucide-react";
 import { QuestionIcon } from "@/components/QuestionIcon";
 import { TeacherQuizModal } from "@/components/TeacherQuizModal";
+import { SharedClassesList } from "@/components/collaborators";
 
 interface User {
   id: number;
@@ -358,26 +359,6 @@ export default function TeacherDashboard() {
                 <p className="font-body text-muted-foreground">Balance Teams</p>
               </CardContent>
             </Card>
-            <Card 
-              className="hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => setLocation("/teacher/game/create")}
-            >
-              <CardContent className="p-8 text-center">
-                <div className="flex items-center justify-center mx-auto mb-6">
-                  <img
-                    src="/images/games.svg"
-                    alt="Games"
-                    className="w-24 h-24"
-                  />
-                </div>
-                <h3 className="text-xl font-subheading text-foreground">
-                  GAMES
-                </h3>
-                <p className="font-body text-muted-foreground">
-                  Interactive Activities
-                </p>
-              </CardContent>
-            </Card>
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardContent className="p-8 text-center">
                 <div className="flex items-center justify-center mx-auto mb-6">
@@ -557,6 +538,9 @@ export default function TeacherDashboard() {
               )}
             </CardContent>
           </Card>
+
+          {/* Shared Classes */}
+          <SharedClassesList />
         </div>
       </div>
       {/* Delete Confirmation Dialog */}

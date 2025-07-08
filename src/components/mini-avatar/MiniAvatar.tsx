@@ -1,5 +1,5 @@
 import React from 'react';
-import LayeredAvatar from '@/components/avatar-v2/LayeredAvatar';
+// import LayeredAvatar from '@/components/avatar-v2/LayeredAvatar';
 import { cn } from '@/lib/utils';
 
 interface MiniAvatarProps {
@@ -39,14 +39,19 @@ export const MiniAvatar = React.memo(({
     >
       {showFullBody ? (
         // Full body mode - simple contained avatar
-        <LayeredAvatar
-          animalType={animalType}
-          items={equipped}
-          width={size}
-          height={size}
-          animated={false}
-          className="w-full h-full"
-        />
+        <>
+          {/* <LayeredAvatar
+            animalType={animalType}
+            items={equipped}
+            width={size}
+            height={size}
+            animated={false}
+            className="w-full h-full"
+          /> */}
+          <div className="flex items-center justify-center h-full text-xs text-muted-foreground bg-gray-200">
+            <span>{animalType[0].toUpperCase()}</span>
+          </div>
+        </>
       ) : (
         // Head crop mode - zoomed in view
         <div 
@@ -58,13 +63,16 @@ export const MiniAvatar = React.memo(({
             left: -(innerSize - size) / 2,
           }}
         >
-          <LayeredAvatar
+          {/* <LayeredAvatar
             animalType={animalType}
             items={equipped}
             width={innerSize}
             height={innerSize}
             animated={false}
-          />
+          /> */}
+          <div className="flex items-center justify-center h-full text-xs text-muted-foreground bg-gray-200 rounded-full">
+            <span>{animalType[0].toUpperCase()}</span>
+          </div>
         </div>
       )}
     </div>

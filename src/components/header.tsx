@@ -1,5 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { useClassContext } from "@/hooks/useClassContext";
+import { CollaboratorBadge } from "@/components/collaborators";
 
 interface HeaderProps {
   isAuthenticated?: boolean;
@@ -10,6 +12,7 @@ interface HeaderProps {
 
 export default function Header({ isAuthenticated, onLogin, onLogout, user }: HeaderProps) {
   const [location, setLocation] = useLocation();
+  const { className, role } = useClassContext();
 
   return (
     <header className="bg-card shadow-sm border-b border-border">
@@ -44,9 +47,17 @@ export default function Header({ isAuthenticated, onLogin, onLogout, user }: Hea
                     Admin Panel
                   </Link>
                 )}
-                <span className="font-body text-muted-foreground px-3 py-2">
-                  Welcome, {user?.firstName}!
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="font-body text-muted-foreground px-3 py-2">
+                    Welcome, {user?.firstName}!
+                  </span>
+                  {className && role && (
+                    <div className="flex items-center gap-2 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">{className}</span>
+                      <CollaboratorBadge role={role} size="sm" />
+                    </div>
+                  )}
+                </div>
                 <div className="flex flex-col items-center">
                   <Button onClick={onLogout} variant="outline">
                     Sign Out

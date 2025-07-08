@@ -84,15 +84,16 @@ export function normalizedToPixels(
 }
 
 /**
- * Calculate item size based on normalized scale
- * Scale is relative to the largest dimension of the rendered image
+ * Calculate item size for display
+ * Returns the actual pixel dimensions based on scale
  */
 export function calculateItemSize(
   normalizedScale: number,
   imageBounds: ImageBounds,
   itemAspectRatio?: number
 ): { width: number; height: number } {
-  // Use largest dimension as reference
+  // Calculate actual size based on scale
+  // Scale is relative to the largest dimension of the rendered image
   const referenceSize = Math.max(imageBounds.width, imageBounds.height);
   const width = normalizedScale * referenceSize;
   
@@ -110,6 +111,7 @@ export function getItemTransform(position: NormalizedPosition): string {
   const translateX = -(position.anchorX * 100);
   const translateY = -(position.anchorY * 100);
   
+  // Note: scale is now handled by actual element size, not CSS transform
   return `translate(${translateX}%, ${translateY}%) rotate(${position.rotation}deg)`;
 }
 

@@ -27,6 +27,9 @@ interface StoreItem {
   isActive: boolean;
   sortOrder: number;
   imageUrl?: string;
+  thumbnailUrl?: string;
+  assetType?: string;
+  riveUrl?: string;
 }
 
 const ITEM_TYPES = [
@@ -55,8 +58,11 @@ export default function StoreManagementDirect() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [activeTab, setActiveTab] = useState('manage');
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+  const [uploadedThumbnailUrl, setUploadedThumbnailUrl] = useState<string | null>(null);
   const [uploadedAssetId, setUploadedAssetId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [assetType, setAssetType] = useState<'image' | 'rive'>('image');
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -75,11 +81,16 @@ export default function StoreManagementDirect() {
     queryFn: () => apiRequest('GET', '/api/store/admin/items'),
   });
 
-  // Upload file function
-  const uploadFile = async (file: File, itemType: string) => {
+  // Upload file function with support for thumbnails
+  const uploadFile = async (mainFile: File, itemType: string, thumbnail?: File) => {
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append('image', mainFile);
     formData.append('type', itemType);
+    formData.append('assetType', assetType);
+    
+    if (thumbnail) {
+      formData.append('thumbnail', thumbnail);
+    }
     
     const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/admin/assets/upload`, {
       method: 'POST',
@@ -166,22 +177,29 @@ export default function StoreManagementDirect() {
     try {
       setIsUploading(true);
       
-      // Upload the file
-      const result = await uploadFile(file, formData.itemType);
+      // Check if this is a RIVE file
+      const isRive = file.name.toLowerCase().endsWith('.riv');
+      if (isRive) {
+        setAssetType('rive');
+      }
       
-      // Store the URL and assetId
+      // Upload the file with thumbnail if needed
+      const result = await uploadFile(file, formData.itemType, thumbnailFile || undefined);
+      
+      // Store the URLs and assetId
       setUploadedImageUrl(result.url);
+      setUploadedThumbnailUrl(result.thumbnailUrl);
       setUploadedAssetId(result.assetId);
       
       toast({
         title: "Success",
-        description: "Image uploaded successfully"
+        description: isRive ? "RIVE animation uploaded successfully" : "Image uploaded successfully"
       });
       
     } catch (error: any) {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to upload image',
+        description: error.message || 'Failed to upload file',
         variant: 'destructive'
       });
     } finally {
@@ -200,7 +218,10 @@ export default function StoreManagementDirect() {
       sortOrder: 0,
     });
     setUploadedImageUrl(null);
+    setUploadedThumbnailUrl(null);
     setUploadedAssetId(null);
+    setAssetType('image');
+    setThumbnailFile(null);
   };
 
   const handleEdit = (item: StoreItem) => {
@@ -220,7 +241,10 @@ export default function StoreManagementDirect() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!uploadedImageUrl && !selectedItem) {
+    // For wallpaper and flooring, we don't require an upload
+    const isPatternItem = ['room_wallpaper', 'room_flooring'].includes(formData.itemType);
+    
+    if (!uploadedImageUrl && !selectedItem && !isPatternItem) {
       toast({
         title: "Error",
         description: "Please upload an image first",
@@ -235,7 +259,10 @@ export default function StoreManagementDirect() {
       createItem.mutate({
         ...formData,
         imageUrl: uploadedImageUrl,
+        thumbnailUrl: uploadedThumbnailUrl,
         assetId: uploadedAssetId,
+        assetType: assetType,
+        riveUrl: assetType === 'rive' ? uploadedImageUrl : undefined,
       });
     }
   };
@@ -301,62 +328,74 @@ export default function StoreManagementDirect() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-2">
                   {typeItems.map((item) => (
-                    <Card key={item.id} className="relative">
-                      <CardContent className="p-4">
+                    <Card key={item.id} className="relative max-w-[150px]">
+                      <CardContent className="p-2">
                         {/* Active toggle */}
-                        <div className="absolute top-2 right-2 z-10">
-                          <Badge variant={item.isActive ? "default" : "secondary"}>
-                            {item.isActive ? "Active" : "Inactive"}
-                          </Badge>
+                        <div className="absolute top-1 right-1 z-10">
+                          <div 
+                            className={`w-2 h-2 rounded-full ${item.isActive ? 'bg-green-500' : 'bg-red-500'}`}
+                            title={item.isActive ? "Active" : "Inactive"}
+                          />
                         </div>
                         
-                        {/* Item image */}
-                        {item.imageUrl && (
-                          <div className="mb-3 aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                            <img 
-                              src={item.imageUrl} 
-                              alt={item.name}
-                              className="w-full h-full object-contain"
-                            />
+                        {/* Item image - use thumbnail if available */}
+                        {(item.thumbnailUrl || item.imageUrl) && (
+                          <div className="mb-2 w-[80px] h-[80px] bg-gray-100 rounded overflow-hidden mx-auto">
+                            {item.assetType === 'rive' && item.thumbnailUrl ? (
+                              <div className="relative w-full h-full">
+                                <img 
+                                  src={item.thumbnailUrl} 
+                                  alt={item.name}
+                                  className="w-full h-full object-contain"
+                                />
+                                <div className="absolute top-2 left-2 bg-purple-600 text-white text-xs px-2 py-1 rounded">
+                                  RIVE
+                                </div>
+                              </div>
+                            ) : (
+                              <img 
+                                src={item.thumbnailUrl || item.imageUrl} 
+                                alt={item.name}
+                                className="w-full h-full object-contain"
+                              />
+                            )}
                           </div>
                         )}
                         
                         {/* Item details */}
-                        <h3 className="font-semibold mb-1">{item.name}</h3>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {item.description || 'No description'}
-                        </p>
+                        <h3 className="font-medium text-xs truncate text-center">{item.name}</h3>
                         
-                        <div className="flex items-center justify-between mb-3">
-                          <Badge className={RARITIES.find(r => r.value === item.rarity)?.color}>
+                        <div className="flex items-center justify-between mb-1 mt-1">
+                          <Badge className={`${RARITIES.find(r => r.value === item.rarity)?.color} text-[10px] py-0 px-1`}>
                             {item.rarity}
                           </Badge>
-                          <span className="font-semibold">{item.cost} coins</span>
+                          <span className="text-[10px] font-medium">{item.cost}c</span>
                         </div>
                         
                         {/* Actions */}
-                        <div className="flex gap-2">
+                        <div className="flex gap-1 justify-center">
                           <Button
                             size="sm"
-                            variant="outline"
+                            variant="ghost"
                             onClick={() => handleEdit(item)}
-                            className="flex-1"
+                            className="h-6 w-6 p-0"
+                            title="Edit item"
                           >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
+                            <Edit className="h-3 w-3" />
                           </Button>
                           <Button
                             size="sm"
-                            variant="outline"
+                            variant="ghost"
                             onClick={() => {
                               setSelectedItem(item);
                               setShowDeleteDialog(true);
                             }}
-                            className="text-red-600 hover:bg-red-50"
+                            className="h-6 w-6 p-0 text-red-600 hover:bg-red-50"
+                            title="Delete item"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
                       </CardContent>
@@ -396,15 +435,38 @@ export default function StoreManagementDirect() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Left column - Image upload */}
+                  {/* Left column - Asset upload */}
                   <div className="space-y-4">
+                    {/* Asset Type Selection */}
                     <div>
-                      <Label>Item Image</Label>
+                      <Label>Asset Type</Label>
+                      <Select
+                        value={assetType}
+                        onValueChange={(value: 'image' | 'rive') => setAssetType(value)}
+                        disabled={!!uploadedImageUrl}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="image">Static Image (PNG, JPG)</SelectItem>
+                          <SelectItem value="rive">Animated (RIVE)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label>Main Asset</Label>
+                      {['room_wallpaper', 'room_flooring'].includes(formData.itemType) && (
+                        <p className="text-sm text-muted-foreground mt-1 mb-2">
+                          Optional - Wallpapers and flooring can use CSS patterns instead of images
+                        </p>
+                      )}
                       {!uploadedImageUrl ? (
                         <div className="mt-2">
                           <input
                             type="file"
-                            accept="image/*"
+                            accept={assetType === 'rive' ? '.riv' : 'image/*'}
                             onChange={handleFileSelect}
                             disabled={isUploading}
                             className="hidden"
@@ -424,10 +486,10 @@ export default function StoreManagementDirect() {
                               <>
                                 <Upload className="h-10 w-10 text-gray-400 mx-auto mb-2" />
                                 <p className="text-sm text-gray-600">
-                                  Click to upload an image
+                                  Click to upload {assetType === 'rive' ? 'a RIVE animation' : 'an image'}
                                 </p>
                                 <p className="text-xs text-gray-500 mt-1">
-                                  PNG, JPG, GIF, WebP up to 10MB
+                                  {assetType === 'rive' ? '.riv files only' : 'PNG, JPG, GIF, WebP up to 10MB'}
                                 </p>
                               </>
                             )}
@@ -435,27 +497,77 @@ export default function StoreManagementDirect() {
                         </div>
                       ) : (
                         <div className="mt-2 space-y-4">
-                          <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                            <img
-                              src={uploadedImageUrl}
-                              alt="Preview"
-                              className="w-full h-full object-contain"
-                            />
+                          <div className="relative w-[200px] h-[200px] bg-gray-100 rounded-lg overflow-hidden mx-auto">
+                            {assetType === 'rive' ? (
+                              <div className="flex items-center justify-center h-full">
+                                <div className="text-center">
+                                  <Package className="h-16 w-16 text-purple-600 mx-auto mb-2" />
+                                  <p className="text-sm font-medium">RIVE Animation</p>
+                                  <p className="text-xs text-gray-500">{uploadedImageUrl.split('/').pop()}</p>
+                                </div>
+                              </div>
+                            ) : (
+                              <img
+                                src={uploadedImageUrl}
+                                alt="Preview"
+                                className="w-full h-full object-contain"
+                              />
+                            )}
                           </div>
                           <Button
                             type="button"
                             variant="outline"
                             onClick={() => {
                               setUploadedImageUrl(null);
+                              setUploadedThumbnailUrl(null);
                               setUploadedAssetId(null);
                             }}
                             className="w-full"
                           >
-                            Remove & Choose Different Image
+                            Remove & Choose Different Asset
                           </Button>
                         </div>
                       )}
                     </div>
+                    
+                    {/* Thumbnail upload for RIVE files */}
+                    {assetType === 'rive' && !uploadedImageUrl && (
+                      <div>
+                        <Label>Thumbnail (Required for RIVE)</Label>
+                        <div className="mt-2">
+                          <input
+                            type="file"
+                            accept="image/png,image/jpeg"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) setThumbnailFile(file);
+                            }}
+                            className="hidden"
+                            id="thumbnail-upload"
+                          />
+                          <label
+                            htmlFor="thumbnail-upload"
+                            className="block border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors hover:border-gray-400"
+                          >
+                            {thumbnailFile ? (
+                              <p className="text-sm text-gray-600">
+                                Thumbnail selected: {thumbnailFile.name}
+                              </p>
+                            ) : (
+                              <>
+                                <ImageIcon className="h-8 w-8 text-gray-400 mx-auto mb-1" />
+                                <p className="text-sm text-gray-600">
+                                  Click to upload thumbnail
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  PNG or JPG (128x128 recommended)
+                                </p>
+                              </>
+                            )}
+                          </label>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Right column - Item details */}

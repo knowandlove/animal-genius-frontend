@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import LayeredAvatarFixed from '@/components/avatar-v2/LayeredAvatarFixed';
+// import LayeredAvatarFixed from '@/components/avatar-v2/LayeredAvatarFixed';
 import { getItemFolder } from '@shared/currency-types';
 import { ANIMAL_CONFIGS, getItemScaleForAnimal } from '@/config/animal-sizing';
 import { Save, Copy, RotateCw, Download, Upload, Move, FileJson } from 'lucide-react';
@@ -728,7 +728,7 @@ export default function AvatarItemPositioner() {
                         onMouseDown={handleMouseDown}
                         style={{ cursor: selectedItem ? 'move' : 'default' }}
                       >
-                        <LayeredAvatarFixed
+                        {/* <LayeredAvatarFixed
                           animalType={selectedAnimal}
                           selectedItem={selectedItem}
                           selectedItemImageUrl={selectedItemData?.imageUrl || selectedItemData?.imageURL}
@@ -736,7 +736,10 @@ export default function AvatarItemPositioner() {
                           width={600}
                           height={600}
                           animated={false}
-                        />
+                        /> */}
+                        <div className="flex items-center justify-center h-full text-muted-foreground">
+                          <p>Component not available</p>
+                        </div>
                       </div>
 
                       {/* Grid overlay for positioning help */}

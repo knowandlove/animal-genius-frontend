@@ -1,0 +1,47 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Monkey body -->
+  <ellipse cx="50" cy="68" rx="20" ry="22" fill="#8B6914"/>
+  
+  <!-- Monkey head -->
+  <circle cx="50" cy="35" r="18" fill="#A0522D"/>
+  
+  <!-- Face area -->
+  <ellipse cx="50" cy="38" rx="14" ry="12" fill="#D2B48C"/>
+  
+  <!-- Ears -->
+  <circle cx="30" cy="35" r="8" fill="#8B6914"/>
+  <circle cx="70" cy="35" r="8" fill="#8B6914"/>
+  <circle cx="30" cy="35" r="5" fill="#D2B48C"/>
+  <circle cx="70" cy="35" r="5" fill="#D2B48C"/>
+  
+  <!-- Eyes -->
+  <circle cx="44" cy="35" r="3" fill="#000000"/>
+  <circle cx="56" cy="35" r="3" fill="#000000"/>
+  <circle cx="45" cy="34" r="1" fill="#FFFFFF"/>
+  <circle cx="57" cy="34" r="1" fill="#FFFFFF"/>
+  
+  <!-- Nose -->
+  <ellipse cx="50" cy="42" rx="3" ry="2" fill="#654321"/>
+  
+  <!-- Mouth -->
+  <path d="M 45 45 Q 50 48 55 45" stroke="#654321" stroke-width="2" fill="none"/>
+  
+  <!-- Arms holding pencil -->
+  <ellipse cx="30" cy="60" rx="6" ry="15" fill="#8B6914" transform="rotate(-30 30 60)"/>
+  <ellipse cx="70" cy="60" rx="6" ry="15" fill="#8B6914" transform="rotate(30 70 60)"/>
+  
+  <!-- Pencil -->
+  <rect x="60" y="45" width="4" height="20" fill="#FFD700" transform="rotate(45 62 55)"/>
+  <path d="M 72 35 L 74 37 L 70 41 Z" fill="#000000" transform="rotate(45 72 37)"/>
+  
+  <!-- Math symbols around monkey -->
+  <text x="15" y="20" font-family="Arial" font-size="12" fill="#4169E1">π</text>
+  <text x="80" y="25" font-family="Arial" font-size="10" fill="#4169E1">∑</text>
+  <text x="10" y="80" font-family="Arial" font-size="12" fill="#4169E1">√</text>
+  <text x="85" y="85" font-family="Arial" font-size="10" fill="#4169E1">∞</text>
+  
+  <!-- Glasses -->
+  <circle cx="44" cy="35" r="7" fill="none" stroke="#000000" stroke-width="2"/>
+  <circle cx="56" cy="35" r="7" fill="none" stroke="#000000" stroke-width="2"/>
+  <line x1="51" y1="35" x2="53" y2="35" stroke="#000000" stroke-width="2"/>
+</svg>

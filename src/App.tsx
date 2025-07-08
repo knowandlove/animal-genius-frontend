@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { StoreDataProvider } from "@/contexts/StoreDataContext";
 import ErrorBoundary from "@/components/error-boundary";
+import { preloadRiveRuntime } from "@/utils/rive-runtime-loader";
 
 // Lazy load all page components
 const Landing = lazy(() => import("@/pages/Landing"));
@@ -23,35 +24,32 @@ const PreAssessment = lazy(() => import("@/pages/pre-assessment"));
 const AdminPanel = lazy(() => import("@/pages/AdminPanel"));
 const GroupMaker = lazy(() => import("@/pages/group-maker"));
 const ClassReport = lazy(() => import("@/pages/class-report"));
+const ClassSettings = lazy(() => import("@/pages/class-settings"));
 const TeacherStudentView = lazy(() => import("@/pages/teacher-student-view"));
 const TeacherPersonalityResults = lazy(() => import("@/pages/teacher-personality-results"));
 const LiveDiscoveryBoard = lazy(() => import("@/pages/LiveDiscoveryBoard"));
+const AcceptInvitation = lazy(() => import("@/pages/accept-invitation"));
 const NotFound = lazy(() => import("@/pages/not-found"));
-const GameJoin = lazy(() => import("@/pages/game-join"));
-const GameLobby = lazy(() => import("@/pages/game-lobby"));
-const GamePlay = lazy(() => import("@/pages/game-play"));
 const StudentRoom = lazy(() => import("@/pages/StudentRoom"));
 const ClassIsland = lazy(() => import("@/pages/ClassIsland"));
-const GameCreate = lazy(() => import("@/pages/teacher/game-create"));
-const TeacherGameDashboard = lazy(() => import("@/pages/teacher/game-dashboard"));
 const ColorPreview = lazy(() => import("@/pages/color-preview"));
 const ClassEconomy = lazy(() => import("@/pages/class-economy"));
-const AvatarTest = lazy(() => import("@/pages/avatar-test"));
-// const AvatarTestV2 = lazy(() => import("@/pages/avatar-test-v2")); // Moved to .cleanup
+// Test pages removed during cleanup
 const AvatarEditor = lazy(() => import("@/pages/avatar-editor"));
 const AvatarItemPositioner = lazy(() => import("@/pages/admin/avatar-item-positioner"));
-const AvatarItemPositionerNormalized = lazy(() => import("@/pages/admin/avatar-item-positioner-normalized"));
+const AvatarItemPositionerV2 = lazy(() => import("@/pages/admin/avatar-item-positioner-v2"));
 // const AddStoreItem = lazy(() => import("@/pages/admin/add-store-item")); // Removed - use StoreManagement instead
 const StoreManagement = lazy(() => import("@/pages/admin/store-management-direct"));
+const PetManagement = lazy(() => import("@/pages/admin/pet-management"));
 const AnimalSizer = lazy(() => import("@/pages/admin/animal-sizer"));
 const BulkPositionUpdate = lazy(() => import("@/pages/admin/bulk-position-update"));
 const MakeAdmin = lazy(() => import("@/pages/admin/make-admin"));
 const DiagnosticCheck = lazy(() => import("@/pages/admin/diagnostic-check"));
 const DebugAuth = lazy(() => import("@/pages/admin/debug-auth"));
-const TestAdmin = lazy(() => import("@/pages/admin/test-admin"));
-const TestPositions = lazy(() => import("@/pages/admin/test-positions"));
+// Test admin pages removed during cleanup
 const AvatarSizeDebug = lazy(() => import("@/pages/admin/avatar-size-debug"));
 const UploadDebug = lazy(() => import("@/pages/admin/upload-debug"));
+const TestFish = lazy(() => import("@/pages/test-fish"));
 
 // Import the properly configured query client
 import { queryClient } from "@/lib/queryClient";
@@ -66,6 +64,9 @@ function Router() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Preload Rive runtime on app initialization
+    preloadRiveRuntime().catch(console.error);
+    
     // Check and clean up authentication state first
     const hasValidAuth = checkAuthStateOnLoad();
     
@@ -120,24 +121,21 @@ function Router() {
         <Route path="/results/:submissionId" component={QuizResults} />
         
         {/* Student room routes */}
+        <Route path="/island/:passportCode" component={StudentRoom} />
         <Route path="/room/:passportCode" component={StudentRoom} />
         <Route path="/student-room/:passportCode" component={StudentRoom} />
         <Route path="/class/:classCode" component={ClassIsland} />
         <Route path="/class-island" component={ClassIsland} />
         
-        {/* Game routes - always available */}
-        <Route path="/game/join" component={GameJoin} />
-        <Route path="/game/:gameId/lobby" component={GameLobby} />
-        <Route path="/game/:gameId/play" component={GamePlay} />
         
-        {/* Test/Development routes - always available */}
-        <Route path="/avatar-test" component={AvatarTest} />
-        {/* <Route path="/avatar-test-v2" component={AvatarTestV2} /> */}
+        {/* Test/Development routes - removed during cleanup */}
         <Route path="/avatar-editor" component={AvatarEditor} />
+        <Route path="/test-fish" component={TestFish} />
         
         {/* Authentication routes - always available */}
         <Route path="/register" component={TeacherRegistration} />
         <Route path="/login" component={TeacherLogin} />
+        <Route path="/accept-invitation/:token" component={AcceptInvitation} />
         
         {/* Protected teacher routes - only when authenticated */}
         {token ? (
@@ -149,6 +147,7 @@ function Router() {
             <Route path="/learning-lounge" component={LearningLounge} />
             <Route path="/classes/:classId/analytics" component={ClassAnalytics} />
             <Route path="/class/:classId/analytics" component={ClassAnalytics} />
+            <Route path="/class/:classId/settings" component={ClassSettings} />
             <Route path="/classes/:classId/economy" component={ClassEconomy} />
             <Route path="/class-report/:classId" component={ClassReport} />
             <Route path="/classes/:id/live" component={LiveDiscoveryBoard} />
@@ -158,21 +157,19 @@ function Router() {
             <Route path="/pre-assessment" component={PreAssessment} />
             <Route path="/group-maker" component={GroupMaker} />
             <Route path="/admin" component={AdminPanel} />
-            <Route path="/teacher/game/create" component={GameCreate} />
-            <Route path="/teacher/game/:gameId" component={TeacherGameDashboard} />
             <Route path="/teacher/class/:classId/island" component={ClassIsland} />
             <Route path="/colors" component={ColorPreview} />
             <Route path="/admin/item-positioner" component={AvatarItemPositioner} />
-            <Route path="/admin/item-positioner-normalized" component={AvatarItemPositionerNormalized} />
+            <Route path="/admin/item-positioner-v2" component={AvatarItemPositionerV2} />
             {/* <Route path="/admin/add-item" component={AddStoreItem} /> */}
             <Route path="/admin/store" component={StoreManagement} />
+            <Route path="/admin/pets" component={PetManagement} />
             <Route path="/admin/animal-sizer" component={AnimalSizer} />
             <Route path="/admin/bulk-update" component={BulkPositionUpdate} />
             <Route path="/admin/make-admin" component={MakeAdmin} />
             <Route path="/admin/diagnostic" component={DiagnosticCheck} />
             <Route path="/admin/debug-auth" component={DebugAuth} />
-            <Route path="/admin/test-admin" component={TestAdmin} />
-            <Route path="/admin/test-positions" component={TestPositions} />
+            {/* Test admin routes removed during cleanup */}
             <Route path="/admin/avatar-debug" component={AvatarSizeDebug} />
             <Route path="/admin/upload-debug" component={UploadDebug} />
           </>
@@ -186,6 +183,7 @@ function Router() {
             <Route path="/learning-lounge" component={() => { window.location.href = '/login'; return null; }} />
             <Route path="/classes/:classId/analytics" component={() => { window.location.href = '/login'; return null; }} />
             <Route path="/class/:classId/analytics" component={() => { window.location.href = '/login'; return null; }} />
+            <Route path="/class/:classId/settings" component={() => { window.location.href = '/login'; return null; }} />
             <Route path="/classes/:classId/economy" component={() => { window.location.href = '/login'; return null; }} />
             <Route path="/class-report/:classId" component={() => { window.location.href = '/login'; return null; }} />
             <Route path="/teacher/student/:submissionId" component={() => { window.location.href = '/login'; return null; }} />
@@ -193,8 +191,6 @@ function Router() {
             <Route path="/submission/:submissionId/report" component={() => { window.location.href = '/login'; return null; }} />
             <Route path="/pre-assessment" component={() => { window.location.href = '/login'; return null; }} />
             <Route path="/admin" component={() => { window.location.href = '/login'; return null; }} />
-            <Route path="/teacher/game/create" component={() => { window.location.href = '/login'; return null; }} />
-            <Route path="/teacher/game/:gameId" component={() => { window.location.href = '/login'; return null; }} />
           </>
         )}
         <Route component={NotFound} />

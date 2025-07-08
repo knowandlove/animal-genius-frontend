@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Wand2, Home, ShoppingBag, Undo2, Trash2 } from 'lucide-react';
+import { Wand2, Home, ShoppingBag, Undo2, Trash2, Loader2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useRoomStore } from '@/stores/roomStore';
@@ -25,6 +25,8 @@ export default function UnifiedInventoryPanel() {
   const discardDraftChanges = useRoomStore((state) => state.discardDraftChanges);
   const setInventoryMode = useRoomStore((state) => state.setInventoryMode);
   const isSaving = useRoomStore((state) => state.ui.isSaving);
+  const lastSaved = useRoomStore((state) => state.ui.lastSaved);
+  const saveError = useRoomStore((state) => state.ui.saveError);
   const draftAvatar = useRoomStore((state) => state.draftAvatar);
   const openInventory = useRoomStore((state) => state.openInventory);
   const closeInventory = useRoomStore((state) => state.closeInventory);
@@ -112,6 +114,29 @@ export default function UnifiedInventoryPanel() {
             <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6" />
           </motion.button>
         </div>
+        
+        {/* Save Status Indicator */}
+        {editingMode && (
+          <div className="mt-3 flex justify-center">
+            {isSaving && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>Saving changes...</span>
+              </div>
+            )}
+            {!isSaving && lastSaved && !saveError && (
+              <div className="flex items-center gap-2 text-sm text-green-600 animate-fade-in-out">
+                <Check className="w-3 h-3" />
+                <span>Changes saved</span>
+              </div>
+            )}
+            {saveError && (
+              <div className="text-sm text-red-600">
+                {saveError}
+              </div>
+            )}
+          </div>
+        )}
       </div>
       
       <ScrollArea className="flex-1">

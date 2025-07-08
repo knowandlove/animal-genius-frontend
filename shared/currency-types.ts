@@ -17,8 +17,6 @@ export type ItemType =
   | 'room_wallpaper'
   | 'room_flooring';
 
-// Purchase request status
-export type PurchaseStatus = 'pending' | 'approved' | 'denied';
 
 // Store catalog interface
 export interface StoreItem {

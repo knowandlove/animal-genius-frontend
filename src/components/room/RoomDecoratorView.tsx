@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Package, Sparkles, Sofa, Palette, Home, AlertCircle, Paintbrush, Box } from 'lucide-react';
+import { Package, Sparkles, Sofa, Palette, Home, AlertCircle, Paintbrush, Box, Fish } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRoomStore, ROOM_ITEM_LIMIT } from '@/stores/roomStore';
@@ -12,10 +12,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import SurfaceCustomizer, { type SurfaceValue } from './SurfaceCustomizer';
+import type { Pattern } from '@shared/schema';
+import { apiRequest } from '@/lib/queryClient';
 
 export default function RoomDecoratorView() {
   const inventory = useRoomStore((state) => state.inventory);
+  const room = useRoomStore((state) => state.room);
   const draftRoom = useRoomStore((state) => state.draftRoom);
   const selectInventoryItem = useRoomStore((state) => state.selectInventoryItem);
   const selectedItem = useRoomStore((state) => state.inventory.selectedItem);
@@ -24,25 +28,134 @@ export default function RoomDecoratorView() {
   const startDragging = useRoomStore((state) => state.startDragging);
   const stopDragging = useRoomStore((state) => state.stopDragging);
   const startArranging = useRoomStore((state) => state.startArranging);
+  const passportCode = useRoomStore((state) => state.passportCode);
   
   // State for hovered item
   const [hoveredItem, setHoveredItem] = useState<any>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
+  
+  // State for owned patterns
+  const [ownedPatterns, setOwnedPatterns] = useState<Pattern[]>([]);
+  const [patternsLoading, setPatternsLoading] = useState(true);
+  
+  // Fetch owned patterns on mount
+  useEffect(() => {
+    const fetchPatterns = async () => {
+      try {
+        setPatternsLoading(true);
+        // Include passport code for teacher access
+        const endpoint = passportCode 
+          ? `/api/patterns/student/inventory/patterns?passportCode=${passportCode}`
+          : '/api/patterns/student/inventory/patterns';
+        const response = await apiRequest('GET', endpoint);
+        
+        
+        // The API returns { success: true, data: [...] }
+        const patterns = response.data || [];
+        // Transform the pattern objects to match expected format
+        const transformedPatterns = patterns.map((item: any) => ({
+          id: item.pattern.id,
+          code: item.pattern.code,
+          name: item.pattern.name,
+          description: item.pattern.description,
+          surfaceType: item.pattern.surfaceType,
+          patternType: item.pattern.patternType,
+          patternValue: item.pattern.patternValue,
+          theme: item.pattern.theme,
+          thumbnailUrl: item.pattern.thumbnailUrl,
+          isActive: item.pattern.isActive,
+          // Include item data for reference
+          itemId: item.item.id,
+          cost: item.item.cost,
+          rarity: item.item.rarity,
+          imageUrl: item.item.imageUrl,
+        }));
+        setOwnedPatterns(transformedPatterns);
+      } catch (error) {
+        console.error('Error fetching patterns:', error);
+        // Set empty array on error to prevent undefined issues
+        setOwnedPatterns([]);
+      } finally {
+        setPatternsLoading(false);
+      }
+    };
+    
+    fetchPatterns();
+  }, [passportCode]);
 
-  // Filter inventory for room items only
+  // Filter inventory for room items and pets
   const roomItems = inventory.items.filter(item => 
-    item.type === 'room_decoration' || item.type === 'room_furniture'
+    item.type === 'room_decoration' || item.type === 'room_furniture' || item.type === 'pets'
   );
 
   // Categorize items
   const furnitureItems = roomItems.filter(item => 
-    item.type === 'room_furniture' || 
-    ['chair', 'table', 'sofa', 'desk', 'bed'].some(keyword => item.id.includes(keyword))
+    item.type === 'room_furniture' && item.name !== 'Fish Bowl' // Exclude fishbowl from furniture
   );
   
   const objectItems = roomItems.filter(item => 
-    !furnitureItems.includes(item) // Everything else that's not furniture
+    item.type === 'room_decoration'
   );
+  
+  const petItems = roomItems.filter(item => 
+    item.type === 'pets' || item.name === 'Fish Bowl' // Include fishbowl in pets
+  );
+  
+  // Handler for surface updates
+  const handleSurfaceUpdate = (surface: 'wall' | 'floor', newValue: SurfaceValue) => {
+    if (newValue.type === 'color') {
+      // Update color and set proper wall/floor object
+      if (surface === 'wall') {
+        updateRoomColors(newValue.value, undefined);
+        updateRoomPatterns({ type: 'color', value: newValue.value }, undefined); // Set wall as color type
+      } else {
+        updateRoomColors(undefined, newValue.value);
+        updateRoomPatterns(undefined, { type: 'color', value: newValue.value }); // Set floor as color type
+      }
+    } else if (newValue.type === 'pattern') {
+      // Update pattern with full data
+      // Handle both data structures (patternData and direct properties)
+      const patternType = newValue.patternData?.patternType || newValue.patternType;
+      const patternValue = newValue.patternData?.patternValue || newValue.patternValue;
+      
+      if (!patternType || !patternValue) {
+        console.error('Missing pattern data:', newValue);
+        return;
+      }
+      
+      const patternInfo = {
+        type: 'pattern' as const,
+        value: newValue.value, // pattern ID (which is the pattern code like 'wallpaper_stripes_01')
+        patternType: patternType as 'css' | 'image',
+        patternValue: patternValue
+      };
+      
+      if (surface === 'wall') {
+        updateRoomPatterns(patternInfo, undefined);
+      } else {
+        updateRoomPatterns(undefined, patternInfo);
+      }
+    }
+  };
+  
+  // Get current surface values for the customizers
+  const getCurrentSurfaceValue = (surface: 'wall' | 'floor'): SurfaceValue => {
+    if (surface === 'wall') {
+      if (draftRoom.wall?.type === 'pattern') {
+        return { type: 'pattern', value: draftRoom.wall.value };
+      } else if (draftRoom.wallPattern) {
+        return { type: 'pattern', value: draftRoom.wallPattern };
+      }
+      return { type: 'color', value: draftRoom.wallColor || '#f5ddd9' };
+    } else {
+      if (draftRoom.floor?.type === 'pattern') {
+        return { type: 'pattern', value: draftRoom.floor.value };
+      } else if (draftRoom.floorPattern) {
+        return { type: 'pattern', value: draftRoom.floorPattern };
+      }
+      return { type: 'color', value: draftRoom.floorColor || '#d4875f' };
+    }
+  };
 
 
   const handleDragStart = (e: React.DragEvent, item: any) => {
@@ -146,9 +259,6 @@ export default function RoomDecoratorView() {
             onDragStart={(e) => handleDragStart(e, item)}
             onDragEnd={handleDragEnd}
             onMouseEnter={(e) => {
-              if (process.env.NODE_ENV === 'development') {
-                console.log('Hovering room item:', item);
-              }
               setHoveredItem(item);
               const rect = e.currentTarget.getBoundingClientRect();
               setHoverPosition({ 
@@ -157,9 +267,6 @@ export default function RoomDecoratorView() {
               });
             }}
             onMouseLeave={() => {
-              if (process.env.NODE_ENV === 'development') {
-                console.log('Mouse left room item');
-              }
               setHoveredItem(null);
             }}
           >
@@ -201,9 +308,19 @@ export default function RoomDecoratorView() {
   return (
     <TooltipProvider>
       <div className="h-full flex flex-col">
+        {/* Help text when items are placed */}
+        {draftRoom.placedItems.length > 0 && (
+          <div className="bg-blue-50 border-b border-blue-200 px-3 py-2">
+            <p className="text-xs text-blue-700 flex items-center gap-1">
+              <span className="text-sm">💡</span>
+              Placed items can be dragged to reposition them in your room
+            </p>
+          </div>
+        )}
+        
         {/* Tabs for different categories */}
         <Tabs defaultValue="furniture" className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsList className="grid w-full grid-cols-4 mb-4">
             <Tooltip>
               <TooltipTrigger asChild>
                 <TabsTrigger value="furniture" className="flex items-center justify-center p-2">
@@ -223,6 +340,17 @@ export default function RoomDecoratorView() {
               </TooltipTrigger>
               <TooltipContent>
                 <p>Objects - Decorative items, plants, and accessories</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="pets" className="flex items-center justify-center p-2">
+                  <Fish className="w-5 h-5" />
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Pets - Your aquatic friends</p>
               </TooltipContent>
             </Tooltip>
             
@@ -251,91 +379,40 @@ export default function RoomDecoratorView() {
             </div>
           </TabsContent>
 
+          <TabsContent value="pets" className="mt-0">
+            <div className="grid grid-cols-4 gap-2 mt-4 p-2">
+              {renderItemGrid(petItems, 'pets')}
+            </div>
+          </TabsContent>
+
           <TabsContent value="colors" className="mt-0">
-            <div className="space-y-4">
-              {/* Wall Color */}
-              <div>
-                <label className="text-sm font-medium mb-2 block">Wall Color</label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="color"
-                    value={draftRoom.wallColor || '#f5ddd9'}
-                    onChange={(e) => updateRoomColors(e.target.value, undefined)}
-                    className="w-16 h-16 rounded-lg cursor-pointer border-2 border-gray-300"
-                  />
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-600 mb-1">Current color</div>
-                    <div className="font-mono text-sm">{draftRoom.wallColor || '#f5ddd9'}</div>
+            <div className="space-y-6 p-2">
+              {patternsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600 mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-600">Loading patterns...</p>
                   </div>
                 </div>
-              </div>
-
-              {/* Floor Color */}
-              <div>
-                <label className="text-sm font-medium mb-2 block">Floor Color</label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="color"
-                    value={draftRoom.floorColor || '#d4875f'}
-                    onChange={(e) => updateRoomColors(undefined, e.target.value)}
-                    className="w-16 h-16 rounded-lg cursor-pointer border-2 border-gray-300"
+              ) : (
+                <>
+                  {/* Wall Surface Customizer */}
+                  <SurfaceCustomizer
+                    surface="wall"
+                    currentValue={getCurrentSurfaceValue('wall')}
+                    ownedPatterns={ownedPatterns}
+                    onUpdate={(newValue) => handleSurfaceUpdate('wall', newValue)}
                   />
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-600 mb-1">Current color</div>
-                    <div className="font-mono text-sm">{draftRoom.floorColor || '#d4875f'}</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Preset Color Combos */}
-              <div className="mt-6">
-                <label className="text-sm font-medium mb-2 block">Quick Presets</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => updateRoomColors('#f5ddd9', '#d4875f')}
-                    className="p-2 rounded-lg border-2 border-gray-200 hover:border-gray-400 transition-colors"
-                  >
-                    <div className="flex h-12">
-                      <div className="flex-1 bg-[#f5ddd9] rounded-l"></div>
-                      <div className="flex-1 bg-[#d4875f] rounded-r"></div>
-                    </div>
-                    <span className="text-xs mt-1 block">Warm & Cozy</span>
-                  </button>
                   
-                  <button
-                    onClick={() => updateRoomColors('#e8f4f8', '#a8c5d6')}
-                    className="p-2 rounded-lg border-2 border-gray-200 hover:border-gray-400 transition-colors"
-                  >
-                    <div className="flex h-12">
-                      <div className="flex-1 bg-[#e8f4f8] rounded-l"></div>
-                      <div className="flex-1 bg-[#a8c5d6] rounded-r"></div>
-                    </div>
-                    <span className="text-xs mt-1 block">Ocean Blue</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => updateRoomColors('#f5e6ff', '#d4a6ff')}
-                    className="p-2 rounded-lg border-2 border-gray-200 hover:border-gray-400 transition-colors"
-                  >
-                    <div className="flex h-12">
-                      <div className="flex-1 bg-[#f5e6ff] rounded-l"></div>
-                      <div className="flex-1 bg-[#d4a6ff] rounded-r"></div>
-                    </div>
-                    <span className="text-xs mt-1 block">Purple Dream</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => updateRoomColors('#e8ffe8', '#a6d4a6')}
-                    className="p-2 rounded-lg border-2 border-gray-200 hover:border-gray-400 transition-colors"
-                  >
-                    <div className="flex h-12">
-                      <div className="flex-1 bg-[#e8ffe8] rounded-l"></div>
-                      <div className="flex-1 bg-[#a6d4a6] rounded-r"></div>
-                    </div>
-                    <span className="text-xs mt-1 block">Forest Green</span>
-                  </button>
-                </div>
-              </div>
+                  {/* Floor Surface Customizer */}
+                  <SurfaceCustomizer
+                    surface="floor"
+                    currentValue={getCurrentSurfaceValue('floor')}
+                    ownedPatterns={ownedPatterns}
+                    onUpdate={(newValue) => handleSurfaceUpdate('floor', newValue)}
+                  />
+                </>
+              )}
             </div>
           </TabsContent>
         </div>

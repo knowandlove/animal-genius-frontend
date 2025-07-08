@@ -1,10 +1,12 @@
 import { useRef, useState, useEffect } from 'react';
 import { useRoomStore, ROOM_ITEM_LIMIT } from '@/stores/roomStore';
 import { cn } from '@/lib/utils';
-import LayeredAvatarRoom from '@/components/avatar-v2/LayeredAvatarRoom';
 import { AnimatePresence } from 'framer-motion';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Loader2, Check } from 'lucide-react';
 import { getAssetUrl } from '@/utils/cloud-assets';
+import FishbowlPlaceholder from './FishbowlPlaceholder';
+import FishbowlModal from './FishbowlModal';
+import FishBowl from '@/components/pets/FishBowl';
 
 interface DragState {
   itemId: string;
@@ -22,6 +24,8 @@ export default function RoomSticker() {
   const [showTrash, setShowTrash] = useState(false);
   const [overTrash, setOverTrash] = useState(false);
   const [dropPreview, setDropPreview] = useState<{ x: number; y: number } | null>(null);
+  const [fishbowlModalOpen, setFishbowlModalOpen] = useState(false);
+  const [selectedFishbowl, setSelectedFishbowl] = useState<any>(null);
   
   const { 
     avatar, 
@@ -36,6 +40,9 @@ export default function RoomSticker() {
     startDragging,
     stopDragging,
     stopArranging,
+    canEdit,
+    passportCode,
+    pet,
   } = useRoomStore();
   
   // Listen for placeItemCenter event from room decorator
@@ -56,7 +63,19 @@ export default function RoomSticker() {
   const isEditingAvatar = ui.inventoryMode === 'avatar';
   const isEditingRoom = ui.inventoryMode === 'room';
   const displayAvatar = isEditingAvatar ? { ...avatar, equipped: draftAvatar.equipped } : avatar;
-  const displayRoom = isEditingRoom ? { ...room, placedItems: draftRoom.placedItems } : room;
+  const displayRoom = isEditingRoom 
+    ? { 
+        ...room, 
+        placedItems: draftRoom.placedItems,
+        wallColor: draftRoom.wallColor,
+        floorColor: draftRoom.floorColor,
+        wallPattern: draftRoom.wallPattern,
+        floorPattern: draftRoom.floorPattern,
+        wall: draftRoom.wall,
+        floor: draftRoom.floor
+      } 
+    : room;
+  
 
   // Sort items by z-index for proper layering
   const sortedItems = [...displayRoom.placedItems].sort((a, b) => 
@@ -69,6 +88,40 @@ export default function RoomSticker() {
   };
 
   const handleItemMouseDown = (e: React.MouseEvent, item: any, displayX: number, displayY: number) => {
+    // Get item details to check if this is a fishbowl
+    const itemDetails = getItemDetails(item.itemId);
+    
+    // Check if this is a fishbowl click (not in edit mode)
+    if (itemDetails?.name === 'Fish Bowl' && !ui.isArranging) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Use the actual pet data if available
+      if (pet) {
+        setSelectedFishbowl(pet);
+        setFishbowlModalOpen(true);
+      } else {
+        // Fallback for demo/testing
+        const mockPet = {
+          id: 'mock-pet-id',
+          customName: 'Goldie',
+          hunger: 75,
+          happiness: 85,
+          calculatedStats: { hunger: 75, happiness: 85 },
+          pet: {
+            species: 'goldfish',
+            baseStats: {
+              hungerDecayRate: 2,
+              happinessDecayRate: 3
+            }
+          }
+        };
+        setSelectedFishbowl(mockPet);
+        setFishbowlModalOpen(true);
+      }
+      return;
+    }
+    
     if (!isEditingRoom || !roomRef.current || !ui.isArranging) return;
     
     e.preventDefault();
@@ -224,19 +277,105 @@ export default function RoomSticker() {
           <div 
             className="absolute inset-0 h-[70%]"
             style={{
-              backgroundColor: displayRoom.wallColor || '#f5ddd9',
-              backgroundImage: displayRoom.wallPattern ? `url(/patterns/${displayRoom.wallPattern})` : 'none',
-              backgroundSize: displayRoom.wallPattern ? '100px 100px' : 'auto',
+              backgroundColor: (() => {
+                // Check for new format first
+                if (displayRoom.wall?.type === 'pattern') {
+                  // Don't set backgroundColor when using patterns
+                  return undefined;
+                }
+                if (displayRoom.wall?.type === 'color' && displayRoom.wall?.value) {
+                  return displayRoom.wall.value;
+                }
+                // Fall back to old format
+                if (displayRoom.wallPattern) {
+                  return undefined; // Don't set backgroundColor when using old patterns
+                }
+                return displayRoom.wallColor || '#f5ddd9';
+              })(),
+              backgroundImage: (() => {
+                // Check for new pattern format with type
+                if (displayRoom.wall?.type === 'pattern') {
+                  if (displayRoom.wall.patternType === 'image' && displayRoom.wall.patternValue) {
+                    return `url(${displayRoom.wall.patternValue})`;
+                  }
+                  // CSS patterns are handled by data-pattern attribute - don't set backgroundImage
+                  return undefined;
+                }
+                // Fall back to old format
+                return displayRoom.wallPattern ? `url(/patterns/${displayRoom.wallPattern})` : undefined;
+              })(),
+              backgroundSize: (() => {
+                // Apply background size for image patterns
+                if (displayRoom.wall?.type === 'pattern' && displayRoom.wall?.patternType === 'image') {
+                  return '256px 256px'; // Standard tile size for images
+                }
+                // Old format patterns
+                if (displayRoom.wallPattern) {
+                  return '100px 100px';
+                }
+                return 'auto';
+              })(),
+              backgroundRepeat: 'repeat',
             }}
+            data-pattern={(() => {
+              // Apply data-pattern attribute for CSS patterns
+              if (displayRoom.wall?.type === 'pattern' && displayRoom.wall?.patternType === 'css') {
+                return displayRoom.wall.value; // This contains the pattern code for CSS patterns
+              }
+              return undefined;
+            })()}
           />
           {/* Floor */}
           <div 
             className="absolute bottom-0 left-0 right-0 h-[30%]"
             style={{
-              backgroundColor: displayRoom.floorColor || '#d4875f',
-              backgroundImage: displayRoom.floorPattern ? `url(/patterns/${displayRoom.floorPattern})` : 'none',
-              backgroundSize: displayRoom.floorPattern ? '100px 100px' : 'auto',
+              backgroundColor: (() => {
+                // Check for new format first
+                if (displayRoom.floor?.type === 'pattern') {
+                  // Don't set backgroundColor when using patterns
+                  return undefined;
+                }
+                if (displayRoom.floor?.type === 'color' && displayRoom.floor?.value) {
+                  return displayRoom.floor.value;
+                }
+                // Fall back to old format
+                if (displayRoom.floorPattern) {
+                  return undefined; // Don't set backgroundColor when using old patterns
+                }
+                return displayRoom.floorColor || '#d4875f';
+              })(),
+              backgroundImage: (() => {
+                // Check for new pattern format with type
+                if (displayRoom.floor?.type === 'pattern') {
+                  if (displayRoom.floor.patternType === 'image' && displayRoom.floor.patternValue) {
+                    return `url(${displayRoom.floor.patternValue})`;
+                  }
+                  // CSS patterns are handled by data-pattern attribute - don't set backgroundImage
+                  return undefined;
+                }
+                // Fall back to old format
+                return displayRoom.floorPattern ? `url(/patterns/${displayRoom.floorPattern})` : undefined;
+              })(),
+              backgroundSize: (() => {
+                // Apply background size for image patterns
+                if (displayRoom.floor?.type === 'pattern' && displayRoom.floor?.patternType === 'image') {
+                  return '256px 256px'; // Standard tile size for images
+                }
+                // Old format patterns
+                if (displayRoom.floorPattern) {
+                  return '100px 100px';
+                }
+                return 'auto';
+              })(),
+              backgroundRepeat: 'repeat',
             }}
+            data-pattern={(() => {
+              // Apply data-pattern attribute for CSS patterns
+              if (displayRoom.floor?.type === 'pattern' && displayRoom.floor?.patternType === 'css') {
+                return displayRoom.floor.value; // This contains the pattern code for CSS patterns
+              }
+              return undefined;
+            })()}
           />
         </div>
         
@@ -325,7 +464,19 @@ export default function RoomSticker() {
               )}
               
               {/* Item Visual */}
-              {itemDetails?.imageUrl ? (
+              {itemDetails?.name === 'Fish Bowl' ? (
+                <div className={cn(
+                  "cursor-pointer transition-transform",
+                  !ui.isArranging && "hover:scale-105"
+                )}>
+                  <div style={{ width: '120px', height: '120px' }}>
+                    <FishBowl 
+                      happiness={pet?.calculatedStats?.happiness || 80} 
+                      hunger={pet?.calculatedStats?.hunger || 80}
+                    />
+                  </div>
+                </div>
+              ) : itemDetails?.imageUrl ? (
                 <img 
                   src={itemDetails.imageUrl} 
                   alt={itemDetails.name || item.itemId}
@@ -362,25 +513,6 @@ export default function RoomSticker() {
         })}
         </div>
 
-        {!isEditingRoom && (
-            <div
-              className="absolute pointer-events-none"
-              style={{
-                left: `${displayAvatar.position.x}%`,
-                top: `${displayAvatar.position.y}%`,
-                transform: 'translate(-50%, -50%)',
-                zIndex: Math.floor((displayAvatar.position.y) * 10), // Dynamic z-index
-              }}
-            >
-              <LayeredAvatarRoom
-                animalType={displayAvatar.type}
-                items={displayAvatar.equipped}
-                width={504}
-                height={504}
-                animated={displayAvatar.animation !== 'idle'}
-              />
-            </div>
-          )}
 
         {/* Trash Zone */}
         <AnimatePresence>
@@ -406,34 +538,50 @@ export default function RoomSticker() {
         )}
         </AnimatePresence>
 
-        {/* Decorative Elements */}
-        {!isEditingRoom && !isEditingAvatar && (
-          <>
-            {/* Sparkle effects */}
-            <div className="absolute top-10 right-10 animate-pulse">
-              <span className="text-2xl">✨</span>
-            </div>
-            <div className="absolute bottom-20 left-20 animate-pulse animation-delay-1000">
-              <span className="text-xl">🌟</span>
-            </div>
-          </>
-        )}
+        {/* Removed decorative sparkle elements */}
       </div>
     </div>
     
-    {/* Save Button - Shows when arranging */}
-    {ui.isArranging && (
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50">
-        <button
-          onClick={() => stopArranging()}
-          className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg shadow-lg transition-all hover:scale-105 flex items-center gap-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-          Save Room Layout
-        </button>
+    {/* Save Button removed - now in StudentRoom.tsx */}
+    
+    {/* Save Status Indicator */}
+    {ui.isSaving && (
+      <div className="absolute top-4 right-4 z-50 bg-white/90 backdrop-blur rounded-lg px-3 py-2 shadow-lg flex items-center gap-2">
+        <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+        <span className="text-sm font-medium">Saving...</span>
       </div>
+    )}
+    
+    {/* Save Error */}
+    {ui.saveError && (
+      <div className="absolute top-4 right-4 z-50 bg-red-100 border border-red-300 rounded-lg px-3 py-2 shadow-lg">
+        <span className="text-sm font-medium text-red-800">{ui.saveError}</span>
+      </div>
+    )}
+    
+    {/* Recently Saved Indicator */}
+    {ui.lastSaved && !ui.isSaving && !ui.saveError && (
+      <div className="absolute top-4 right-4 z-50 animate-fade-in-out">
+        <div className="bg-green-100 border border-green-300 rounded-lg px-3 py-2 shadow-lg flex items-center gap-2">
+          <Check className="w-4 h-4 text-green-600" />
+          <span className="text-sm font-medium text-green-800">Saved!</span>
+        </div>
+      </div>
+    )}
+    
+    {/* Fishbowl Modal */}
+    {fishbowlModalOpen && selectedFishbowl && (
+      <FishbowlModal
+        open={fishbowlModalOpen}
+        onClose={() => {
+          setFishbowlModalOpen(false);
+          setSelectedFishbowl(null);
+        }}
+        pet={selectedFishbowl}
+        canInteract={canEdit}
+        balance={avatar?.currencyBalance || 0}
+        passportCode={passportCode || ''}
+      />
     )}
     </>
   );

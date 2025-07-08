@@ -24,6 +24,7 @@ export default function AvatarCustomizerView() {
   // State for hovered item
   const [hoveredItem, setHoveredItem] = useState<any>(null);
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
+  const [showAutoSaveInfo, setShowAutoSaveInfo] = useState(true);
 
   // Filter inventory for avatar items only
   const avatarItems = inventory.items.filter(item => 
@@ -89,9 +90,6 @@ export default function AvatarCustomizerView() {
           whileTap={{ scale: 0.95 }}
           onClick={() => handleItemClick(slot, item.id, item)}
           onMouseEnter={(e) => {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Hovering item:', item);
-            }
             setHoveredItem(item);
             const rect = e.currentTarget.getBoundingClientRect();
             // Position tooltip to the left of the item
@@ -101,9 +99,6 @@ export default function AvatarCustomizerView() {
             });
           }}
           onMouseLeave={() => {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Mouse left item');
-            }
             setHoveredItem(null);
           }}
           className={cn(
@@ -166,6 +161,22 @@ export default function AvatarCustomizerView() {
   return (
     <TooltipProvider>
       <div className="h-full flex flex-col">
+        {/* Auto-save info message */}
+        {showAutoSaveInfo && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 mx-4 mb-3 text-sm flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-blue-600" />
+              <span className="text-blue-700">Changes save automatically</span>
+            </div>
+            <button
+              onClick={() => setShowAutoSaveInfo(false)}
+              className="text-blue-600 hover:text-blue-800 text-xs"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+        
         {/* Tabs for different categories */}
         <Tabs defaultValue="hat" className="flex-1 flex flex-col">
           <TabsList className="grid w-full grid-cols-3 mb-4">

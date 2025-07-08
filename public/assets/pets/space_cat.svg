@@ -1,0 +1,39 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Space helmet glass -->
+  <ellipse cx="50" cy="45" rx="35" ry="38" fill="rgba(200, 220, 255, 0.3)" stroke="#4A90E2" stroke-width="2"/>
+  
+  <!-- Cat body inside helmet -->
+  <ellipse cx="50" cy="70" rx="18" ry="16" fill="#6B46C1"/>
+  
+  <!-- Cat head -->
+  <circle cx="50" cy="42" r="16" fill="#7C3AED"/>
+  
+  <!-- Ears -->
+  <path d="M 35 32 L 32 20 L 40 28 Z" fill="#6B46C1"/>
+  <path d="M 65 32 L 68 20 L 60 28 Z" fill="#6B46C1"/>
+  <path d="M 36 28 L 34 22 L 38 26 Z" fill="#E9D5FF"/>
+  <path d="M 64 28 L 66 22 L 62 26 Z" fill="#E9D5FF"/>
+  
+  <!-- Eyes -->
+  <ellipse cx="44" cy="42" rx="3" ry="4" fill="#FFD700"/>
+  <ellipse cx="56" cy="42" rx="3" ry="4" fill="#FFD700"/>
+  <ellipse cx="44" cy="43" rx="1" ry="2" fill="#000000"/>
+  <ellipse cx="56" cy="43" rx="1" ry="2" fill="#000000"/>
+  
+  <!-- Nose -->
+  <path d="M 50 48 L 48 50 L 52 50 Z" fill="#000000"/>
+  
+  <!-- Mouth -->
+  <path d="M 50 50 Q 46 52 44 50" stroke="#000000" stroke-width="1" fill="none"/>
+  <path d="M 50 50 Q 54 52 56 50" stroke="#000000" stroke-width="1" fill="none"/>
+  
+  <!-- Stars on helmet -->
+  <text x="25" y="25" font-size="8" fill="#FFD700">★</text>
+  <text x="70" y="30" font-size="6" fill="#FFD700">✦</text>
+  <text x="75" y="60" font-size="8" fill="#FFD700">★</text>
+  <text x="20" y="55" font-size="6" fill="#FFD700">✦</text>
+  
+  <!-- Antenna on helmet -->
+  <line x1="50" y1="8" x2="50" y2="15" stroke="#4A90E2" stroke-width="2"/>
+  <circle cx="50" cy="8" r="3" fill="#E74C3C"/>
+</svg>

@@ -11,12 +11,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Users, School, BarChart3, Shield, Trash2, Key, Edit, Eye, Activity, Clock, Database, Wifi, Palette, Package, Sparkles, Monitor, Home } from "lucide-react";
+import { Users, School, BarChart3, Shield, Trash2, Key, Edit, Eye, Activity, Clock, Database, Wifi, Palette, Package, Sparkles, Monitor, Home, Dog } from "lucide-react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { SystemMonitoringTab } from "@/components/admin/SystemMonitoringTab";
 import { AdminDashboardSummary } from "@/components/admin/AdminDashboardSummary";
+import { EnhancedMonitoringTab } from "@/components/admin/EnhancedMonitoringTab";
 
 interface Teacher {
   id: number;
@@ -288,7 +289,7 @@ export default function AdminPanel() {
         </TabsContent>
 
         <TabsContent value="monitoring" className="space-y-4">
-          <SystemMonitoringTab />
+          <EnhancedMonitoringTab />
         </TabsContent>
 
         <TabsContent value="teachers" className="space-y-4">
@@ -500,6 +501,27 @@ export default function AdminPanel() {
                       className="w-full bg-green-600 hover:bg-green-700"
                     >
                       Open Store Manager
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-2 border-purple-500 hover:border-purple-600 transition-colors">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Dog className="h-4 w-4" />
+                      Pet Management
+                      <Badge className="bg-purple-100 text-purple-800">New</Badge>
+                    </CardTitle>
+                    <CardDescription>
+                      Manage pet types, sprites, and behaviors
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button
+                      onClick={() => setLocation("/admin/pets")}
+                      className="w-full bg-purple-600 hover:bg-purple-700"
+                    >
+                      Open Pet Manager
                     </Button>
                   </CardContent>
                 </Card>

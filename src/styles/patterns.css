@@ -1,0 +1,229 @@
+/* Pattern Rendering Styles */
+
+/* Wall Patterns */
+[data-pattern^="brick_"] {
+  background-image: url('/patterns/walls/brick_pattern.png');
+  background-repeat: repeat;
+  background-size: 200px 200px;
+}
+
+[data-pattern="brick_red_01"] {
+  background-color: #8B4513; /* Fallback color */
+  background-position: 0 0;
+}
+
+[data-pattern^="wallpaper_"] {
+  background-repeat: repeat;
+  background-size: 150px 150px;
+}
+
+/* Commented out - using CSS patterns below
+[data-pattern="wallpaper_floral_01"] {
+  background-image: url('/patterns/walls/floral_pattern.png');
+  background-color: #FFE4E1;
+}
+
+[data-pattern="wallpaper_stripes_01"] {
+  background-image: url('/patterns/walls/stripes_pattern.png');
+  background-color: #E6E6FA;
+} */
+
+[data-pattern="wallpaper_stars_01"] {
+  background-image: url('/patterns/walls/stars_pattern.png');
+  background-color: #191970; /* Fallback midnight blue */
+}
+
+[data-pattern^="stone_"] {
+  background-image: url('/patterns/walls/stone_pattern.png');
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+[data-pattern="stone_gray_01"] {
+  background-color: #708090; /* Fallback slate gray */
+  background-position: 0 0;
+}
+
+/* Floor Patterns */
+[data-pattern^="wood_"] {
+  background-image: url('/patterns/floors/wood_pattern.png');
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+[data-pattern="wood_oak_01"] {
+  background-color: #8B4513; /* Fallback brown */
+  background-position: 0 0;
+}
+
+[data-pattern^="tile_"] {
+  background-repeat: repeat;
+  background-size: 200px 200px;
+}
+
+/* Commented out - using CSS pattern below
+[data-pattern="tile_checkered_01"] {
+  background-image: url('/patterns/floors/checkered_pattern.png');
+  background-color: #000000;
+} */
+
+[data-pattern="tile_marble_01"] {
+  background-image: url('/patterns/floors/marble_pattern.png');
+  background-color: #F5F5F5; /* Fallback white */
+}
+
+[data-pattern^="carpet_"] {
+  background-image: url('/patterns/floors/carpet_pattern.png');
+  background-repeat: repeat;
+  background-size: 150px 150px;
+}
+
+[data-pattern="carpet_blue_01"] {
+  background-color: #4682B4; /* Fallback steel blue */
+  background-position: 0 0;
+}
+
+[data-pattern="grass_green_01"] {
+  background-image: url('/patterns/floors/grass_pattern.png');
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  background-color: #228B22; /* Fallback forest green */
+}
+
+/* Pattern Loading States */
+[data-pattern] {
+  transition: background-image 0.3s ease-in-out;
+}
+
+/* Pattern Error Fallback */
+[data-pattern]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: inherit;
+  z-index: -1;
+}
+
+/* Pattern Placeholders using CSS Gradients */
+/* These are used as the actual patterns until image files are created */
+
+/* Brick Pattern */
+[data-pattern="brick_red_01"] {
+  background-image: 
+    repeating-linear-gradient(
+      0deg,
+      #8B4513,
+      #8B4513 20px,
+      #A0522D 20px,
+      #A0522D 22px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 50px,
+      rgba(0,0,0,0.1) 50px,
+      rgba(0,0,0,0.1) 52px
+    );
+}
+
+/* Striped Wallpaper */
+[data-pattern="wallpaper_stripes_01"] {
+  background-image: repeating-linear-gradient(
+    90deg,
+    #FFE4E1,
+    #FFE4E1 20px,
+    #E6E6FA 20px,
+    #E6E6FA 40px
+  );
+}
+
+/* Checkered Tile */
+[data-pattern="tile_checkered_01"] {
+  background-color: #ffffff;
+  background-image: 
+    linear-gradient(45deg, #000 25%, transparent 25%),
+    linear-gradient(-45deg, #000 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #000 75%),
+    linear-gradient(-45deg, transparent 75%, #000 75%);
+  background-size: 50px 50px;
+  background-position: 0 0, 0 25px, 25px -25px, -25px 0px;
+}
+
+/* Wood Grain */
+[data-pattern="wood_oak_01"] {
+  background-image: 
+    repeating-linear-gradient(
+      90deg,
+      #8B4513,
+      #8B4513 5px,
+      #A0522D 5px,
+      #A0522D 10px
+    );
+}
+
+/* Grass */
+[data-pattern="grass_green_01"] {
+  background-image: 
+    repeating-linear-gradient(
+      75deg,
+      #228B22,
+      #228B22 2px,
+      #32CD32 2px,
+      #32CD32 4px
+    );
+}
+
+/* Polka Dots Pattern */
+[data-pattern="css-dots-simple"] {
+  background-image: radial-gradient(circle at 20px 20px, #d0d0d0 3px, transparent 3px);
+  background-size: 40px 40px;
+  background-position: 0 0;
+}
+
+/* Additional Pattern Placeholders */
+
+/* Floral Wallpaper */
+[data-pattern="wallpaper_floral_01"] {
+  background: #FFE4E1;
+  background-image: 
+    radial-gradient(circle at 20% 20%, #FF69B4 0%, transparent 30%),
+    radial-gradient(circle at 60% 60%, #FF1493 0%, transparent 25%),
+    radial-gradient(circle at 80% 20%, #FFB6C1 0%, transparent 20%);
+  background-size: 100px 100px;
+}
+
+/* Stone Gray */
+[data-pattern="stone_gray_01"] {
+  background: #708090;
+  background-image: 
+    repeating-conic-gradient(from 45deg at 30% 30%, #696969 0deg, #708090 90deg, #778899 180deg, #708090 270deg, #696969 360deg);
+  background-size: 60px 60px;
+}
+
+/* Starry Night */
+[data-pattern="wallpaper_stars_01"] {
+  background: #191970;
+  background-image: 
+    radial-gradient(circle at 20% 20%, white 0%, transparent 3%),
+    radial-gradient(circle at 60% 10%, white 0%, transparent 2%),
+    radial-gradient(circle at 80% 80%, white 0%, transparent 2.5%),
+    radial-gradient(circle at 30% 70%, white 0%, transparent 2%),
+    radial-gradient(circle at 90% 50%, yellow 0%, transparent 15%);
+  background-size: 150px 150px;
+}
+
+/* Blue Carpet */
+[data-pattern="carpet_blue_01"] {
+  background: #4682B4;
+  background-image: 
+    repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,.1) 10px, rgba(255,255,255,.1) 20px),
+    repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(0,0,0,.1) 10px, rgba(0,0,0,.1) 20px);
+}
+
+/* Marble Tiles */
+[data-pattern="tile_marble_01"] {
+  background: #F5F5F5;
+  background-image: 
+    repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(128,128,128,.1) 35px, rgba(128,128,128,.1) 70px),
+    repeating-linear-gradient(-45deg, transparent, transparent 35px, rgba(128,128,128,.05) 35px, rgba(128,128,128,.05) 70px);
+}

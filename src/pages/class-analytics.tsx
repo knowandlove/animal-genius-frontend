@@ -14,8 +14,10 @@ import { apiRequest } from "@/lib/queryClient";
 import { getAssetUrl } from "@/utils/cloud-assets";
 import Header from "@/components/header";
 import { InteractivePieChart } from "@/components/interactive-pie-chart";
-import { Monitor, Upload, Eye, Volume2, Zap, BookOpen, MapPin, Coins, Plus, Minus, Store } from "lucide-react";
+import { Monitor, Upload, Eye, Volume2, Zap, BookOpen, MapPin, Coins, Plus, Minus, Store, Settings } from "lucide-react";
 import { CSVImportModal } from "@/components/CSVImportModal";
+import { PermissionGate } from "@/components/collaborators";
+import { useClassContext } from "@/hooks/useClassContext";
 
 interface User {
   id: number;
@@ -69,6 +71,7 @@ export default function ClassAnalytics() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { role } = useClassContext();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAnimal, setSelectedAnimal] = useState<string | null>(null);
   const [selectedPersonality, setSelectedPersonality] = useState<string | null>(
@@ -91,6 +94,13 @@ export default function ClassAnalytics() {
   const [showCurrencySection, setShowCurrencySection] = useState(false);
   
   const itemsPerPage = 10;
+  
+  // Permission checks based on role
+  const isOwner = role === 'owner';
+  const canEdit = role === 'owner' || role === 'editor';
+  const canManageStudents = isOwner || (role === 'editor' && true); // TODO: Check specific permissions
+  const canManageEconomy = isOwner || (role === 'editor' && true); // TODO: Check specific permissions
+  const canExportData = isOwner || (role === 'editor' && true); // TODO: Check specific permissions
 
   const handleLogout = () => {
     localStorage.removeItem("authToken");
@@ -468,13 +478,24 @@ export default function ClassAnalytics() {
                   </p>
                 </div>
               </div>
-              <Button
-                onClick={() => setLocation("/dashboard")}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                ← Back to Dashboard
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => setLocation(`/class/${classId}/settings`)}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  Settings
+                </Button>
+                <Button
+                  onClick={() => setLocation("/dashboard")}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  ← Back to Dashboard
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -843,15 +864,20 @@ export default function ClassAnalytics() {
                           )}
                         </div>
                         <div className="flex items-center gap-3">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIsCSVModalOpen(true)}
-                            className="flex items-center gap-2"
+                          <PermissionGate 
+                            canAccess={canManageStudents}
+                            tooltip="Only class owners and editors can import students"
                           >
-                            <Upload className="h-4 w-4" />
-                            Import CSV
-                          </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setIsCSVModalOpen(true)}
+                              className="flex items-center gap-2"
+                            >
+                              <Upload className="h-4 w-4" />
+                              Import CSV
+                            </Button>
+                          </PermissionGate>
                           <input
                             type="text"
                             placeholder="Search students..."
@@ -1024,15 +1050,20 @@ export default function ClassAnalytics() {
                                           </Button>
                                         </>
                                       )}
-                                      <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onClick={() =>
-                                          handleDeleteSubmission(submission.id)
-                                        }
+                                      <PermissionGate 
+                                        canAccess={canManageStudents}
+                                        tooltip="Only class owners and editors can delete students"
                                       >
-                                        Delete
-                                      </Button>
+                                        <Button
+                                          variant="destructive"
+                                          size="sm"
+                                          onClick={() =>
+                                            handleDeleteSubmission(submission.id)
+                                          }
+                                        >
+                                          Delete
+                                        </Button>
+                                      </PermissionGate>
                                     </td>
                                   </tr>
                                 );

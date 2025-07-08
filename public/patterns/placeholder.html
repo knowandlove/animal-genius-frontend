@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pattern Placeholders</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        
+        .pattern-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .pattern-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .pattern-preview {
+            width: 256px;
+            height: 256px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+        }
+        
+        .thumbnail {
+            width: 128px;
+            height: 128px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+        }
+        
+        /* Wall Patterns */
+        .brick-red {
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    #8B4513,
+                    #8B4513 20px,
+                    #A0522D 20px,
+                    #A0522D 22px
+                ),
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 50px,
+                    rgba(0,0,0,0.1) 50px,
+                    rgba(0,0,0,0.1) 52px
+                );
+        }
+        
+        .floral {
+            background: #FFE4E1;
+            background-image: 
+                radial-gradient(circle at 20% 20%, #FF69B4 0%, transparent 30%),
+                radial-gradient(circle at 60% 60%, #FF1493 0%, transparent 25%),
+                radial-gradient(circle at 80% 20%, #FFB6C1 0%, transparent 20%);
+            background-size: 100px 100px;
+        }
+        
+        .stripes {
+            background: repeating-linear-gradient(
+                90deg,
+                #FFE4E1,
+                #FFE4E1 20px,
+                #E6E6FA 20px,
+                #E6E6FA 40px
+            );
+        }
+        
+        .stone-gray {
+            background: #708090;
+            background-image: 
+                repeating-conic-gradient(from 45deg at 30% 30%, #696969 0deg, #708090 90deg, #778899 180deg, #708090 270deg, #696969 360deg);
+            background-size: 60px 60px;
+        }
+        
+        .stars {
+            background: #191970;
+            background-image: 
+                radial-gradient(circle at 20% 20%, white 0%, transparent 3%),
+                radial-gradient(circle at 60% 10%, white 0%, transparent 2%),
+                radial-gradient(circle at 80% 80%, white 0%, transparent 2.5%),
+                radial-gradient(circle at 30% 70%, white 0%, transparent 2%),
+                radial-gradient(circle at 90% 50%, yellow 0%, transparent 15%);
+            background-size: 150px 150px;
+        }
+        
+        /* Floor Patterns */
+        .wood-oak {
+            background: 
+                repeating-linear-gradient(
+                    90deg,
+                    #8B4513,
+                    #8B4513 5px,
+                    #A0522D 5px,
+                    #A0522D 10px,
+                    #8B4513 10px,
+                    #8B4513 15px,
+                    #6B4423 15px,
+                    #6B4423 20px
+                );
+        }
+        
+        .checkered {
+            background-image: 
+                linear-gradient(45deg, #000 25%, transparent 25%),
+                linear-gradient(-45deg, #000 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #000 75%),
+                linear-gradient(-45deg, transparent 75%, #000 75%);
+            background-size: 50px 50px;
+            background-position: 0 0, 0 25px, 25px -25px, -25px 0px;
+            background-color: white;
+        }
+        
+        .carpet-blue {
+            background: #4682B4;
+            background-image: 
+                repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,.1) 10px, rgba(255,255,255,.1) 20px),
+                repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(0,0,0,.1) 10px, rgba(0,0,0,.1) 20px);
+        }
+        
+        .marble {
+            background: #F5F5F5;
+            background-image: 
+                repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(128,128,128,.1) 35px, rgba(128,128,128,.1) 70px),
+                repeating-linear-gradient(-45deg, transparent, transparent 35px, rgba(128,128,128,.05) 35px, rgba(128,128,128,.05) 70px);
+        }
+        
+        .grass {
+            background: #228B22;
+            background-image: 
+                repeating-linear-gradient(75deg, #228B22, #228B22 2px, #32CD32 2px, #32CD32 4px),
+                repeating-linear-gradient(-75deg, transparent, transparent 3px, rgba(0,100,0,0.3) 3px, rgba(0,100,0,0.3) 6px);
+        }
+        
+        code {
+            background: #f4f4f4;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Pattern Placeholders</h1>
+    <p>These CSS-based patterns can be used as placeholders until actual pattern images are created.</p>
+    <p>To use: Take screenshots of these patterns and save them to the appropriate directories.</p>
+    
+    <div class="pattern-grid">
+        <!-- Wall Patterns -->
+        <div class="pattern-card">
+            <h3>Red Brick Wall</h3>
+            <code>brick_red_01</code>
+            <div class="pattern-preview brick-red"></div>
+            <div class="thumbnail brick-red"></div>
+        </div>
+        
+        <div class="pattern-card">
+            <h3>Floral Wallpaper</h3>
+            <code>wallpaper_floral_01</code>
+            <div class="pattern-preview floral"></div>
+            <div class="thumbnail floral"></div>
+        </div>
+        
+        <div class="pattern-card">
+            <h3>Striped Wallpaper</h3>
+            <code>wallpaper_stripes_01</code>
+            <div class="pattern-preview stripes"></div>
+            <div class="thumbnail stripes"></div>
+        </div>
+        
+        <div class="pattern-card">
+            <h3>Gray Stone Wall</h3>
+            <code>stone_gray_01</code>
+            <div class="pattern-preview stone-gray"></div>
+            <div class="thumbnail stone-gray"></div>
+        </div>
+        
+        <div class="pattern-card">
+            <h3>Starry Night</h3>
+            <code>wallpaper_stars_01</code>
+            <div class="pattern-preview stars"></div>
+            <div class="thumbnail stars"></div>
+        </div>
+        
+        <!-- Floor Patterns -->
+        <div class="pattern-card">
+            <h3>Oak Wood Flooring</h3>
+            <code>wood_oak_01</code>
+            <div class="pattern-preview wood-oak"></div>
+            <div class="thumbnail wood-oak"></div>
+        </div>
+        
+        <div class="pattern-card">
+            <h3>Checkered Tiles</h3>
+            <code>tile_checkered_01</code>
+            <div class="pattern-preview checkered"></div>
+            <div class="thumbnail checkered"></div>
+        </div>
+        
+        <div class="pattern-card">
+            <h3>Blue Carpet</h3>
+            <code>carpet_blue_01</code>
+            <div class="pattern-preview carpet-blue"></div>
+            <div class="thumbnail carpet-blue"></div>
+        </div>
+        
+        <div class="pattern-card">
+            <h3>Marble Tiles</h3>
+            <code>tile_marble_01</code>
+            <div class="pattern-preview marble"></div>
+            <div class="thumbnail marble"></div>
+        </div>
+        
+        <div class="pattern-card">
+            <h3>Grass Floor</h3>
+            <code>grass_green_01</code>
+            <div class="pattern-preview grass"></div>
+            <div class="thumbnail grass"></div>
+        </div>
+    </div>
+</body>
+</html>

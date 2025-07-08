@@ -49,8 +49,10 @@ export default function TeacherLogin() {
         description: "You have been logged in successfully.",
       });
       
-      // Use router navigation instead of window.location
-      setLocation("/dashboard");
+      // Small delay to ensure auth state is propagated
+      setTimeout(() => {
+        setLocation("/dashboard");
+      }, 100);
     },
     onError: (error) => {
       toast({

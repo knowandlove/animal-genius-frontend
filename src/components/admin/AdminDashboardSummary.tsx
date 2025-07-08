@@ -37,7 +37,6 @@ interface QuickStats {
   store: {
     totalItems: number;
     activeItems: number;
-    pendingOrders: number;
     popularItems: Array<{ name: string; purchases: number }>;
   };
   engagement: {
@@ -91,7 +90,7 @@ export function AdminDashboardSummary() {
         <Button 
           variant="outline" 
           className="h-auto flex flex-col items-center gap-2 p-4"
-          onClick={() => window.location.href = '/admin/item-positioner'}
+          onClick={() => window.location.href = '/admin/item-positioner-v2'}
         >
           <UserCheck className="h-6 w-6" />
           <span>Avatar Tools</span>
@@ -152,9 +151,6 @@ export function AdminDashboardSummary() {
             <div className="text-2xl font-bold">{stats?.store.activeItems || 0}</div>
             <p className="text-xs text-muted-foreground">
               active items of {stats?.store.totalItems || 0} total
-            </p>
-            <p className="text-xs text-orange-600">
-              {stats?.store.pendingOrders || 0} pending orders
             </p>
           </CardContent>
         </Card>
@@ -266,10 +262,6 @@ export function AdminDashboardSummary() {
             <div className="p-4 bg-green-50 rounded-lg">
               <p className="text-2xl font-bold text-green-700">{stats?.students.quizzesCompleted || 0}</p>
               <p className="text-sm text-green-600">Quizzes Completed</p>
-            </div>
-            <div className="p-4 bg-orange-50 rounded-lg">
-              <p className="text-2xl font-bold text-orange-700">{stats?.store.pendingOrders || 0}</p>
-              <p className="text-sm text-orange-600">Pending Orders</p>
             </div>
             <div className="p-4 bg-purple-50 rounded-lg">
               <p className="text-2xl font-bold text-purple-700">

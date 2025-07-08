@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import type { StoreItem } from '@shared/currency-types';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import type { StudentPet, PetAnimation } from '@/types/pet';
 
 // Simple debounce function
 function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T & { cancel: () => void } {
@@ -72,6 +73,7 @@ export interface RoomStore {
   passportCode: string;
   playerName: string;
   balance: number;
+  canEdit: boolean; // Whether the current user can edit this room
   
   // Avatar state
   avatar: {
@@ -93,6 +95,18 @@ export interface RoomStore {
     floorColor?: string;
     wallPattern?: string;
     floorPattern?: string;
+    wall?: {
+      type: 'color' | 'pattern';
+      value: string; // color hex or pattern ID
+      patternType?: 'css' | 'image';
+      patternValue?: string; // CSS string or image URL
+    };
+    floor?: {
+      type: 'color' | 'pattern';
+      value: string; // color hex or pattern ID
+      patternType?: 'css' | 'image';
+      patternValue?: string; // CSS string or image URL
+    };
     placedItems: PlacedItem[];
   };
   
@@ -115,7 +129,11 @@ export interface RoomStore {
     isSaving: boolean;
     saveError: string | null;
     pendingModeChange: InventoryMode | null;
+    isArranging: boolean;
   };
+  
+  // Pet state
+  pet: StudentPet | null;
   
   // Draft states for unsaved changes
   draftAvatar: {
@@ -130,6 +148,18 @@ export interface RoomStore {
     floorColor?: string;
     wallPattern?: string;
     floorPattern?: string;
+    wall?: {
+      type: 'color' | 'pattern';
+      value: string; // color hex or pattern ID
+      patternType?: 'css' | 'image';
+      patternValue?: string; // CSS string or image URL
+    };
+    floor?: {
+      type: 'color' | 'pattern';
+      value: string; // color hex or pattern ID
+      patternType?: 'css' | 'image';
+      patternValue?: string; // CSS string or image URL
+    };
     placedItems: PlacedItem[];
   };
   
@@ -155,7 +185,10 @@ export interface RoomStore {
   updateDraftAvatar: (slot: string, itemId: ItemId | null) => void;
   updateDraftRoom: (placedItems: PlacedItem[]) => void;
   updateRoomColors: (wallColor?: string, floorColor?: string) => void;
-  updateRoomPatterns: (wallPattern?: string, floorPattern?: string) => void;
+  updateRoomPatterns: (
+    wallPattern?: string | null | { type: 'pattern'; value: string; patternType?: 'css' | 'image'; patternValue?: string },
+    floorPattern?: string | null | { type: 'pattern'; value: string; patternType?: 'css' | 'image'; patternValue?: string }
+  ) => void;
   startDragging: (item: DraggedItem) => void;
   stopDragging: () => void;
   // highlightHotspots removed for sticker-style
@@ -172,9 +205,16 @@ export interface RoomStore {
   clearRoom: () => void;
   startArranging: () => void;
   stopArranging: () => void;
+  
+  // Pet actions
+  setPet: (pet: StudentPet | null) => void;
+  updatePetStats: (stats: { hunger: number; happiness: number }) => void;
+  updatePetPosition: (position: { x: number; y: number }) => void;
+  updatePetName: (name: string) => void;
 }
 
 // Create the debounced save function outside the store
+// Reduced to 2 second delay for better UX while still preventing rate limits
 const debouncedSave = debounce(() => {
   useRoomStore.getState().saveToServer();
 }, 2000);
@@ -186,6 +226,7 @@ export const useRoomStore = create<RoomStore>()(
     passportCode: '',
     playerName: '',
     balance: 0,
+    canEdit: false, // Default to read-only for security
     
     avatar: {
       type: 'dolphin',
@@ -220,6 +261,9 @@ export const useRoomStore = create<RoomStore>()(
       pendingModeChange: null,
       isArranging: false,
     },
+    
+    // Pet initial state
+    pet: null,
     
     draftAvatar: {
       equipped: {},
@@ -257,6 +301,7 @@ export const useRoomStore = create<RoomStore>()(
         passportCode: data.passportCode,
         playerName: data.studentName,
         balance: data.currencyBalance,
+        canEdit: data.canEdit || false, // Set edit permission from server
         avatar: {
           type: data.animalType.toLowerCase(),
           equipped: equipped,
@@ -269,6 +314,8 @@ export const useRoomStore = create<RoomStore>()(
           floorColor: data.roomData?.floorColor || '#d4875f',
           wallPattern: data.roomData?.wallPattern,
           floorPattern: data.roomData?.floorPattern,
+          wall: data.roomData?.wall,
+          floor: data.roomData?.floor,
           placedItems: placedItems,
         },
         inventory: {
@@ -276,6 +323,7 @@ export const useRoomStore = create<RoomStore>()(
           filter: 'all',
           selectedItem: undefined,
         },
+        pet: data.pet || null, // Initialize pet from server data
         // Initialize drafts with current values
         draftAvatar: {
           equipped: { ...equipped },
@@ -285,20 +333,12 @@ export const useRoomStore = create<RoomStore>()(
           floorColor: data.roomData?.floorColor || '#d4875f',
           wallPattern: data.roomData?.wallPattern,
           floorPattern: data.roomData?.floorPattern,
+          wall: data.roomData?.wall,
+          floor: data.roomData?.floor,
           placedItems: [...placedItems],
         },
       });
       
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Room store initialized:', {
-        animalType: data.animalType,
-        equipped: equipped,
-        draftAvatar: get().draftAvatar,
-        room: get().room,
-        draftRoom: get().draftRoom,
-        inventory: get().inventory
-      });
-      }
     },
     
     setBalance: (balance) => set({ balance }),
@@ -338,14 +378,16 @@ export const useRoomStore = create<RoomStore>()(
     },
     
     placeItem: (itemId, x, y) => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('placeItem called with:', { itemId, x, y });
-      }
       
       const state = get();
       
+      // Don't allow placement if user can't edit
+      if (!state.canEdit) {
+        return;
+      }
+      
       // Check if we've hit the room item limit
-      const currentItemCount = state.room.placedItems.length;
+      const currentItemCount = state.draftRoom.placedItems.length;
         
       if (currentItemCount >= ROOM_ITEM_LIMIT) {
         console.warn(`Room item limit reached (${ROOM_ITEM_LIMIT} items)`);
@@ -358,7 +400,7 @@ export const useRoomStore = create<RoomStore>()(
         type: 'room',
         timestamp: new Date(),
         state: {
-          room: { ...state.room, placedItems: [...state.room.placedItems] }
+          room: { ...state.room, placedItems: [...state.draftRoom.placedItems] }
         }
       };
       
@@ -376,15 +418,11 @@ export const useRoomStore = create<RoomStore>()(
         zIndex,
       };
       
-      // Update room and inventory
+      // Update only draft room and inventory
       set({
-        room: {
-          ...state.room,
-          placedItems: [...state.room.placedItems, newPlacedItem],
-        },
         draftRoom: {
           ...state.draftRoom,
-          placedItems: [...state.room.placedItems, newPlacedItem],
+          placedItems: [...state.draftRoom.placedItems, newPlacedItem],
         },
         inventory: {
           ...state.inventory,
@@ -404,7 +442,7 @@ export const useRoomStore = create<RoomStore>()(
     removeItem: (placedItemId) => {
       const state = get();
       
-      const removedItem = state.room.placedItems.find(item => item.id === placedItemId);
+      const removedItem = state.draftRoom.placedItems.find(item => item.id === placedItemId);
       if (!removedItem) return;
       
       // Save current state to undo history
@@ -421,14 +459,10 @@ export const useRoomStore = create<RoomStore>()(
       // Add item back to inventory
       const existingItem = state.inventory.items.find(item => item.id === removedItem.itemId);
       
-      // Update room and inventory
-      const newPlacedItems = state.room.placedItems.filter(item => item.id !== placedItemId);
+      // Update only draft room and inventory
+      const newPlacedItems = state.draftRoom.placedItems.filter(item => item.id !== placedItemId);
       
       set({
-        room: {
-          ...state.room,
-          placedItems: newPlacedItems,
-        },
         draftRoom: {
           ...state.draftRoom,
           placedItems: newPlacedItems,
@@ -479,12 +513,22 @@ export const useRoomStore = create<RoomStore>()(
     
     setInventoryMode: (mode) => {
       set((state) => ({
-        ui: { ...state.ui, inventoryMode: mode },
+        ui: { 
+          ...state.ui, 
+          inventoryMode: mode,
+          // Turn off arranging mode when switching away from room decoration
+          isArranging: mode === 'room' ? state.ui.isArranging : false
+        },
       }));
     },
     
     updateDraftAvatar: (slot, itemId) => {
       const state = get();
+      
+      // Don't allow updates if user can't edit
+      if (!state.canEdit) {
+        return;
+      }
       
       // Save current state to undo history
       const undoItem: UndoHistoryItem = {
@@ -497,17 +541,13 @@ export const useRoomStore = create<RoomStore>()(
       
       const newHistory = [undoItem, ...state.undoHistory.slice(0, state.maxUndoSteps - 1)];
       
-      // Update both avatar and draft
+      // Update ONLY the draft avatar (not the current avatar)
       const newEquipped = {
-        ...state.avatar.equipped,
+        ...state.draftAvatar.equipped,
         [slot]: itemId || undefined,
       };
       
       set({
-        avatar: {
-          ...state.avatar,
-          equipped: newEquipped,
-        },
         draftAvatar: {
           equipped: newEquipped,
         },
@@ -530,6 +570,11 @@ export const useRoomStore = create<RoomStore>()(
     updateRoomColors: (wallColor, floorColor) => {
       const state = get();
       
+      // Don't allow updates if user can't edit
+      if (!state.canEdit) {
+        return;
+      }
+      
       // Save current state to undo history
       const undoItem: UndoHistoryItem = {
         type: 'room',
@@ -545,13 +590,8 @@ export const useRoomStore = create<RoomStore>()(
       
       const newHistory = [undoItem, ...state.undoHistory.slice(0, state.maxUndoSteps - 1)];
       
-      // Update both room and draft
+      // Update only draft (room state should only change after save)
       set((state) => ({
-        room: {
-          ...state.room,
-          ...(wallColor !== undefined && { wallColor }),
-          ...(floorColor !== undefined && { floorColor }),
-        },
         draftRoom: {
           ...state.draftRoom,
           ...(wallColor !== undefined && { wallColor }),
@@ -567,6 +607,11 @@ export const useRoomStore = create<RoomStore>()(
     updateRoomPatterns: (wallPattern, floorPattern) => {
       const state = get();
       
+      // Don't allow updates if user can't edit
+      if (!state.canEdit) {
+        return;
+      }
+      
       // Save current state to undo history
       const undoItem: UndoHistoryItem = {
         type: 'room',
@@ -576,26 +621,55 @@ export const useRoomStore = create<RoomStore>()(
             ...state.room,
             wallPattern: state.room.wallPattern,
             floorPattern: state.room.floorPattern,
+            wall: state.room.wall,
+            floor: state.room.floor,
           }
         }
       };
       
       const newHistory = [undoItem, ...state.undoHistory.slice(0, state.maxUndoSteps - 1)];
       
-      // Update both room and draft
-      set((state) => ({
-        room: {
-          ...state.room,
-          ...(wallPattern !== undefined && { wallPattern }),
-          ...(floorPattern !== undefined && { floorPattern }),
-        },
-        draftRoom: {
-          ...state.draftRoom,
-          ...(wallPattern !== undefined && { wallPattern }),
-          ...(floorPattern !== undefined && { floorPattern }),
-        },
-        undoHistory: newHistory,
-      }));
+      // Update only draft (room state should only change after save)
+      set((state) => {
+        const updates: any = {
+          draftRoom: { ...state.draftRoom },
+          undoHistory: newHistory,
+        };
+        
+        // Handle wall pattern
+        if (wallPattern !== undefined) {
+          if (wallPattern === null) {
+            // Clear pattern
+            updates.draftRoom.wallPattern = undefined;
+            updates.draftRoom.wall = undefined;
+          } else if (typeof wallPattern === 'object') {
+            // New pattern format
+            updates.draftRoom.wall = wallPattern;
+            updates.draftRoom.wallPattern = wallPattern.value; // Keep for backwards compat
+          } else {
+            // Legacy string format
+            updates.draftRoom.wallPattern = wallPattern;
+          }
+        }
+        
+        // Handle floor pattern
+        if (floorPattern !== undefined) {
+          if (floorPattern === null) {
+            // Clear pattern
+            updates.draftRoom.floorPattern = undefined;
+            updates.draftRoom.floor = undefined;
+          } else if (typeof floorPattern === 'object') {
+            // New pattern format
+            updates.draftRoom.floor = floorPattern;
+            updates.draftRoom.floorPattern = floorPattern.value; // Keep for backwards compat
+          } else {
+            // Legacy string format
+            updates.draftRoom.floorPattern = floorPattern;
+          }
+        }
+        
+        return updates;
+      });
       
       // Use debounced save
       debouncedSave();
@@ -608,10 +682,8 @@ export const useRoomStore = create<RoomStore>()(
     },
     
     stopDragging: () => {
-      // Cancel any pending debounced save and save immediately
-      debouncedSave.cancel();
-      get().saveToServer();
-      
+      // Don't save immediately - let the debounced save handle it
+      // This prevents too many requests when dragging items
       set((state) => ({
         ui: { ...state.ui, draggedItem: undefined },
       }));
@@ -634,18 +706,14 @@ export const useRoomStore = create<RoomStore>()(
       // Calculate z-index based on Y position
       const zIndex = Math.floor(y * 10);
       
-      // Update both room and draft
-      const newPlacedItems = state.room.placedItems.map(item =>
+      // Update only draft room
+      const newPlacedItems = state.draftRoom.placedItems.map(item =>
         item.id === placedItemId
           ? { ...item, x, y, zIndex }
           : item
       );
       
       set({
-        room: {
-          ...state.room,
-          placedItems: newPlacedItems,
-        },
         draftRoom: {
           ...state.draftRoom,
           placedItems: newPlacedItems,
@@ -659,33 +727,77 @@ export const useRoomStore = create<RoomStore>()(
     
     saveToServer: async () => {
       const state = get();
-      if (!state.passportCode || !state.ui.editingMode) return;
+      // Check permissions first
+      if (!state.canEdit) {
+        return;
+      }
+      
+      if (!state.passportCode) {
+        return;
+      }
       
       set((state) => ({
         ui: { ...state.ui, isSaving: true, saveError: null },
       }));
       
       try {
-        if (state.ui.editingMode === 'avatar') {
+        // Check if we have avatar changes to save
+        const hasAvatarChanges = JSON.stringify(state.avatar.equipped) !== JSON.stringify(state.draftAvatar.equipped);
+        // Check if we have room changes to save
+        const hasRoomChanges = JSON.stringify(state.room) !== JSON.stringify(state.draftRoom);
+        
+        if (hasAvatarChanges) {
           // Save current avatar state
           await apiRequest('POST', `/api/room/${state.passportCode}/avatar`, {
-            equipped: state.avatar.equipped,
+            equipped: state.draftAvatar.equipped,
           });
-        } else if (state.ui.editingMode === 'room') {
-          // Save current room state
-          await apiRequest('POST', `/api/room/${state.passportCode}/room`, {
+          }
+        
+        if (hasRoomChanges) {
+          // Save draft room state (which contains the current changes)
+          const saveData = {
             theme: state.room.theme,
-            wallColor: state.room.wallColor,
-            floorColor: state.room.floorColor,
-            wallPattern: state.room.wallPattern,
-            floorPattern: state.room.floorPattern,
-            furniture: state.room.placedItems,
-          });
+            wallColor: state.draftRoom.wallColor || state.room.wallColor,
+            floorColor: state.draftRoom.floorColor || state.room.floorColor,
+            wallPattern: state.draftRoom.wallPattern,
+            floorPattern: state.draftRoom.floorPattern,
+            // Include new wall/floor format from draft
+            wall: state.draftRoom.wall,
+            floor: state.draftRoom.floor,
+            furniture: state.draftRoom.placedItems,
+          };
+          
+          await apiRequest('POST', `/api/room/${state.passportCode}/room`, saveData);
         }
         
+        // After successful save, update the main state with draft changes
         set((state) => ({
-          ui: { ...state.ui, lastSaved: new Date(), isSaving: false, saveError: null },
+          room: {
+            ...state.room,
+            wallColor: state.draftRoom.wallColor,
+            floorColor: state.draftRoom.floorColor,
+            wallPattern: state.draftRoom.wallPattern,
+            floorPattern: state.draftRoom.floorPattern,
+            wall: state.draftRoom.wall,
+            floor: state.draftRoom.floor,
+            placedItems: [...state.draftRoom.placedItems],
+          },
+          avatar: {
+            ...state.avatar,
+            equipped: { ...state.draftAvatar.equipped },
+          },
+          ui: { 
+            ...state.ui, 
+            lastSaved: new Date(), 
+            isSaving: false, 
+            saveError: null,
+            // Turn off arranging mode after successful save
+            isArranging: false
+          },
         }));
+        
+        // Invalidate the room page data query to ensure fresh data on navigation
+        queryClient.invalidateQueries({ queryKey: [`/api/room-page-data/${state.passportCode}`] });
       } catch (error) {
         console.error('Failed to save room state:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to save changes';
@@ -748,6 +860,8 @@ export const useRoomStore = create<RoomStore>()(
             floorColor: state.room.floorColor,
             wallPattern: state.room.wallPattern,
             floorPattern: state.room.floorPattern,
+            wall: state.room.wall,
+            floor: state.room.floor,
             placedItems: [...state.room.placedItems],
           },
           ui: {
@@ -755,6 +869,7 @@ export const useRoomStore = create<RoomStore>()(
             isInventoryOpen: true,
             editingMode: mode,
             inventoryMode: mode,
+            isArranging: true, // Enable arranging mode when opening room editor
           },
         });
       }
@@ -765,6 +880,7 @@ export const useRoomStore = create<RoomStore>()(
         ui: {
           ...state.ui,
           isInventoryOpen: false,
+          isArranging: false, // Stop arranging when closing inventory
           // Keep editingMode active so we remember what was open
           // editingMode: null,
           // inventoryMode: null,
@@ -947,13 +1063,42 @@ export const useRoomStore = create<RoomStore>()(
       // Save when exiting arranging mode
       get().saveToServer();
     },
+    
+    // Pet actions
+    setPet: (pet) => {
+      set({ pet });
+    },
+    
+    updatePetStats: (stats) => {
+      set((state) => ({
+        pet: state.pet ? {
+          ...state.pet,
+          calculatedStats: stats
+        } : null
+      }));
+    },
+    
+    updatePetPosition: (position) => {
+      set((state) => ({
+        pet: state.pet ? {
+          ...state.pet,
+          position
+        } : null
+      }));
+      // Use debounced save for position updates
+      debouncedSave();
+    },
+    
+    updatePetName: (name) => {
+      set((state) => ({
+        pet: state.pet ? {
+          ...state.pet,
+          customName: name
+        } : null
+      }));
+    },
   }))
 );
 
 // Note: Auto-save now uses debounced saving (2 second delay) to reduce API calls
 // This prevents excessive backend writes during rapid user interactions
-
-// Make store accessible in development for testing
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  (window as any).useRoomStore = useRoomStore;
-}
