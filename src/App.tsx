@@ -12,6 +12,7 @@ import { preloadRiveRuntime } from "@/utils/rive-runtime-loader";
 const Landing = lazy(() => import("@/pages/Landing"));
 const TeacherLogin = lazy(() => import("@/pages/teacher-login"));
 const TeacherRegistration = lazy(() => import("@/pages/teacher-registration"));
+const ResetPassword = lazy(() => import("@/pages/reset-password"));
 const StudentLogin = lazy(() => import("@/pages/StudentLogin"));
 const StudentDashboard = lazy(() => import("@/pages/StudentDashboard"));
 const StudentQuizResults = lazy(() => import("@/pages/StudentQuizResults"));
@@ -153,6 +154,7 @@ function Router() {
         {/* Authentication routes - always available */}
         <Route path="/register" component={TeacherRegistration} />
         <Route path="/login" component={TeacherLogin} />
+        <Route path="/reset-password" component={ResetPassword} />
         
         {/* Protected teacher routes - only when authenticated */}
         {token ? (
