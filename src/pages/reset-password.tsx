@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
-import { supabase } from "@/lib/supabase-client";
+import { supabase } from "@/lib/supabase";
 
 export default function ResetPassword() {
   const [, setLocation] = useLocation();
