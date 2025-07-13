@@ -124,11 +124,11 @@ export default function TeacherDashboard() {
   });
 
   // Fetch lesson progress for each class
-  const { data: classProgress = {} } = useQuery<Record<string, number[]>>({
+  const { data: classProgress = {} } = useQuery<Record<string, any>>({
     queryKey: ["classProgress", classes?.map((c: any) => c.id)],
     queryFn: async () => {
       if (!classes) return {};
-      const progressData: Record<string, number[]> = {};
+      const progressData: Record<string, any> = {};
       const token = localStorage.getItem("authToken");
       
       await Promise.all(
@@ -143,10 +143,10 @@ export default function TeacherDashboard() {
               const progress = await response.json();
               progressData[cls.id] = progress;
             } else {
-              progressData[cls.id] = [];
+              progressData[cls.id] = { lessons: [], completedLessons: 0, totalLessons: 5 };
             }
           } catch (error) {
-            progressData[cls.id] = [];
+            progressData[cls.id] = { lessons: [], completedLessons: 0, totalLessons: 5 };
           }
         })
       );
@@ -367,62 +367,7 @@ export default function TeacherDashboard() {
             </CardContent>
           </Card>
 
-          {/* Quick Stats */}
-          <div className="grid md:grid-cols-4 gap-6 mb-8">
-            <Card
-              className="hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => setLocation("/learning-lounge")}
-            >
-              <CardContent className="p-8 text-center">
-                <div className="flex items-center justify-center mx-auto mb-6">
-                  <img
-                    src="/images/teachertools.svg"
-                    alt="Teacher Tools"
-                    className="w-24 h-24"
-                  />
-                </div>
-                <h3 className="text-xl font-subheading text-foreground">
-                  TEACHER TOOLS
-                </h3>
-                <p className="font-body text-muted-foreground">Lesson Guide</p>
-              </CardContent>
-            </Card>
-            <Card
-              className="hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => setLocation("/group-maker")}
-            >
-              <CardContent className="p-8 text-center">
-                <div className="flex items-center justify-center mx-auto mb-6">
-                  <img
-                    src="/images/createclass.svg"
-                    alt="Create Class"
-                    className="w-24 h-24"
-                  />
-                </div>
-                <h3 className="text-xl font-subheading text-foreground">
-                  Group Maker
-                </h3>
-                <p className="font-body text-muted-foreground">Balance Teams</p>
-              </CardContent>
-            </Card>
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <CardContent className="p-8 text-center">
-                <div className="flex items-center justify-center mx-auto mb-6">
-                  <img
-                    src="/images/feedback.svg"
-                    alt="Submit Feedback"
-                    className="w-24 h-24"
-                  />
-                </div>
-                <h3 className="text-xl font-subheading text-foreground">
-                  SUBMIT FEEDBACK
-                </h3>
-                <p className="font-body text-muted-foreground">
-                  Share Thoughts
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+
 
           {/* Classes Grid */}
           <Card>
@@ -518,14 +463,14 @@ export default function TeacherDashboard() {
                               Learning Lounge Progress
                             </span>
                             <span className="text-lg font-semibold text-primary">
-                              {classProgress[cls.id]?.length || 0}/2
+                              {classProgress[cls.id]?.completedLessons || 0}/{classProgress[cls.id]?.totalLessons || 5}
                             </span>
                           </div>
                           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                             <div
                               className="h-2 rounded-full transition-all duration-300 text-[#c0b7c8] bg-[#c6e3db]"
                               style={{
-                                width: `${((classProgress[cls.id]?.length || 0) / 2) * 100}%`,
+                                width: `${((classProgress[cls.id]?.completedLessons || 0) / (classProgress[cls.id]?.totalLessons || 5)) * 100}%`,
                               }}
                             ></div>
                           </div>

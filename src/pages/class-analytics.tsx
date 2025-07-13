@@ -486,7 +486,7 @@ export default function ClassAnalytics() {
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                    {analyticsData?.class?.name || "Class"} - Analytics
+                    {analyticsData?.class?.name || "Class"} - Overview
                   </h1>
                   <p className="text-gray-600">
                     Class Code: {analyticsData?.class?.code || ""}

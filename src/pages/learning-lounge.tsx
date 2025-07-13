@@ -4,10 +4,13 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { CheckCircle, Clock, BookOpen, Users, Target, ListChecks, ArrowLeft, PlayCircle, Printer, FileText } from "lucide-react";
+import { CheckCircle, Clock, BookOpen, Users, Target, ListChecks, ArrowLeft, PlayCircle, Printer, FileText, Check as CheckIcon, Sun, Battery, Lock, ArrowRight, Calendar, Trophy } from "lucide-react";
 import { lessons, type Lesson, type Activity } from "@shared/lessons";
+import { modules, type Module, getModuleById } from "@/shared/modules";
 import { apiRequest } from "@/lib/queryClient";
+import { api } from "@/config/api";
 import { getIconComponent, getIconColor } from "@/utils/icon-utils";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { AuthenticatedLayout } from "@/components/layouts/AuthenticatedLayout";
@@ -15,10 +18,13 @@ import { AuthenticatedLayout } from "@/components/layouts/AuthenticatedLayout";
 export default function LearningLounge() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [selectedLesson, setSelectedLesson] = useState<number | null>(null);
+  const [selectedModule, setSelectedModule] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [classId, setClassId] = useState<string | null>(null);
   const [className, setClassName] = useState<string | null>(null);
+  const [lessonProgressData, setLessonProgressData] = useState<any>(null);
 
   const handleLogout = () => {
     localStorage.removeItem("authToken");
@@ -35,11 +41,22 @@ export default function LearningLounge() {
     }
     setToken(authToken);
 
-    // Get classId from URL parameters
+    // Get classId, module, and lesson from URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const classIdParam = urlParams.get("classId");
+    const moduleParam = urlParams.get("module");
+    const lessonParam = urlParams.get("lesson");
+    
     if (classIdParam) {
       setClassId(classIdParam);
+    }
+    
+    if (moduleParam) {
+      setSelectedModule(moduleParam);
+    }
+    
+    if (lessonParam) {
+      setSelectedLesson(parseInt(lessonParam));
     }
   }, [setLocation]);
 
@@ -55,25 +72,77 @@ export default function LearningLounge() {
     }
   }, [classData]);
 
-  const { data: completedLessons = [], isLoading } = useQuery<number[]>({
+  // Fetch lesson progress
+  const { data: progressData, isLoading } = useQuery({
     queryKey: classId ? [`/api/classes/${classId}/lessons/progress`] : ["/api/lessons/progress"],
+    queryFn: async () => {
+      const endpoint = classId 
+        ? api(`/api/classes/${classId}/lessons/progress`)
+        : api("/api/lessons/progress");
+      const response = await fetch(endpoint, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch lesson progress");
+      const data = await response.json();
+      setLessonProgressData(data);
+      return data;
+    },
     enabled: !!token,
   });
 
   const markCompleteMutation = useMutation({
-    mutationFn: (lessonId: number) =>
-      classId 
-        ? apiRequest("POST", `/api/classes/${classId}/lessons/${lessonId}/complete`)
-        : apiRequest("POST", `/api/lessons/${lessonId}/complete`),
+    mutationFn: async (lessonId: number) => {
+      const endpoint = classId 
+        ? `/api/classes/${classId}/lessons/${lessonId}/complete`
+        : `/api/lessons/${lessonId}/complete`;
+      return apiRequest("POST", endpoint);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
         queryKey: classId ? [`/api/classes/${classId}/lessons/progress`] : ["/api/lessons/progress"] 
+      });
+      toast({
+        title: "Lesson Complete!",
+        description: "Great job! You've completed this lesson.",
+      });
+    },
+  });
+  
+  const startLessonMutation = useMutation({
+    mutationFn: async (lessonId: number) => {
+      const endpoint = `/api/classes/${classId}/lessons/${lessonId}/start`;
+      return apiRequest("POST", endpoint);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/classes/${classId}/lessons/progress`]
+      });
+    },
+  });
+  
+  const completeActivityMutation = useMutation({
+    mutationFn: async ({ lessonId, activityNumber }: { lessonId: number; activityNumber: number }) => {
+      const endpoint = `/api/classes/${classId}/lessons/${lessonId}/activities/${activityNumber}/complete`;
+      return apiRequest("POST", endpoint);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/classes/${classId}/lessons/progress`]
       });
     },
   });
 
   const isLessonComplete = (lessonId: number) => {
-    return Array.isArray(completedLessons) && completedLessons.includes(lessonId);
+    if (!progressData?.lessons) return false;
+    const lesson = progressData.lessons.find((l: any) => l.lessonId === lessonId);
+    return lesson?.status === 'completed';
+  };
+  
+  const getLessonProgress = (lessonId: number) => {
+    if (!progressData?.lessons) return null;
+    return progressData.lessons.find((l: any) => l.lessonId === lessonId);
   };
 
   const handleMarkComplete = (lessonId: number) => {
@@ -112,17 +181,118 @@ export default function LearningLounge() {
     );
   }
 
+  // Show lesson detail if a lesson is selected
   if (selectedLesson) {
     const lesson = lessons.find(l => l.id === selectedLesson);
     if (!lesson) return null;
 
     return <LessonDetailView 
       lesson={lesson}
+      lessonProgress={getLessonProgress(lesson.id)}
       isComplete={isLessonComplete(lesson.id)}
       onMarkComplete={() => handleMarkComplete(lesson.id)}
-      onBack={() => setSelectedLesson(null)}
+      onStartLesson={() => startLessonMutation.mutate(lesson.id)}
+      onCompleteActivity={(activityNumber) => completeActivityMutation.mutate({ lessonId: lesson.id, activityNumber })}
+      onBack={() => {
+        setSelectedLesson(null);
+        // Update URL to show module view
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('lesson');
+        window.history.replaceState({}, '', newUrl.toString());
+      }}
       isMarkingComplete={markCompleteMutation.isPending}
+      classId={classId}
     />;
+  }
+  
+  // Show module lessons if a module is selected
+  if (selectedModule) {
+    const module = getModuleById(selectedModule);
+    if (!module) return null;
+    
+    return (
+      <AuthenticatedLayout 
+        showSidebar={true}
+        classId={classId || undefined}
+        className={className || undefined}
+        user={undefined}
+        onLogout={handleLogout}
+      >
+        <Card className="mb-8">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                {classData && (
+                  <div 
+                    className="w-16 h-16 rounded-full flex items-center justify-center text-2xl flex-shrink-0"
+                    style={{ backgroundColor: getIconColor(classData.iconColor, classData.backgroundColor) }}
+                  >
+                    {(() => {
+                      const IconComponent = getIconComponent(classData.icon || classData.iconEmoji);
+                      return <IconComponent className="w-8 h-8 text-white" />;
+                    })()}
+                  </div>
+                )}
+                <div>
+                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
+                    <button 
+                      onClick={() => {
+                        setSelectedModule(null);
+                        const newUrl = new URL(window.location.href);
+                        newUrl.searchParams.delete('module');
+                        window.history.replaceState({}, '', newUrl.toString());
+                      }}
+                      className="hover:text-gray-700 transition-colors"
+                    >
+                      Learning Lounge
+                    </button>
+                    <ArrowRight className="h-3 w-3" />
+                    <span>{module.title}</span>
+                  </div>
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    {module.title}
+                  </h1>
+                  <p className="text-gray-600 mt-2">
+                    {module.description}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSelectedModule(null);
+                  const newUrl = new URL(window.location.href);
+                  newUrl.searchParams.delete('module');
+                  window.history.replaceState({}, '', newUrl.toString());
+                }}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Modules
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-6">
+          {lessons.map((lesson) => (
+            <LessonCard
+              key={lesson.id}
+              lesson={lesson}
+              isComplete={isLessonComplete(lesson.id)}
+              onSelect={() => {
+                setSelectedLesson(lesson.id);
+                const newUrl = new URL(window.location.href);
+                newUrl.searchParams.set('lesson', lesson.id.toString());
+                window.history.replaceState({}, '', newUrl.toString());
+              }}
+              onMarkComplete={() => handleMarkComplete(lesson.id)}
+              isMarkingComplete={markCompleteMutation.isPending}
+            />
+          ))}
+        </div>
+      </AuthenticatedLayout>
+    );
   }
 
   return (
@@ -172,15 +342,21 @@ export default function LearningLounge() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6">
-        {lessons.map((lesson) => (
-          <LessonCard
-            key={lesson.id}
-            lesson={lesson}
-            isComplete={isLessonComplete(lesson.id)}
-            onSelect={() => setSelectedLesson(lesson.id)}
-            onMarkComplete={() => handleMarkComplete(lesson.id)}
-            isMarkingComplete={markCompleteMutation.isPending}
+      {/* Module Selection View */}
+      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
+        {modules.map((module) => (
+          <ModuleCard
+            key={module.id}
+            module={module}
+            progressData={module.id === 'week-of-connection' ? lessonProgressData : null}
+            onSelect={() => {
+              if (module.status === 'active') {
+                setSelectedModule(module.id);
+                const newUrl = new URL(window.location.href);
+                newUrl.searchParams.set('module', module.id);
+                window.history.replaceState({}, '', newUrl.toString());
+              }
+            }}
           />
         ))}
       </div>
@@ -317,14 +493,35 @@ function LessonCard({ lesson, isComplete, onSelect, onMarkComplete, isMarkingCom
 
 interface LessonDetailViewProps {
   lesson: Lesson;
+  lessonProgress: any;
   isComplete: boolean;
   onMarkComplete: () => void;
+  onStartLesson: () => void;
+  onCompleteActivity: (activityNumber: number) => void;
   onBack: () => void;
   isMarkingComplete: boolean;
+  classId: string | null;
 }
 
-function LessonDetailView({ lesson, isComplete, onMarkComplete, onBack, isMarkingComplete }: LessonDetailViewProps) {
+function LessonDetailView({ lesson, lessonProgress, isComplete, onMarkComplete, onStartLesson, onCompleteActivity, onBack, isMarkingComplete, classId }: LessonDetailViewProps) {
   const [, setLocation] = useLocation();
+  const [startingLesson, setStartingLesson] = useState(false);
+  
+  // Start lesson if not started
+  useEffect(() => {
+    if (!lessonProgress && !startingLesson && !isComplete) {
+      setStartingLesson(true);
+      onStartLesson();
+    }
+  }, [lessonProgress, startingLesson, isComplete, onStartLesson]);
+  
+  // Check if activity is complete
+  const isActivityComplete = (activityNumber: number) => {
+    if (!lessonProgress?.activities) return false;
+    return lessonProgress.activities.some((a: any) => 
+      a.activityNumber === activityNumber && a.completed
+    );
+  };
   
   const handlePrintWorksheet = () => {
     // For now, open the pre-assessment page for any worksheet-related lesson
@@ -418,7 +615,12 @@ function LessonDetailView({ lesson, isComplete, onMarkComplete, onBack, isMarkin
 
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <LessonSectionsView lesson={lesson} />
+            <LessonSectionsView 
+              lesson={lesson} 
+              lessonProgress={lessonProgress}
+              onCompleteActivity={onCompleteActivity}
+              isActivityComplete={isActivityComplete}
+            />
           </div>
           
           <div className="space-y-6">
@@ -430,7 +632,12 @@ function LessonDetailView({ lesson, isComplete, onMarkComplete, onBack, isMarkin
   );
 }
 
-function LessonSectionsView({ lesson }: { lesson: Lesson }) {
+function LessonSectionsView({ lesson, lessonProgress, onCompleteActivity, isActivityComplete }: { 
+  lesson: Lesson; 
+  lessonProgress?: any;
+  onCompleteActivity: (activityNumber: number) => void;
+  isActivityComplete: (activityNumber: number) => boolean;
+}) {
   // Check if lesson has activities (new structure) or sections (old structure)
   if (!lesson.activities) {
     return (
@@ -506,18 +713,39 @@ function LessonSectionsView({ lesson }: { lesson: Lesson }) {
         
         const accent = colorAccents[color as keyof typeof colorAccents];
 
+        const isComplete = isActivityComplete(number);
+        
         return (
-          <Card key={key} className={`${cardClassName} ${accent.border}`}>
+          <Card key={key} className={`${cardClassName} ${accent.border} ${isComplete ? 'bg-green-50 dark:bg-green-950' : ''}`}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ListChecks className={`h-5 w-5 ${accent.icon}`} />
-                Activity {number}: {data.title}
-                {data.optional && (
-                  <Badge variant="secondary" className="ml-2 bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-default">
-                    Optional
-                  </Badge>
-                )}
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <ListChecks className={`h-5 w-5 ${accent.icon}`} />
+                  Activity {number}: {data.title}
+                  {data.optional && (
+                    <Badge variant="secondary" className="ml-2 bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-default">
+                      Optional
+                    </Badge>
+                  )}
+                </CardTitle>
+                <div>
+                  {isComplete ? (
+                    <div className="flex items-center text-green-600">
+                      <CheckIcon className="w-5 h-5 mr-1" />
+                      <span className="text-sm font-medium">Complete</span>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={() => onCompleteActivity(number)}
+                      size="sm"
+                      variant="outline"
+                      className="text-xs"
+                    >
+                      Mark Complete
+                    </Button>
+                  )}
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Special description for Activity 4 */}
@@ -769,5 +997,153 @@ function LessonSidebar({ lesson }: { lesson: Lesson }) {
         </Card>
       )}
     </div>
+  );
+}
+
+interface ModuleCardProps {
+  module: Module;
+  progressData?: any;
+  onSelect: () => void;
+}
+
+function ModuleCard({ module, progressData, onSelect }: ModuleCardProps) {
+  const getModuleIcon = (iconName: string) => {
+    switch (iconName) {
+      case 'Users':
+        return Users;
+      case 'Sun':
+        return Sun;
+      case 'Battery':
+        return Battery;
+      case 'Trophy':
+        return Trophy;
+      default:
+        return BookOpen;
+    }
+  };
+
+  const IconComponent = getModuleIcon(module.icon);
+
+  const getProgressInfo = () => {
+    if (module.id === 'week-of-connection' && progressData) {
+      const completed = progressData.completedLessons || 0;
+      const total = progressData.totalLessons || 5;
+      const percentage = Math.round((completed / total) * 100);
+      return { completed, total, percentage };
+    }
+    return null;
+  };
+
+  const progress = getProgressInfo();
+
+  return (
+    <Card 
+      className={`relative cursor-pointer transition-all hover:shadow-lg ${
+        module.status === 'coming_soon' 
+          ? 'opacity-75 cursor-not-allowed' 
+          : 'hover:shadow-lg'
+      }`}
+      onClick={module.status === 'active' ? onSelect : undefined}
+    >
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div 
+              className="p-3 rounded-lg flex-shrink-0"
+              style={{ backgroundColor: module.color + '33' }}
+            >
+              <IconComponent 
+                className="h-6 w-6" 
+                style={{ color: module.color }}
+              />
+            </div>
+            <div>
+              <CardTitle className="text-xl flex items-center gap-2">
+                {module.title}
+                {module.status === 'coming_soon' && (
+                  <Badge variant="secondary" className="text-xs">
+                    Coming Soon
+                  </Badge>
+                )}
+                {module.status === 'locked' && (
+                  <Lock className="h-4 w-4 text-gray-400" />
+                )}
+              </CardTitle>
+            </div>
+          </div>
+        </div>
+        
+        <CardDescription className="text-base mt-3">
+          {module.status === 'coming_soon' && module.comingSoonMessage ? 
+            module.comingSoonMessage : 
+            module.description
+          }
+        </CardDescription>
+
+        {/* Progress Bar for Week of Connection */}
+        {progress && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-600">Progress</span>
+              <span className="text-sm font-semibold text-gray-900">
+                {progress.completed}/{progress.total} lessons completed
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className="h-2 rounded-full transition-all duration-300"
+                style={{ 
+                  backgroundColor: module.color,
+                  width: `${progress.percentage}%`
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Module Info */}
+        <div className="flex items-center gap-4 text-sm text-muted-foreground mt-4">
+          {module.estimatedDuration && (
+            <div className="flex items-center gap-1">
+              <Clock className="h-4 w-4" />
+              {module.estimatedDuration}
+            </div>
+          )}
+          {module.lessonCount && (
+            <div className="flex items-center gap-1">
+              <BookOpen className="h-4 w-4" />
+              {module.lessonCount} lessons
+            </div>
+          )}
+          {module.status === 'coming_soon' && (
+            <div className="flex items-center gap-1">
+              <Calendar className="h-4 w-4" />
+              Coming Soon
+            </div>
+          )}
+        </div>
+      </CardHeader>
+
+      <CardContent className="pt-0">
+        {module.status === 'active' ? (
+          <Button 
+            className="w-full" 
+            style={{ backgroundColor: module.color }}
+            onClick={onSelect}
+          >
+            <PlayCircle className="h-4 w-4 mr-2" />
+            {progress && progress.completed > 0 ? 'Continue Module' : 'Start Module'}
+          </Button>
+        ) : (
+          <Button 
+            className="w-full" 
+            variant="outline" 
+            disabled
+          >
+            {module.status === 'coming_soon' ? 'Coming Soon' : 'Locked'}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 }

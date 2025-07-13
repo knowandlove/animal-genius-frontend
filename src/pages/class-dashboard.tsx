@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { getAnimalByName } from "@/lib/animals";
 import { apiRequest } from "@/lib/queryClient";
+import { api } from "@/config/api";
 import { getAssetUrl } from "@/utils/cloud-assets";
 import { getIconComponent, getIconColor } from "@/utils/icon-utils";
 import { AuthenticatedLayout } from "@/components/layouts/AuthenticatedLayout";
@@ -96,11 +97,28 @@ export default function ClassDashboard() {
   const queryClient = useQueryClient();
   const { role } = useClassContext();
   const { user, isLoading: authLoading } = useAuth();
+  const [lessonProgress, setLessonProgress] = useState<any>(null);
 
   // Fetch class analytics data
   const { data, isLoading, error } = useQuery<ClassAnalyticsData>({
     queryKey: [`/api/classes/${classId}/analytics`],
     enabled: !!classId,
+  });
+
+  // Fetch lesson progress
+  const { data: lessonProgressData } = useQuery({
+    queryKey: [`/api/classes/${classId}/lessons/progress`],
+    queryFn: async () => {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(api(`/api/classes/${classId}/lessons/progress`), {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch lesson progress");
+      return response.json();
+    },
+    enabled: !!classId && !!user,
   });
 
   const handleLogout = () => {
@@ -292,8 +310,17 @@ export default function ClassDashboard() {
                     <p className="text-sm font-body text-muted-foreground">Your class is working through the curriculum</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-medium text-gray-900">Lesson 2 of 8</div>
-                    <div className="text-xs text-gray-500">25% Complete</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {lessonProgressData?.inProgressLessons > 0 
+                        ? `Lesson ${lessonProgressData.lessons.find((l: any) => l.status === 'in_progress')?.lessonId || 1} of ${lessonProgressData.totalLessons}`
+                        : lessonProgressData?.completedLessons > 0
+                        ? `${lessonProgressData.completedLessons} of ${lessonProgressData.totalLessons} Complete`
+                        : `0 of ${lessonProgressData?.totalLessons || 5} Started`
+                      }
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {Math.round(((lessonProgressData?.completedLessons || 0) / (lessonProgressData?.totalLessons || 5)) * 100)}% Complete
+                    </div>
                   </div>
                 </div>
                 
@@ -302,26 +329,65 @@ export default function ClassDashboard() {
                   <div className="w-full h-3 bg-gray-200 rounded-full">
                     <div 
                       className="h-3 bg-[#c6e3db] rounded-full transition-all duration-300" 
-                      style={{ width: '25%' }}
+                      style={{ 
+                        width: `${((lessonProgressData?.completedLessons || 0) / (lessonProgressData?.totalLessons || 5)) * 100}%` 
+                      }}
                     />
                   </div>
                 </div>
                 
                 {/* Current Lesson Info */}
-                <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center mr-3">
-                      <Play className="w-5 h-5 text-white" />
+                {lessonProgressData?.lessons && lessonProgressData.lessons.length > 0 ? (
+                  <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center mr-3">
+                        <Play className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">
+                          {lessonProgressData.lessons.find((l: any) => l.status === 'in_progress')
+                            ? `Continue Lesson ${lessonProgressData.lessons.find((l: any) => l.status === 'in_progress').lessonId}`
+                            : 'Start Next Lesson'
+                          }
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {lessonProgressData.inProgressLessons > 0 
+                            ? 'Pick up where you left off'
+                            : 'Begin your learning journey'
+                          }
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-medium text-gray-900">Understanding Personality Types</div>
-                      <div className="text-sm text-gray-600">Interactive lesson on MBTI fundamentals</div>
-                    </div>
+                    <Button 
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      onClick={() => {
+                        const currentLesson = lessonProgressData.lessons.find((l: any) => l.status === 'in_progress');
+                        const nextLessonId = currentLesson ? currentLesson.lessonId : (lessonProgressData.completedLessons + 1);
+                        setLocation(`/learning-lounge?classId=${classId}&module=week-of-connection&lesson=${nextLessonId}`);
+                      }}
+                    >
+                      {lessonProgressData.inProgressLessons > 0 ? 'Resume Lesson' : 'Start Lesson'} →
+                    </Button>
                   </div>
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                    Resume Lesson →
-                  </Button>
-                </div>
+                ) : (
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-gray-400 rounded-full flex items-center justify-center mr-3">
+                        <BookOpen className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">Ready to begin?</div>
+                        <div className="text-sm text-gray-600">Start your first lesson in the Learning Lounge</div>
+                      </div>
+                    </div>
+                    <Button 
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      onClick={() => setLocation(`/learning-lounge?classId=${classId}`)}
+                    >
+                      Go to Learning Lounge →
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

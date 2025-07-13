@@ -13,7 +13,8 @@ import {
   BookOpen,
   UserPlus,
   FileText,
-  Home
+  Home,
+  Layout
 } from "lucide-react";
 
 interface SidebarItem {
@@ -45,9 +46,15 @@ export function Sidebar({
   const navigationItems: SidebarItem[] = classId ? [
     {
       id: 'dashboard',
-      label: 'Dashboard',
+      label: 'Class Dashboard',
       href: `/class/${classId}/dashboard`,
-      icon: Home
+      icon: Layout
+    },
+    {
+      id: 'learning',
+      label: 'Learning Lounge',
+      href: `/learning-lounge?classId=${classId}`,
+      icon: BookOpen
     },
     {
       id: 'analytics',
@@ -56,10 +63,10 @@ export function Sidebar({
       icon: BarChart3
     },
     {
-      id: 'groups',
-      label: 'Groups',
-      href: `/group-maker?classId=${classId}`,
-      icon: UserPlus
+      id: 'island',
+      label: 'Class Island',
+      href: `/teacher/class/${classId}/island`,
+      icon: MapPin
     },
     {
       id: 'economy',
@@ -68,16 +75,10 @@ export function Sidebar({
       icon: Coins
     },
     {
-      id: 'island',
-      label: 'Class Island',
-      href: `/teacher/class/${classId}/island`,
-      icon: MapPin
-    },
-    {
-      id: 'learning',
-      label: 'Learning Lounge',
-      href: `/learning-lounge?classId=${classId}`,
-      icon: BookOpen
+      id: 'groups',
+      label: 'Groups',
+      href: `/group-maker?classId=${classId}`,
+      icon: UserPlus
     },
     {
       id: 'reports',
@@ -168,24 +169,7 @@ export function Sidebar({
         })}
       </nav>
 
-      {/* Back to Dashboard */}
-      <div className="p-2 border-t border-border">
-        <Link href="/dashboard">
-          <div className={cn(
-            "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-            "text-muted-foreground hover:bg-muted hover:text-foreground",
-            isCollapsed && "justify-center px-2"
-          )}>
-            <Home className={cn(
-              "shrink-0",
-              isCollapsed ? "h-5 w-5" : "h-4 w-4 mr-3"
-            )} />
-            {!isCollapsed && (
-              <span className="truncate">← All Classes</span>
-            )}
-          </div>
-        </Link>
-      </div>
+
     </aside>
   );
 }
