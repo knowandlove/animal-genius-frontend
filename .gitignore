@@ -27,3 +27,21 @@ dist-ssr
 .env
 .env.local
 .env.*.local
+
+# Test and debug files
+test-*.tsx
+test-*.ts
+*debug*.tsx
+*debug*.ts
+*.pid
+frontend-debug.log
+frontend.log
+
+# Build artifacts
+dist/
+/dist
+
+# Backup and archive directories
+backups/
+archive/
+*-backup/

@@ -12,6 +12,11 @@ import { preloadRiveRuntime } from "@/utils/rive-runtime-loader";
 const Landing = lazy(() => import("@/pages/Landing"));
 const TeacherLogin = lazy(() => import("@/pages/teacher-login"));
 const TeacherRegistration = lazy(() => import("@/pages/teacher-registration"));
+const StudentLogin = lazy(() => import("@/pages/StudentLogin"));
+const StudentDashboard = lazy(() => import("@/pages/StudentDashboard"));
+const StudentQuizResults = lazy(() => import("@/pages/StudentQuizResults"));
+const StudentAchievements = lazy(() => import("@/pages/StudentAchievements"));
+import { ProtectedStudentRoute } from "@/components/ProtectedStudentRoute";
 const TeacherDashboard = lazy(() => import("@/pages/teacher-dashboard"));
 const CreateClass = lazy(() => import("@/pages/create-class"));
 const ClassAnalytics = lazy(() => import("@/pages/class-analytics"));
@@ -28,12 +33,12 @@ const ClassSettings = lazy(() => import("@/pages/class-settings"));
 const TeacherStudentView = lazy(() => import("@/pages/teacher-student-view"));
 const TeacherPersonalityResults = lazy(() => import("@/pages/teacher-personality-results"));
 const LiveDiscoveryBoard = lazy(() => import("@/pages/LiveDiscoveryBoard"));
-const AcceptInvitation = lazy(() => import("@/pages/accept-invitation"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 const StudentRoom = lazy(() => import("@/pages/StudentRoom"));
 const ClassIsland = lazy(() => import("@/pages/ClassIsland"));
 const ColorPreview = lazy(() => import("@/pages/color-preview"));
 const ClassEconomy = lazy(() => import("@/pages/class-economy"));
+const ClassDashboard = lazy(() => import("@/pages/class-dashboard"));
 // Test pages removed during cleanup
 const AvatarEditor = lazy(() => import("@/pages/avatar-editor"));
 const AvatarItemPositioner = lazy(() => import("@/pages/admin/avatar-item-positioner"));
@@ -45,17 +50,12 @@ const AnimalSizer = lazy(() => import("@/pages/admin/animal-sizer"));
 const BulkPositionUpdate = lazy(() => import("@/pages/admin/bulk-position-update"));
 const MakeAdmin = lazy(() => import("@/pages/admin/make-admin"));
 const DiagnosticCheck = lazy(() => import("@/pages/admin/diagnostic-check"));
-const DebugAuth = lazy(() => import("@/pages/admin/debug-auth"));
+const CustomizerTest = lazy(() => import("@/pages/CustomizerTest"));
 // Test admin pages removed during cleanup
-const AvatarSizeDebug = lazy(() => import("@/pages/admin/avatar-size-debug"));
-const UploadDebug = lazy(() => import("@/pages/admin/upload-debug"));
-const TestFish = lazy(() => import("@/pages/test-fish"));
 
 // Import the properly configured query client
 import { queryClient } from "@/lib/queryClient";
-import { checkAuthStateOnLoad } from "@/lib/auth-utils";
-// Import auth cleanup to run immediately on app load
-import "@/lib/auth-cleanup";
+// Legacy auth utilities removed - now using Supabase Auth for teachers and passport codes for students
 
 
 
@@ -65,10 +65,9 @@ function Router() {
 
   useEffect(() => {
     // Preload Rive runtime on app initialization
-    preloadRiveRuntime().catch(console.error);
-    
-    // Check and clean up authentication state first
-    const hasValidAuth = checkAuthStateOnLoad();
+    preloadRiveRuntime().catch(() => {
+      // Failed to preload Rive runtime - will load on demand
+    });
     
     // Check for SSO token in URL first
     const urlParams = new URLSearchParams(window.location.search);
@@ -88,8 +87,8 @@ function Router() {
     }
 
     // Check for existing token in localStorage
-    const authToken = localStorage.getItem("authToken");
-    setToken(authToken);
+    const existingToken = localStorage.getItem("authToken");
+    setToken(existingToken);
     setIsLoading(false);
 
     // Listen for storage changes to update token state
@@ -120,7 +119,27 @@ function Router() {
         <Route path="/q/:classCode" component={StudentQuiz} />
         <Route path="/results/:submissionId" component={QuizResults} />
         
-        {/* Student room routes */}
+        
+        {/* Student authentication and room routes */}
+        <Route path="/student-login" component={StudentLogin} />
+        <Route path="/student/login" component={StudentLogin} />
+        <Route path="/student/dashboard">
+          <ProtectedStudentRoute>
+            <StudentDashboard />
+          </ProtectedStudentRoute>
+        </Route>
+        <Route path="/student/quiz-results">
+          <ProtectedStudentRoute>
+            <StudentQuizResults />
+          </ProtectedStudentRoute>
+        </Route>
+        <Route path="/student/achievements">
+          <ProtectedStudentRoute>
+            <StudentAchievements />
+          </ProtectedStudentRoute>
+        </Route>
+        
+        {/* Legacy student room routes (backward compatibility) */}
         <Route path="/island/:passportCode" component={StudentRoom} />
         <Route path="/room/:passportCode" component={StudentRoom} />
         <Route path="/student-room/:passportCode" component={StudentRoom} />
@@ -130,12 +149,10 @@ function Router() {
         
         {/* Test/Development routes - removed during cleanup */}
         <Route path="/avatar-editor" component={AvatarEditor} />
-        <Route path="/test-fish" component={TestFish} />
         
         {/* Authentication routes - always available */}
         <Route path="/register" component={TeacherRegistration} />
         <Route path="/login" component={TeacherLogin} />
-        <Route path="/accept-invitation/:token" component={AcceptInvitation} />
         
         {/* Protected teacher routes - only when authenticated */}
         {token ? (
@@ -147,7 +164,11 @@ function Router() {
             <Route path="/learning-lounge" component={LearningLounge} />
             <Route path="/classes/:classId/analytics" component={ClassAnalytics} />
             <Route path="/class/:classId/analytics" component={ClassAnalytics} />
+            <Route path="/classes/:classId/dashboard" component={ClassDashboard} />
+            <Route path="/class/:classId/dashboard" component={ClassDashboard} />
+            <Route path="/class/:classId" component={ClassDashboard} />
             <Route path="/class/:classId/settings" component={ClassSettings} />
+            <Route path="/class/:classId/economy" component={ClassEconomy} />
             <Route path="/classes/:classId/economy" component={ClassEconomy} />
             <Route path="/class-report/:classId" component={ClassReport} />
             <Route path="/classes/:id/live" component={LiveDiscoveryBoard} />
@@ -168,10 +189,8 @@ function Router() {
             <Route path="/admin/bulk-update" component={BulkPositionUpdate} />
             <Route path="/admin/make-admin" component={MakeAdmin} />
             <Route path="/admin/diagnostic" component={DiagnosticCheck} />
-            <Route path="/admin/debug-auth" component={DebugAuth} />
+            <Route path="/test/customizer" component={CustomizerTest} />
             {/* Test admin routes removed during cleanup */}
-            <Route path="/admin/avatar-debug" component={AvatarSizeDebug} />
-            <Route path="/admin/upload-debug" component={UploadDebug} />
           </>
         ) : (
           <>
@@ -183,7 +202,11 @@ function Router() {
             <Route path="/learning-lounge" component={() => { window.location.href = '/login'; return null; }} />
             <Route path="/classes/:classId/analytics" component={() => { window.location.href = '/login'; return null; }} />
             <Route path="/class/:classId/analytics" component={() => { window.location.href = '/login'; return null; }} />
+            <Route path="/classes/:classId/dashboard" component={() => { window.location.href = '/login'; return null; }} />
+            <Route path="/class/:classId/dashboard" component={() => { window.location.href = '/login'; return null; }} />
+            <Route path="/class/:classId" component={() => { window.location.href = '/login'; return null; }} />
             <Route path="/class/:classId/settings" component={() => { window.location.href = '/login'; return null; }} />
+            <Route path="/class/:classId/economy" component={() => { window.location.href = '/login'; return null; }} />
             <Route path="/classes/:classId/economy" component={() => { window.location.href = '/login'; return null; }} />
             <Route path="/class-report/:classId" component={() => { window.location.href = '/login'; return null; }} />
             <Route path="/teacher/student/:submissionId" component={() => { window.location.href = '/login'; return null; }} />

@@ -12,12 +12,14 @@ import { useToast } from "@/hooks/use-toast";
 import { getAnimalByName } from "@/lib/animals";
 import { apiRequest } from "@/lib/queryClient";
 import { getAssetUrl } from "@/utils/cloud-assets";
-import Header from "@/components/header";
+import { getIconComponent, getIconColor } from "@/utils/icon-utils";
+import { AuthenticatedLayout } from "@/components/layouts/AuthenticatedLayout";
 import { InteractivePieChart } from "@/components/interactive-pie-chart";
 import { Monitor, Upload, Eye, Volume2, Zap, BookOpen, MapPin, Coins, Plus, Minus, Store, Settings } from "lucide-react";
 import { CSVImportModal } from "@/components/CSVImportModal";
-import { PermissionGate } from "@/components/collaborators";
+import { PermissionGate } from "@/components/ui/permission-gate";
 import { useClassContext } from "@/hooks/useClassContext";
+import { useAuth } from "@/hooks/useAuth";
 
 interface User {
   id: number;
@@ -54,6 +56,8 @@ interface ClassAnalyticsData {
     teacherId: number;
     iconEmoji?: string;
     iconColor?: string;
+    icon?: string;
+    backgroundColor?: string;
   };
   stats: {
     totalSubmissions: number;
@@ -82,7 +86,7 @@ export default function ClassAnalytics() {
     string | null
   >(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [user, setUser] = useState<User | null>(null);
+  const { user, isLoading: authLoading } = useAuth();
   const [isCSVModalOpen, setIsCSVModalOpen] = useState(false);
   
   // Currency management state
@@ -117,17 +121,10 @@ export default function ClassAnalytics() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
+    if (!authLoading && !user) {
       setLocation("/login");
-      return;
     }
-
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, [setLocation]);
+  }, [user, authLoading, setLocation]);
 
   // Class analytics query
   const {
@@ -275,7 +272,7 @@ export default function ClassAnalytics() {
       ([animal, count]) => {
         const animalInfo = animalColors[animal] || {
           color: "#6366F1",
-          svg: "/images/meerkat.svg",
+          svg: getAssetUrl("/images/meerkat.svg"),
         };
         // Use Math.floor for Border Collie to show 10% instead of 11%
         const percentage =
@@ -406,68 +403,86 @@ export default function ClassAnalytics() {
     });
   };
 
+  // Handle loading and error states
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div>Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    setLocation("/login");
+    return null;
+  }
+
   if (isLoading) {
     return (
-      <div className="min-h-screen">
-        <Header
-          isAuthenticated={!!user}
-          user={user || undefined}
-          onLogout={handleLogout}
-        />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">Loading class analytics...</div>
+      <AuthenticatedLayout 
+        showSidebar={true}
+        classId={classId}
+        className={undefined}
+        classCode={undefined}
+        user={user}
+        onLogout={handleLogout}
+      >
+        <div className="flex items-center justify-center py-16">
+          <div>Loading class analytics...</div>
         </div>
-      </div>
+      </AuthenticatedLayout>
     );
   }
 
   if (error || !analyticsData) {
     return (
-      <div className="min-h-screen">
-        <Header
-          isAuthenticated={true}
-          user={user || undefined}
-          onLogout={handleLogout}
-        />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Class Not Found
-            </h2>
-            <p className="text-gray-600 mb-4">
-              {error ? (error as any).message : "The class you're looking for doesn't exist or you don't have access to it."}
+      <AuthenticatedLayout 
+        showSidebar={true}
+        classId={classId}
+        user={user}
+        onLogout={handleLogout}
+      >
+        <div className="text-center py-16">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Class Not Found
+          </h2>
+          <p className="text-gray-600 mb-4">
+            {error ? (error as any).message : "The class you're looking for doesn't exist or you don't have access to it."}
+          </p>
+          {classId && (
+            <p className="text-sm text-gray-500 mb-4">
+              Class ID: {classId}
             </p>
-            {classId && (
-              <p className="text-sm text-gray-500 mb-4">
-                Class ID: {classId}
-              </p>
-            )}
-            <Button onClick={() => setLocation("/dashboard")}>
-              Back to Dashboard
-            </Button>
-          </div>
+          )}
+          <Button onClick={() => setLocation("/dashboard")}>
+            Back to Dashboard
+          </Button>
         </div>
-      </div>
+      </AuthenticatedLayout>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      <Header
-        isAuthenticated={true}
-        user={user || undefined}
-        onLogout={handleLogout}
-      />
-      <div className="container mx-auto px-4 py-8">
+    <AuthenticatedLayout 
+      showSidebar={true}
+      classId={classId}
+      className={analyticsData?.class?.name}
+      classCode={analyticsData?.class?.code}
+      user={user}
+      onLogout={handleLogout}
+    >
         <Card className="mb-8">
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-4">
                 <div 
-                  className="w-16 h-16 rounded-full flex items-center justify-center text-2xl flex-shrink-0"
-                  style={{ backgroundColor: analyticsData?.class?.iconColor || "hsl(202 25% 65%)" }}
+                  className="w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: getIconColor(analyticsData?.class?.backgroundColor || analyticsData?.class?.iconColor || "#c5d49f") }}
                 >
-                  {analyticsData?.class?.iconEmoji || "📚"}
+                  {(() => {
+                    const IconComponent = getIconComponent(analyticsData?.class?.icon || analyticsData?.class?.iconEmoji || "📚");
+                    return <IconComponent className="w-8 h-8 text-white" />;
+                  })()}
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -941,7 +956,7 @@ export default function ClassAnalytics() {
                                       <div className="flex items-center">
                                         <div className="w-6 h-6 mr-2">
                                           <img 
-                                            src={animalColors[submission.animalType]?.svg || "/images/meerkat.svg"} 
+                                            src={animalColors[submission.animalType]?.svg || getAssetUrl("/images/meerkat.svg")} 
                                             alt={submission.animalType} 
                                             className="w-full h-full object-contain" 
                                           />
@@ -1203,7 +1218,6 @@ export default function ClassAnalytics() {
             <span className="mr-2">←</span>Back to Dashboard
           </Button>
         </div>
-      </div>
       
       {/* Currency Management Section */}
       {showCurrencySection && (
@@ -1339,13 +1353,13 @@ export default function ClassAnalytics() {
       <CSVImportModal
         isOpen={isCSVModalOpen}
         onClose={() => setIsCSVModalOpen(false)}
-        classId={parseInt(classId)}
+        classId={classId!}
         onImportComplete={() => {
           queryClient.invalidateQueries({
             queryKey: [`/api/classes/${classId}/analytics`],
           });
         }}
       />
-    </div>
+    </AuthenticatedLayout>
   );
 }

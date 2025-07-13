@@ -13,7 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import Header from "@/components/header";
+import { getIconComponent, getIconColor } from "@/utils/icon-utils";
+import { AuthenticatedLayout } from "@/components/layouts/AuthenticatedLayout";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { MiniAvatar } from "@/components/mini-avatar/MiniAvatar";
 import { format } from "date-fns";
@@ -70,6 +71,8 @@ interface ClassEconomyData {
     teacherId: number;
     iconEmoji?: string;
     iconColor?: string;
+    icon?: string; // Backend returns this instead of iconEmoji
+    backgroundColor?: string; // Backend returns this instead of iconColor
   };
   students: Student[];
 }
@@ -104,6 +107,17 @@ export default function ClassEconomy() {
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
   const [transactionHistoryOpen, setTransactionHistoryOpen] = useState(false);
 
+  const handleLogout = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("authTokenChanged"));
+    toast({
+      title: "Signed out successfully",
+      description: "You have been logged out of your account.",
+    });
+    setLocation("/");
+  };
+
   // Get class data and students
   const { data: economyData, isLoading, error } = useQuery({
     queryKey: [`/api/classes/${classId}/economy`],
@@ -119,9 +133,13 @@ export default function ClassEconomy() {
 
   // Get store status
   const { data: storeStatus } = useQuery({
-    queryKey: [`/api/classes/${classId}/store-status`],
-    queryFn: () => apiRequest('GET', `/api/classes/${classId}/store-status`),
-    enabled: !!classId,
+    queryKey: [`/api/classes/${economyData?.class?.id}/store-status`],
+    queryFn: () => {
+      const classUuid = economyData?.class?.id;
+      if (!classUuid) return null;
+      return apiRequest('GET', `/api/classes/${classUuid}/store-status`);
+    },
+    enabled: !!economyData?.class?.id,
   });
 
   // Get transaction history for selected student
@@ -145,8 +163,13 @@ export default function ClassEconomy() {
   // Toggle store mutation
   const toggleStoreMutation = useMutation({
     mutationFn: async (isOpen: boolean) => {
+      // Use the UUID from economyData, not the numeric classId from URL
+      const classUuid = economyData?.class?.id;
+      if (!classUuid) {
+        throw new Error('Class UUID not found');
+      }
       return apiRequest('POST', '/api/currency/store/toggle', {
-        classId,
+        classId: classUuid,
         isOpen
       });
     },
@@ -156,7 +179,7 @@ export default function ClassEconomy() {
         description: storeStatus?.isOpen ? "Store closed successfully" : "Store opened successfully",
       });
       queryClient.invalidateQueries({
-        queryKey: [`/api/classes/${classId}/store-status`],
+        queryKey: [`/api/classes/${economyData?.class?.id}/store-status`],
       });
     },
     onError: (error: any) => {
@@ -336,62 +359,65 @@ export default function ClassEconomy() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen">
-        <Header isAuthenticated={true} user={user || undefined} onLogout={() => {}} />
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center">
-            <LoadingSpinner />
-            <span className="ml-2">Loading class economy...</span>
-          </div>
+      <AuthenticatedLayout 
+        showSidebar={true}
+        classId={classId}
+        className={undefined}
+        classCode={undefined}
+        user={user || undefined}
+        onLogout={handleLogout}
+      >
+        <div className="flex items-center justify-center py-16">
+          <LoadingSpinner />
+          <span className="ml-2">Loading class economy...</span>
         </div>
-      </div>
+      </AuthenticatedLayout>
     );
   }
 
   if (error || !economyData) {
     return (
-      <div className="min-h-screen">
-        <Header isAuthenticated={true} user={user || undefined} onLogout={() => {}} />
-        <div className="container mx-auto px-4 py-8">
-          <Card>
-            <CardContent className="p-8 text-center">
-              <h2 className="text-xl font-bold mb-2">Class Not Found</h2>
-              <p className="text-muted-foreground mb-4">
-                Unable to load class economy data.
-              </p>
-              <Button onClick={() => setLocation("/dashboard")}>
-                Back to Dashboard
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <AuthenticatedLayout 
+        showSidebar={true}
+        classId={classId}
+        user={user || undefined}
+        onLogout={handleLogout}
+      >
+        <Card>
+          <CardContent className="p-8 text-center">
+            <h2 className="text-xl font-bold mb-2">Class Not Found</h2>
+            <p className="text-muted-foreground mb-4">
+              Unable to load class economy data.
+            </p>
+            <Button onClick={() => setLocation("/dashboard")}>
+              Back to Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </AuthenticatedLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header isAuthenticated={true} user={user || undefined} onLogout={() => {}} />
-      
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
+    <AuthenticatedLayout 
+      showSidebar={true}
+      classId={classId}
+      className={economyData.class?.name}
+      classCode={economyData.class?.code}
+      user={user || undefined}
+      onLogout={handleLogout}
+    >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              onClick={() => setLocation(`/classes/${classId}/analytics`)}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Analytics
-            </Button>
-            
-            <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3">
               <div 
                 className="w-12 h-12 rounded-full flex items-center justify-center text-xl"
-                style={{ backgroundColor: economyData.class.iconColor || "hsl(202 25% 65%)" }}
+                style={{ backgroundColor: getIconColor(economyData.class.iconColor, economyData.class.backgroundColor) }}
               >
-                {economyData.class.iconEmoji || "📚"}
+                {(() => {
+                  const IconComponent = getIconComponent(economyData.class.icon || economyData.class.iconEmoji);
+                  return <IconComponent className="w-6 h-6 text-white" />;
+                })()}
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
@@ -403,7 +429,6 @@ export default function ClassEconomy() {
               </div>
             </div>
           </div>
-        </div>
 
         {/* Stats Overview */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -489,8 +514,8 @@ export default function ClassEconomy() {
                       <SelectContent>
                         <SelectItem value="all">All Animals</SelectItem>
                         {animalTypes.map(animal => (
-                          <SelectItem key={animal} value={animal}>
-                            {animal}
+                          <SelectItem key={animal as string} value={animal as string}>
+                            {animal as string}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -773,7 +798,6 @@ export default function ClassEconomy() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
 
       {/* Transaction History Modal */}
       <Dialog open={transactionHistoryOpen} onOpenChange={setTransactionHistoryOpen}>
@@ -822,6 +846,6 @@ export default function ClassEconomy() {
           </ScrollArea>
         </DialogContent>
       </Dialog>
-    </div>
+    </AuthenticatedLayout>
   );
 }

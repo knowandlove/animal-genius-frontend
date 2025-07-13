@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useRoomStore } from "@/stores/roomStore";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { getPassportAuthHeaders } from "@/lib/passport-auth";
 import { useParams } from "wouter";
 
 const EditorModeToggle: React.FC = () => {
@@ -23,7 +24,9 @@ const EditorModeToggle: React.FC = () => {
   // Save mutations
   const saveAvatarMutation = useMutation({
     mutationFn: (data: any) => 
-      apiRequest('POST', `/api/room/${passportCode}/avatar`, data),
+      apiRequest('POST', `/api/room/${passportCode}/avatar`, data, {
+        headers: getPassportAuthHeaders()
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/room-page-data/${passportCode}`] });
     },
@@ -31,7 +34,9 @@ const EditorModeToggle: React.FC = () => {
 
   const saveRoomMutation = useMutation({
     mutationFn: (data: any) => 
-      apiRequest('POST', `/api/room/${passportCode}/room`, data),
+      apiRequest('POST', `/api/room/${passportCode}/room`, data, {
+        headers: getPassportAuthHeaders()
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/room-page-data/${passportCode}`] });
     },

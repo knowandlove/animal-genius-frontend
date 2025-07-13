@@ -11,11 +11,15 @@ import { PersonalityRadarChart } from "@/components/personality-radar-chart";
 import { animalDetails } from "@shared/animal-details";
 
 export default function TeacherStudentView() {
-  const [, params] = useRoute("/teacher/student/:submissionId");
-  const submissionId = params?.submissionId;
+  const [, params] = useRoute("/teacher/student/:studentId");
+  const studentId = params?.studentId;
   const [, setLocation] = useLocation();
   const [token, setToken] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Get student data from URL params if available (passed from analytics)
+  const urlParams = new URLSearchParams(window.location.search);
+  const classId = urlParams.get('classId');
 
   useEffect(() => {
     const authToken = localStorage.getItem("authToken");
@@ -26,10 +30,11 @@ export default function TeacherStudentView() {
     setToken(authToken);
   }, [setLocation]);
 
-  // Fetch real submission data
-  const { data: submission, isLoading: submissionLoading } = useQuery({
-    queryKey: [`/api/submissions/${submissionId}`],
-    enabled: !!submissionId && !!token
+  // Try to get student data from analytics API
+  const { data: submission, isLoading: submissionLoading, error } = useQuery({
+    queryKey: [`/api/teacher/students/${studentId}`],
+    enabled: !!studentId && !!token,
+    retry: false // Don't retry on 404
   });
 
   // Show loading state
@@ -48,8 +53,24 @@ export default function TeacherStudentView() {
     return (
       <div className="min-h-screen p-4 flex items-center justify-center">
         <div className="text-center">
-          <p>Student data not found</p>
-          <Button onClick={() => setLocation('/')} className="mt-4">Back to Dashboard</Button>
+          <p className="mb-2">Student data not found</p>
+          {error && (
+            <p className="text-sm text-red-600 mb-4">
+              Error: {error instanceof Error ? error.message : 'Unknown error'}
+            </p>
+          )}
+          <p className="text-sm text-gray-500 mb-4">
+            Student ID: {studentId}
+          </p>
+          <Button onClick={() => {
+            if (classId) {
+              setLocation(`/class/${classId}/analytics`);
+            } else {
+              setLocation('/dashboard');
+            }
+          }} className="mt-4">
+            Back to {classId ? 'Analytics' : 'Dashboard'}
+          </Button>
         </div>
       </div>
     );
@@ -60,19 +81,50 @@ export default function TeacherStudentView() {
   const learningScores = (submission as any).learningScores || {};
   const studentName = (submission as any).studentName || 'This student';
   
+  // Get animal tagline/description
+  const getAnimalTagline = (animalName: string): string => {
+    const taglines: Record<string, string> = {
+      'Owl': 'Analytical problem-solver with logical thinking',
+      'owl': 'Analytical problem-solver with logical thinking',
+      'Elephant': 'Natural relationship builder and team harmonizer',
+      'elephant': 'Natural relationship builder and team harmonizer',
+      'Otter': 'High-energy enthusiast who brings fun to everything',
+      'otter': 'High-energy enthusiast who brings fun to everything',
+      'Beaver': 'Reliable organizer with exceptional attention to detail',
+      'beaver': 'Reliable organizer with exceptional attention to detail',
+      'Parrot': 'Creative communicator who inspires others with ideas',
+      'parrot': 'Creative communicator who inspires others with ideas',
+      'Meerkat': 'Imaginative empath with authentic self-expression',
+      'meerkat': 'Imaginative empath with authentic self-expression',
+      'Panda': 'Strategic thinker with deep insight and intuition',
+      'panda': 'Strategic thinker with deep insight and intuition',
+      'Border Collie': 'Natural leader who motivates others toward goals',
+      'border collie': 'Natural leader who motivates others toward goals'
+    };
+    return taglines[animalName] || 'Unique learner with special strengths';
+  };
+
   // Get animal image mapping
   const getAnimalImagePath = (animalName: string): string => {
     const imageMap: Record<string, string> = {
       'Owl': '/images/owl.png',
-      'Elephant': '/images/elephant.png', 
+      'owl': '/images/owl.png', // Handle lowercase
+      'Elephant': '/images/elephant.png',
+      'elephant': '/images/elephant.png',
       'Otter': '/images/otter.png',
+      'otter': '/images/otter.png',
       'Beaver': '/images/beaver.svg',
+      'beaver': '/images/beaver.svg',
       'Parrot': '/images/parrot.png',
+      'parrot': '/images/parrot.png',
       'Meerkat': '/images/meerkat.svg',
+      'meerkat': '/images/meerkat.svg',
       'Panda': '/images/panda.png',
-      'Border Collie': '/images/collie.png'
+      'panda': '/images/panda.png',
+      'Border Collie': '/images/collie.png',
+      'border collie': '/images/collie.png'
     };
-    return imageMap[animalName] || '/images/kal-character.png';
+    return imageMap[animalName] || '/images/owl.png'; // Default to owl if not found
   };
 
   // Calculate energy style from scores
@@ -96,7 +148,30 @@ export default function TeacherStudentView() {
     : "Likes flexibility and keeping options open";
 
   const animalName = (submission as any).animalType;
-  const animalGenius = (submission as any).animalGenius || "Balanced";
+  const animalGenius = (submission as any).geniusType || (submission as any).animalGenius || "Thinker";
+  
+  // Handle case where learningScores might be empty or have different structure
+  const processedLearningScores = {
+    visual: learningScores.visual || 0,
+    auditory: learningScores.auditory || 0, 
+    kinesthetic: learningScores.kinesthetic || 0,
+    readingWriting: learningScores.readingWriting || learningScores.reading_writing || 0
+  };
+  
+  // If all scores are 0, try to derive from primary learning style
+  const allScoresZero = Object.values(processedLearningScores).every(score => score === 0);
+  if (allScoresZero && (submission as any).learningStyle) {
+    const primaryStyle = (submission as any).learningStyle.toLowerCase();
+    if (primaryStyle === 'visual') {
+      processedLearningScores.visual = 100;
+    } else if (primaryStyle === 'auditory') {
+      processedLearningScores.auditory = 100;
+    } else if (primaryStyle === 'kinesthetic') {
+      processedLearningScores.kinesthetic = 100;
+    } else if (primaryStyle === 'readingwriting' || primaryStyle === 'reading/writing') {
+      processedLearningScores.readingWriting = 100;
+    }
+  }
   
   const studentData = {
     name: (submission as any).studentName,
@@ -104,8 +179,8 @@ export default function TeacherStudentView() {
     className: (submission as any).class?.name || "Class",
     animal: {
       imagePath: getAnimalImagePath(animalName),
-      name: animalName,
-      tagline: `${energyStyle.split(' ')[0]} ${decisionStyle.split(' ')[0]}`,
+      name: animalName ? animalName.charAt(0).toUpperCase() + animalName.slice(1).toLowerCase() : 'Unknown', // Capitalize properly
+      tagline: getAnimalTagline(animalName), // Use the proper animal description
       genius: animalGenius
     },
     personalityProfile: {
@@ -120,12 +195,7 @@ export default function TeacherStudentView() {
     },
     learningStyle: {
       primary: (submission as any).learningStyle || "Balanced Learner",
-      percentages: {
-        visual: learningScores.visual || 0,
-        auditory: learningScores.auditory || 0,
-        kinesthetic: learningScores.kinesthetic || 0,
-        readingWriting: learningScores.readingWriting || 0
-      },
+      percentages: processedLearningScores,
       tips: [
         "Benefits from their preferred learning style",
         "Adapts well to different teaching methods",
@@ -258,20 +328,38 @@ export default function TeacherStudentView() {
             </div>
             <h2 className="text-3xl font-heading text-foreground mb-2">{studentData.animal.name}</h2>
             <p className="text-xl font-body text-muted-foreground mb-4">{studentData.animal.tagline}</p>
-            <Badge variant="secondary" className="text-lg px-4 py-2 bg-orange-200 text-orange-800">
-              {studentData.animal.genius}
-            </Badge>
+            <div className="flex flex-wrap justify-center gap-4 mb-4">
+              <Badge 
+                variant="secondary" 
+                className="text-lg px-4 py-2 text-white"
+                style={{
+                  backgroundColor: 
+                    studentData.animal.genius === "Thinker" ? "#8B5CF6" :
+                    studentData.animal.genius === "Feeler" ? "#10B981" :
+                    studentData.animal.genius === "Doer" ? "#F59E0B" :
+                    "#6B7280"
+                }}
+              >
+                Animal Genius: {studentData.animal.genius}
+              </Badge>
+              <Badge 
+                variant="secondary" 
+                className="text-lg px-4 py-2 text-white"
+                style={{
+                  backgroundColor:
+                    studentData.learningStyle.primary === "Visual" ? "#4F46E5" :
+                    studentData.learningStyle.primary === "Auditory" ? "#059669" :
+                    studentData.learningStyle.primary === "Kinesthetic" ? "#DC2626" :
+                    studentData.learningStyle.primary === "readingWriting" ? "#7C2D12" :
+                    "#6B7280"
+                }}
+              >
+                Learning Style: {studentData.learningStyle.primary === 'readingWriting' ? 'Reading/Writing' : 
+                  studentData.learningStyle.primary.charAt(0).toUpperCase() + studentData.learningStyle.primary.slice(1)}
+              </Badge>
+            </div>
           </CardContent>
         </Card>
-
-        {/* Interactive Personality Radar Chart */}
-        <div className="mb-8">
-          <PersonalityRadarChart 
-            scores={scores}
-            studentName={studentData.name}
-            className="w-full"
-          />
-        </div>
 
         {/* Main Content Grid */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">
@@ -314,18 +402,42 @@ export default function TeacherStudentView() {
             <CardContent className="space-y-4">
               <div>
                 <p className="font-medium text-foreground mb-3">
-                  Primary Style: <span className="text-primary">{studentData.learningStyle.primary}</span>
+                  Primary Style: <span className="text-primary">
+                    {studentData.learningStyle.primary === 'readingWriting' ? 'Reading/Writing' : 
+                      studentData.learningStyle.primary.charAt(0).toUpperCase() + studentData.learningStyle.primary.slice(1)}
+                  </span>
                 </p>
                 <div className="space-y-3">
-                  {Object.entries(studentData.learningStyle.percentages).map(([style, percentage]) => (
-                    <div key={style} className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="capitalize">{style.replace(/([A-Z])/g, '/$1').replace('/', ' ')}</span>
-                        <span>{percentage}%</span>
+                  {Object.entries(studentData.learningStyle.percentages).map(([style, percentage]) => {
+                    // Convert style name for display
+                    let displayName;
+                    switch (style) {
+                      case 'visual':
+                        displayName = 'Visual';
+                        break;
+                      case 'auditory':
+                        displayName = 'Auditory';
+                        break;
+                      case 'kinesthetic':
+                        displayName = 'Kinesthetic';
+                        break;
+                      case 'readingWriting':
+                        displayName = 'Reading/Writing';
+                        break;
+                      default:
+                        displayName = style.charAt(0).toUpperCase() + style.slice(1);
+                    }
+                    
+                    return (
+                      <div key={style} className="space-y-1">
+                        <div className="flex justify-between text-sm text-foreground">
+                          <span>{displayName}</span>
+                          <span className="font-medium">{percentage}%</span>
+                        </div>
+                        <Progress value={percentage} className="h-2" />
                       </div>
-                      <Progress value={percentage} className="h-2" />
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
               <div>

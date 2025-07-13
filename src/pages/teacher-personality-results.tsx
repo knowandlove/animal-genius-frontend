@@ -15,7 +15,7 @@ function getAnimalImagePath(animal: string): string {
     'Meerkat': '/images/meerkat.svg',
     'Panda': '/images/panda.png',
     'Owl': '/images/owl.png',
-    'Beaver': '/images/beaver.svg',
+    'Beaver': '/images/beaver.png',
     'Elephant': '/images/elephant.png',
     'Otter': '/images/otter.png',
     'Parrot': '/images/parrot.png',

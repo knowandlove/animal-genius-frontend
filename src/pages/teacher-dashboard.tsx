@@ -13,15 +13,31 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import Header from "@/components/header";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { api } from "@/config/api";
 import { useAuth } from "@/hooks/useAuth";
-import { Trash2, Clipboard } from "lucide-react";
+import { Trash2, Clipboard, Loader2 } from "lucide-react";
+import { getIconComponent } from "@/utils/icon-utils";
 import { QuestionIcon } from "@/components/QuestionIcon";
 import { TeacherQuizModal } from "@/components/TeacherQuizModal";
-import { SharedClassesList } from "@/components/collaborators";
+import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
+import { AuthenticatedLayout } from "@/components/layouts/AuthenticatedLayout";
+
+// Helper function for animal image paths
+function getAnimalImagePath(animal: string): string {
+  const imageMap: Record<string, string> = {
+    'Meerkat': '/images/meerkat.png',
+    'Panda': '/images/panda.png',
+    'Owl': '/images/owl.png',
+    'Beaver': '/images/beaver.png',
+    'Elephant': '/images/elephant.png',
+    'Otter': '/images/otter.png',
+    'Parrot': '/images/parrot.png',
+    'Border Collie': '/images/collie.png'
+  };
+  return imageMap[animal] || '/images/kal-character.png';
+}
 
 interface User {
   id: number;
@@ -33,7 +49,7 @@ interface User {
 }
 
 interface ClassData {
-  id: number;
+  id: string; // UUID from backend
   name: string;
   code?: string; // Some endpoints return 'code'
   classCode?: string; // Some endpoints return 'classCode'
@@ -71,11 +87,13 @@ const getIconEmoji = (iconEmoji?: string, icon?: string): string => {
 
 export default function TeacherDashboard() {
   const [, setLocation] = useLocation();
-  const [deleteClassId, setDeleteClassId] = useState<number | null>(null);
+  const [deleteClassId, setDeleteClassId] = useState<string | null>(null);
   const [showQuizModal, setShowQuizModal] = useState(false);
+  const [deletingClassId, setDeletingClassId] = useState<string | null>(null);
   const { toast } = useToast();
   const { user, isLoading: authLoading, logout, refreshUser } = useAuth();
   const queryClient = useQueryClient();
+  const { confirm, Dialog: ConfirmDialogComponent } = useConfirmDialog();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -106,11 +124,11 @@ export default function TeacherDashboard() {
   });
 
   // Fetch lesson progress for each class
-  const { data: classProgress = {} } = useQuery<Record<number, number[]>>({
+  const { data: classProgress = {} } = useQuery<Record<string, number[]>>({
     queryKey: ["classProgress", classes?.map((c: any) => c.id)],
     queryFn: async () => {
       if (!classes) return {};
-      const progressData: Record<number, number[]> = {};
+      const progressData: Record<string, number[]> = {};
       const token = localStorage.getItem("authToken");
       
       await Promise.all(
@@ -179,7 +197,7 @@ export default function TeacherDashboard() {
   };
 
   const deleteClassMutation = useMutation({
-    mutationFn: async (classId: number) => {
+    mutationFn: async (classId: string) => {
       if (process.env.NODE_ENV === 'development') {
         console.log("Starting delete mutation for class:", classId);
       }
@@ -211,11 +229,12 @@ export default function TeacherDashboard() {
     },
   });
 
-  const handleDeleteClass = async (classId: number) => {
+  const handleDeleteClass = async (classId: string, className: string) => {
     if (process.env.NODE_ENV === 'development') {
       console.log("handleDeleteClass called with classId:", classId);
     }
 
+    setDeletingClassId(classId);
     try {
       const token = localStorage.getItem("authToken");
       if (process.env.NODE_ENV === 'development') {
@@ -262,7 +281,23 @@ export default function TeacherDashboard() {
         description: "Failed to delete class. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setDeletingClassId(null);
     }
+  };
+  
+  const confirmDeleteClass = (classId: string, className: string, studentCount: number) => {
+    confirm({
+      title: "Delete Class",
+      description: `Are you sure you want to delete "${className}"? This will permanently remove all ${studentCount} student submissions. This action cannot be undone.`,
+      confirmText: "Delete Class",
+      cancelText: "Cancel",
+      variant: "destructive",
+      icon: <Trash2 className="h-4 w-4" />,
+      onConfirm: () => {
+        handleDeleteClass(classId, className);
+      },
+    });
   };
 
   
@@ -273,11 +308,17 @@ export default function TeacherDashboard() {
 
 
   return (
-    <div className="min-h-screen" style={{
-      background: 'linear-gradient(135deg, #d3f2ed 0%, #e8f7f3 40%, #f0faf7 100%)'
-    }}>
-      <Header isAuthenticated={true} user={user} onLogout={handleLogout} />
-      <div className="py-8">
+    <AuthenticatedLayout 
+      showSidebar={false}
+      user={user}
+      onLogout={handleLogout}
+    >
+      <div 
+        className="min-h-screen py-8" 
+        style={{
+          background: 'linear-gradient(135deg, #d3f2ed 0%, #e8f7f3 40%, #f0faf7 100%)'
+        }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Dashboard Header */}
           <Card className="mb-8">
@@ -286,9 +327,14 @@ export default function TeacherDashboard() {
                 <div className="flex items-center gap-4">
                   {user.personalityAnimal ? (
                     <img
-                      src={`/images/${user.personalityAnimal === 'Border Collie' ? 'collie' : user.personalityAnimal.toLowerCase().replace(' ', '_')}.png`}
+                      src={getAnimalImagePath(user.personalityAnimal)}
                       alt={`${user.personalityAnimal} - Teacher Animal`}
                       className="w-32 h-32 flex-shrink-0"
+                      onError={(e) => {
+                        console.warn(`Failed to load image for ${user.personalityAnimal}, using fallback`);
+                        // Final fallback to default character
+                        e.currentTarget.src = '/images/kal-character.png';
+                      }}
                     />
                   ) : (
                     <div 
@@ -400,10 +446,13 @@ export default function TeacherDashboard() {
                       <CardContent className="p-6">
                         <div className="flex items-start gap-3 mb-4">
                           <div 
-                            className="w-12 h-12 rounded-full flex items-center justify-center text-xl flex-shrink-0"
+                            className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
                             style={{ backgroundColor: cls.iconColor || cls.backgroundColor || "#c5d49f" }}
                           >
-                            {getIconEmoji(cls.iconEmoji, cls.icon)}
+                            {(() => {
+                              const IconComponent = getIconComponent(cls.icon || cls.iconEmoji);
+                              return <IconComponent className="w-6 h-6 text-white" />;
+                            })()}
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center justify-between mb-1">
@@ -422,10 +471,15 @@ export default function TeacherDashboard() {
                                 <Button
                                   variant="destructive"
                                   size="sm"
-                                  onClick={() => setDeleteClassId(cls.id)}
+                                  onClick={() => confirmDeleteClass(cls.id, cls.name, cls.submissionCount || cls.studentCount || 0)}
                                   title="Delete class"
+                                  disabled={deletingClassId === cls.id}
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  {deletingClassId === cls.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
                                 </Button>
                               </div>
                             </div>
@@ -481,10 +535,10 @@ export default function TeacherDashboard() {
                           <Button
                             variant="outline"
                             onClick={() =>
-                              setLocation(`/class/${cls.id}/analytics`)
+                              setLocation(`/class/${cls.id}/dashboard`)
                             }
                           >
-                            View Results & Analytics
+                            View Class Dashboard
                           </Button>
                           <Button
                             variant="outline"
@@ -538,62 +592,12 @@ export default function TeacherDashboard() {
               )}
             </CardContent>
           </Card>
-
-          {/* Shared Classes */}
-          <SharedClassesList />
         </div>
       </div>
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteClassId !== null} onOpenChange={(open) => !open && setDeleteClassId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
-                <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
-              </div>
-              Delete Class
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "
-              {
-                classes?.find((cls: ClassData) => cls.id === deleteClassId)
-                  ?.name
-              }
-              "? This will permanently remove all{" "}
-              {classes?.find((cls: ClassData) => cls.id === deleteClassId)
-                ?.submissionCount || 0}{" "}
-              student submissions. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={() => {
-                if (process.env.NODE_ENV === 'development') {
-                  console.log("Cancel button clicked");
-                }
-                setDeleteClassId(null);
-              }}
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={async () => {
-                if (process.env.NODE_ENV === 'development') {
-                  console.log("Delete button clicked in modal");
-                }
-                const classToDelete = deleteClassId;
-                setDeleteClassId(null); // Close dialog immediately
-                if (classToDelete) {
-                  await handleDeleteClass(classToDelete);
-                }
-              }}
-              className="px-4 py-2 bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete Class
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      
+      {/* Confirmation Dialog */}
+      <ConfirmDialogComponent />
+      
       {/* Teacher Quiz Modal */}
       <TeacherQuizModal
         isOpen={showQuizModal}
@@ -633,6 +637,6 @@ export default function TeacherDashboard() {
           }
         }}
       />
-    </div>
+    </AuthenticatedLayout>
   );
 }

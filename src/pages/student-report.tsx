@@ -278,11 +278,21 @@ export default function StudentReport() {
                     className="w-24 h-24 rounded-full mx-auto shadow-lg flex items-center justify-center mb-3"
                     style={{ backgroundColor: animalColor }}
                   >
-                    <img 
-                      src={animalData?.imagePath || "/images/kal-character.png"} 
-                      alt={animalData?.name || "Animal"}
-                      className="w-8 h-8 object-contain"
-                    />
+                    {animalData?.imagePath ? (
+                      <img 
+                        src={animalData.imagePath} 
+                        alt={animalData?.name || "Animal"}
+                        className="w-16 h-16 object-contain"
+                        onError={(e) => {
+                          // Hide image if it fails to load instead of showing fallback
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <span className="text-white text-4xl font-bold">
+                        {submission.animalType.charAt(0).toUpperCase()}
+                      </span>
+                    )}
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900">{submission.animalType}</h3>
                   <p className="text-lg font-semibold" style={{ color: animalColor }}>

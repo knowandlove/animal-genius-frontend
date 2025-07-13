@@ -667,22 +667,33 @@ export default function StoreManagementDirect() {
                   >
                     Cancel
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={createItem.isPending || !uploadedImageUrl || !formData.name}
-                  >
-                    {createItem.isPending ? (
-                      <>
-                        <LoadingSpinner className="w-4 h-4 mr-2" />
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create Item
-                      </>
-                    )}
-                  </Button>
+                  {
+                    // Wallpaper and flooring items can use CSS patterns instead of images
+                    (() => {
+                      const isPatternItem = ['room_wallpaper', 'room_flooring'].includes(formData.itemType);
+                      const isImageRequired = !isPatternItem;
+                      const isDisabled = createItem.isPending || (isImageRequired && !uploadedImageUrl) || !formData.name;
+                      
+                      return (
+                        <Button
+                          type="submit"
+                          disabled={isDisabled}
+                        >
+                          {createItem.isPending ? (
+                            <>
+                              <LoadingSpinner className="w-4 h-4 mr-2" />
+                              Creating...
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="h-4 w-4 mr-2" />
+                              Create Item
+                            </>
+                          )}
+                        </Button>
+                      );
+                    })()
+                  }
                 </div>
               </form>
             </CardContent>

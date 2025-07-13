@@ -731,7 +731,7 @@ export default function AvatarItemPositioner() {
                         {/* <LayeredAvatarFixed
                           animalType={selectedAnimal}
                           selectedItem={selectedItem}
-                          selectedItemImageUrl={selectedItemData?.imageUrl || selectedItemData?.imageURL}
+                          selectedItemImageUrl={(selectedItemData as any)?.thumbnailUrl || (selectedItemData as any)?.imageUrl}
                           itemPosition={currentPosition}
                           width={600}
                           height={600}
@@ -769,7 +769,7 @@ export default function AvatarItemPositioner() {
                         <LayeredAvatarFixed
                           animalType={selectedAnimal}
                           selectedItem={selectedItem}
-                          selectedItemImageUrl={selectedItemData?.imageUrl || selectedItemData?.imageURL}
+                          selectedItemImageUrl={(selectedItemData as any)?.thumbnailUrl || (selectedItemData as any)?.imageUrl}
                           itemPosition={currentPosition}
                           width={250}
                           height={250}

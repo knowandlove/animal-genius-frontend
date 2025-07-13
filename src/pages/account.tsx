@@ -13,9 +13,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { api } from "@/config/api";
-import Header from "@/components/header";
 import { TeacherQuizModal } from "@/components/TeacherQuizModal";
 import { HelpCircle } from "lucide-react";
+import { AuthenticatedLayout } from "@/components/layouts/AuthenticatedLayout";
 
 // Form schemas
 const profileSchema = z.object({
@@ -216,26 +216,27 @@ export default function Account() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen">
-        <Header isAuthenticated={true} onLogout={handleLogout} />
+      <AuthenticatedLayout 
+        showSidebar={false}
+        user={undefined}
+        onLogout={handleLogout}
+      >
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading your account...</p>
           </div>
         </div>
-      </div>
+      </AuthenticatedLayout>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      <Header 
-        isAuthenticated={true} 
-        user={user ? { firstName: user.firstName, lastName: user.lastName } : undefined}
-        onLogout={handleLogout} 
-      />
-      
+    <AuthenticatedLayout 
+      showSidebar={false}
+      user={user ? { firstName: user.firstName, lastName: user.lastName } : undefined}
+      onLogout={handleLogout}
+    >
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Card className="mb-8">
           <CardContent className="p-6">
@@ -555,6 +556,6 @@ export default function Account() {
           });
         }}
       />
-    </div>
+    </AuthenticatedLayout>
   );
 }

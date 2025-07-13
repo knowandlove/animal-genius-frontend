@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { X, Sparkles } from 'lucide-react';
-import LayeredAvatarRoom from '@/components/avatar-v2/LayeredAvatarRoom';
+// import LayeredAvatarRoom from '@/components/avatar-v2/LayeredAvatarRoom'; // TODO: This component doesn't exist
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface AvatarCustomizerProps {
@@ -84,13 +84,10 @@ export default function AvatarCustomizer({
           {/* Avatar Preview */}
           <div className="flex flex-col items-center">
             <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl p-8 mb-4">
-              <LayeredAvatarRoom
-                animalType={animalType}
-                items={localEquipped}
-                width={350}
-                height={350}
-                animated={true}
-              />
+              <div className="w-[350px] h-[350px] bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">
+                {/* TODO: Replace with actual LayeredAvatarRoom component */}
+                Avatar Preview ({animalType})
+              </div>
             </div>
             <p className="text-sm text-muted-foreground text-center">
               Click items below to equip/unequip them

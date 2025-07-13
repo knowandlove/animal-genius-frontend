@@ -29,7 +29,7 @@ export default function PetDisplay({ pet, canEdit, passportCode }: PetDisplayPro
   const updatePetName = useRoomStore((state) => state.updatePetName);
 
   // Get sprite metadata from pet data or use defaults
-  const spriteMetadata = pet.pet?.baseStats?.spriteMetadata || {
+  const spriteMetadata = (pet.pet?.baseStats as any)?.spriteMetadata || {
     frameCount: 4,
     frameWidth: 32,
     frameHeight: 32,
@@ -144,7 +144,7 @@ export default function PetDisplay({ pet, canEdit, passportCode }: PetDisplayPro
   const visualState = pet.visualState || getVisualState(stats);
 
   // Get the pet's asset URL
-  const petAssetUrl = pet.pet?.assetUrl || pet.assetUrl;
+  const petAssetUrl = (pet.pet as any)?.assetUrl || (pet as any).assetUrl;
   
   // Check if we should use sprite animation (if the asset is our sprite sheet)
   const useSprite = petAssetUrl && (

@@ -184,8 +184,8 @@ export default function NormalizedAvatar({
   // Get avatar image path
   const getAvatarImage = () => {
     const normalizedAnimal = animalType.toLowerCase().replace(' ', '-');
-    const animalFileName = normalizedAnimal === 'border-collie' ? 'border_collie' : normalizedAnimal;
-    return getAssetUrl(`/images/${animalFileName}_full.png`);
+    const animalFileName = normalizedAnimal === 'border-collie' ? 'collie' : normalizedAnimal;
+    return getAssetUrl(`/avatars/animals/${animalFileName}.png`);
   };
   
   // Get item position from database

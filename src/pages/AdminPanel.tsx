@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Users, School, BarChart3, Shield, Trash2, Key, Edit, Eye, Activity, Clock, Database, Wifi, Palette, Package, Sparkles, Monitor, Home, Dog } from "lucide-react";
+import { Users, School, BarChart3, Shield, Trash2, Key, Edit, Eye, Activity, Clock, Database, Wifi, Palette, Package, Sparkles, Monitor, Home, Dog, AlertCircle } from "lucide-react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -677,6 +677,26 @@ function MetricsTab() {
     queryFn: () => apiRequest('GET', '/api/admin/metrics'),
     refetchInterval: autoRefresh ? 5000 : false, // Refresh every 5 seconds if enabled
   });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <LoadingSpinner />
+        <span className="ml-2">Loading metrics...</span>
+      </div>
+    );
+  }
+
+  if (error || !metrics) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Failed to load metrics. The monitoring service may be unavailable.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   const formatUptime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);

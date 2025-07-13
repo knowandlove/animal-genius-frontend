@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { getPassportAuthHeaders } from "@/lib/passport-auth";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -31,7 +32,9 @@ export default function RoomSettingsButton({ passportCode, currentVisibility = '
 
   const updateVisibilityMutation = useMutation({
     mutationFn: (newVisibility: string) => 
-      apiRequest('PATCH', `/api/room/${passportCode}/settings/visibility`, { visibility: newVisibility }),
+      apiRequest('PATCH', `/api/room/${passportCode}/settings/visibility`, { visibility: newVisibility }, {
+        headers: getPassportAuthHeaders()
+      }),
     onSuccess: (data) => {
       // Update local cache
       queryClient.setQueryData([`/api/room-page-data/${passportCode}`], (old: any) => {

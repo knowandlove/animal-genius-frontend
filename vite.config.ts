@@ -10,6 +10,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "src"),
       "@shared": path.resolve(__dirname, "shared"),
+      "@kalpro/shared-types": path.resolve(__dirname, "../shared-types/src"),
     },
   },
   assetsInclude: ['**/*.wasm'],
@@ -39,5 +40,11 @@ export default defineConfig({
   server: {
     port: 5173,
     open: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+      },
+    },
   },
 });

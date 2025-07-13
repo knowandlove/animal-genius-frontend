@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animal Genius - Class Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .status-card {
+            transition: all 0.2s ease;
+        }
+        .status-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .action-button {
+            transition: all 0.2s ease;
+        }
+        .action-button:hover {
+            transform: translateY(-1px);
+        }
+        .genius-thinker { background-color: #8B5CF6; }
+        .genius-feeler { background-color: #10B981; }
+        .genius-doer { background-color: #F59E0B; }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #10B981 0%, #10B981 var(--progress), #E5E7EB var(--progress), #E5E7EB 100%);
+        }
+        
+        .sidebar-transition {
+            transition: transform 0.3s ease-in-out;
+        }
+        .sidebar-hidden {
+            transform: translateX(-100%);
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                z-index: 50;
+                background: white;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Header - Same as existing -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-start">
+                <div class="flex items-center gap-4">
+                    <button class="md:hidden text-gray-600 hover:text-gray-900" onclick="toggleSidebar()">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <!-- Class Icon & Info -->
+                    <div class="w-16 h-16 rounded-full flex items-center justify-center text-2xl flex-shrink-0 bg-blue-600">
+                        <i class="fas fa-graduation-cap text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                            7th Grade Math - P1
+                        </h1>
+                        <p class="text-gray-600">
+                            Class Code: MTH-7P1
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2">
+                        <i class="fas fa-cog"></i>
+                        Settings
+                    </button>
+                    <button class="border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-md font-medium flex items-center gap-2">
+                        ← Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="sidebar sidebar-transition w-64 bg-white shadow-lg border-r border-gray-200 md:relative md:translate-x-0" id="sidebar">
+            <div class="p-4">
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Class Tools</h3>
+                <nav class="space-y-1">
+                    <a href="#" class="bg-blue-50 text-blue-700 border-r-2 border-blue-600 group flex items-center px-3 py-2 text-sm font-medium rounded-l-md">
+                        <i class="fas fa-tachometer-alt text-blue-500 mr-3"></i>
+                        Dashboard
+                    </a>
+                    <a href="#" class="text-gray-700 hover:bg-gray-50 group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                        <i class="fas fa-chart-bar text-gray-400 group-hover:text-gray-500 mr-3"></i>
+                        Analytics & Reports
+                    </a>
+                    <a href="#" class="text-gray-700 hover:bg-gray-50 group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                        <i class="fas fa-users text-gray-400 group-hover:text-gray-500 mr-3"></i>
+                        Student Management
+                    </a>
+                    <a href="#" class="text-gray-700 hover:bg-gray-50 group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                        <i class="fas fa-object-group text-gray-400 group-hover:text-gray-500 mr-3"></i>
+                        Groups & Seating
+                    </a>
+                    <a href="#" class="text-gray-700 hover:bg-gray-50 group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                        <i class="fas fa-coins text-gray-400 group-hover:text-gray-500 mr-3"></i>
+                        Class Economy
+                    </a>
+                    <a href="#" class="text-gray-700 hover:bg-gray-50 group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                        <i class="fas fa-clipboard-list text-gray-400 group-hover:text-gray-500 mr-3"></i>
+                        Class Reports
+                    </a>
+                    <a href="#" class="text-gray-700 hover:bg-gray-50 group flex items-center px-3 py-2 text-sm font-medium rounded-md">
+                        <i class="fas fa-upload text-gray-400 group-hover:text-gray-500 mr-3"></i>
+                        Import Students
+                    </a>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-6">
+            <!-- Quick Access Tools -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">⚡ Quick Access</h2>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    
+                    <!-- Class Island -->
+                    <button class="action-button flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                            <i class="fas fa-island-tropical text-blue-600 text-xl"></i>
+                        </div>
+                        <span class="text-sm font-medium text-gray-900">Class Island</span>
+                        <span class="text-xs text-gray-500">Virtual space</span>
+                    </button>
+
+                    <!-- View Analytics -->
+                    <button class="action-button flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-colors">
+                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-2">
+                            <i class="fas fa-chart-pie text-purple-600 text-xl"></i>
+                        </div>
+                        <span class="text-sm font-medium text-gray-900">Analytics</span>
+                        <span class="text-xs text-gray-500">Charts & data</span>
+                    </button>
+
+                    <!-- Student List -->
+                    <button class="action-button flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-colors">
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-2">
+                            <i class="fas fa-users text-green-600 text-xl"></i>
+                        </div>
+                        <span class="text-sm font-medium text-gray-900">Students</span>
+                        <span class="text-xs text-gray-500">Manage list</span>
+                    </button>
+
+                    <!-- Create Groups -->
+                    <button class="action-button flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-300 transition-colors">
+                        <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-2">
+                            <i class="fas fa-object-group text-indigo-600 text-xl"></i>
+                        </div>
+                        <span class="text-sm font-medium text-gray-900">Groups</span>
+                        <span class="text-xs text-gray-500">Smart pairs</span>
+                    </button>
+
+                    <!-- Class Economy -->
+                    <button class="action-button flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg hover:bg-yellow-50 hover:border-yellow-300 transition-colors">
+                        <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mb-2">
+                            <i class="fas fa-coins text-yellow-600 text-xl"></i>
+                        </div>
+                        <span class="text-sm font-medium text-gray-900">Class Economy</span>
+                        <span class="text-xs text-gray-500">Manage coins</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Learning Lounge Section -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">📚 Learning Lounge</h2>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">Current Progress</h3>
+                            <p class="text-sm text-gray-600">Your class is working through the curriculum</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm font-medium text-gray-900">Lesson 2 of 8</div>
+                            <div class="text-xs text-gray-500">25% Complete</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="mb-4">
+                        <div class="w-full h-3 bg-gray-200 rounded-full">
+                            <div class="h-3 bg-green-500 rounded-full transition-all duration-300" style="width: 25%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Current Lesson Info -->
+                    <div class="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-play text-white"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium text-gray-900">Understanding Personality Types</div>
+                                <div class="text-sm text-gray-600">Interactive lesson on MBTI fundamentals</div>
+                            </div>
+                        </div>
+                        <button class="action-button bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium">
+                            Resume Lesson →
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Student List Table -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">👥 Students (22/25)</h2>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div class="max-h-96 overflow-y-auto">
+                        <table class="min-w-full">
+                            <thead class="bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Animal</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Genius</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Learning</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Island</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coins</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <!-- Student Row 1 -->
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-4 py-3">
+                                        <button class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline">Bilbo B</button>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center">
+                                            <img src="https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?w=24&h=24&fit=crop&crop=face" 
+                                                 alt="Parrot" class="w-6 h-6 rounded-full mr-2">
+                                            <span class="text-sm">Parrot</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full text-white genius-thinker">Thinker</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-gray-900">Visual</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-gray-500">Jul 12, 1:11 PM</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <button class="inline-flex items-center text-blue-600 hover:text-blue-800 text-xs">
+                                            <i class="fas fa-map-marker-alt mr-1"></i>
+                                            PAR-FU9
+                                        </button>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center text-sm">
+                                            <i class="fas fa-coins text-yellow-500 mr-1"></i>
+                                            50
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center space-x-2">
+                                            <button class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded">View</button>
+                                            <button class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded">Delete</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- Student Row 2 -->
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-4 py-3">
+                                        <button class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline">Dingus P</button>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center">
+                                            <img src="https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?w=24&h=24&fit=crop&crop=face" 
+                                                 alt="Parrot" class="w-6 h-6 rounded-full mr-2">
+                                            <span class="text-sm">Parrot</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full text-white genius-thinker">Thinker</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-gray-900">Visual</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-gray-500">Jul 12, 1:14 PM</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <button class="inline-flex items-center text-blue-600 hover:text-blue-800 text-xs">
+                                            <i class="fas fa-map-marker-alt mr-1"></i>
+                                            PAR-KL5
+                                        </button>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center text-sm">
+                                            <i class="fas fa-coins text-yellow-500 mr-1"></i>
+                                            50
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center space-x-2">
+                                            <button class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded">View</button>
+                                            <button class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded">Delete</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- Student Row 3 -->
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-4 py-3">
+                                        <button class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline">Jack O</button>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center">
+                                            <img src="https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?w=24&h=24&fit=crop&crop=face" 
+                                                 alt="Otter" class="w-6 h-6 rounded-full mr-2">
+                                            <span class="text-sm">Otter</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full text-white genius-doer">Doer</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-gray-900">Visual</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-gray-500">Jul 12, 1:15 PM</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <button class="inline-flex items-center text-blue-600 hover:text-blue-800 text-xs">
+                                            <i class="fas fa-map-marker-alt mr-1"></i>
+                                            OTT-L19
+                                        </button>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center text-sm">
+                                            <i class="fas fa-coins text-yellow-500 mr-1"></i>
+                                            50
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center space-x-2">
+                                            <button class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded">View</button>
+                                            <button class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded">Delete</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- Student Row 4 -->
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-4 py-3">
+                                        <button class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline">Sam G</button>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center">
+                                            <img src="https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?w=24&h=24&fit=crop&crop=face" 
+                                                 alt="Panda" class="w-6 h-6 rounded-full mr-2">
+                                            <span class="text-sm">Panda</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full text-white genius-feeler">Feeler</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-gray-900">Visual</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-gray-500">Jul 12, 1:17 PM</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <button class="inline-flex items-center text-blue-600 hover:text-blue-800 text-xs">
+                                            <i class="fas fa-map-marker-alt mr-1"></i>
+                                            PAN-JJ5
+                                        </button>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center text-sm">
+                                            <i class="fas fa-coins text-yellow-500 mr-1"></i>
+                                            50
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center space-x-2">
+                                            <button class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded">View</button>
+                                            <button class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded">Delete</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- Student Row 5 -->
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-4 py-3">
+                                        <button class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline">Skip P</button>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center">
+                                            <img src="https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?w=24&h=24&fit=crop&crop=face" 
+                                                 alt="Meerkat" class="w-6 h-6 rounded-full mr-2">
+                                            <span class="text-sm">Meerkat</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full text-white genius-feeler">Feeler</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-gray-900">Visual</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-gray-500">Jul 12, 1:52 PM</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <button class="inline-flex items-center text-blue-600 hover:text-blue-800 text-xs">
+                                            <i class="fas fa-map-marker-alt mr-1"></i>
+                                            MKT-PJ8
+                                        </button>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center text-sm">
+                                            <i class="fas fa-coins text-yellow-500 mr-1"></i>
+                                            50
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center space-x-2">
+                                            <button class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded">View</button>
+                                            <button class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded">Delete</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- Student Row 6 -->
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-4 py-3">
+                                        <button class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline">Kal B</button>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center">
+                                            <img src="https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?w=24&h=24&fit=crop&crop=face" 
+                                                 alt="Border Collie" class="w-6 h-6 rounded-full mr-2">
+                                            <span class="text-sm">Border Collie</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full text-white genius-doer">Doer</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-gray-900">Visual</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-sm text-gray-500">Jul 12, 2:00 PM</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <button class="inline-flex items-center text-blue-600 hover:text-blue-800 text-xs">
+                                            <i class="fas fa-map-marker-alt mr-1"></i>
+                                            COL-KN7
+                                        </button>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center text-sm">
+                                            <i class="fas fa-coins text-yellow-500 mr-1"></i>
+                                            50
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex items-center space-x-2">
+                                            <button class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded">View</button>
+                                            <button class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded">Delete</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Share Links -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">🔗 Quick Share Links</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <!-- Class Code Share -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <div class="mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">Class Quiz</h3>
+                            <p class="text-sm text-gray-600">Share this code for students to join and take the quiz</p>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold font-mono text-blue-600 bg-blue-50 px-6 py-3 rounded-lg border-2 border-blue-200 mb-2">
+                                    MTH-7P1
+                                </div>
+                                <div class="text-xs text-gray-500">Class Code</div>
+                            </div>
+                            <button class="action-button bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md font-medium ml-4">
+                                <i class="fas fa-copy mr-2"></i>
+                                Copy Link
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Class Island Share -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                        <div class="mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">Class Island</h3>
+                            <p class="text-sm text-gray-600">Share this link for students to visit your class island</p>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="text-center">
+                                <div class="text-sm font-medium text-green-600 bg-green-50 px-4 py-3 rounded-lg border-2 border-green-200 mb-2">
+                                    <i class="fas fa-island-tropical mr-2"></i>
+                                    island.com/mth-7p1
+                                </div>
+                                <div class="text-xs text-gray-500">Island URL</div>
+                            </div>
+                            <button class="action-button bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md font-medium ml-4">
+                                <i class="fas fa-share mr-2"></i>
+                                Share Link
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Mobile Overlay -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden hidden" id="overlay" onclick="toggleSidebar()"></div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            
+            sidebar.classList.toggle('sidebar-hidden');
+            overlay.classList.toggle('hidden');
+        }
+
+        // Add click handlers for demonstration
+        document.addEventListener('DOMContentLoaded', function() {
+            const actionButtons = document.querySelectorAll('.action-button');
+            actionButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const buttonText = this.querySelector('span, .font-medium').textContent;
+                    console.log('Navigate to:', buttonText);
+                });
+            });
+
+            const statusCards = document.querySelectorAll('.status-card');
+            statusCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    console.log('Show analytics for:', this.querySelector('.font-medium, .font-bold').textContent);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -105,7 +105,7 @@ export default function SurfaceCustomizer({
       onUpdate({ 
         type: 'pattern', 
         value: pattern.code,
-        patternType: pattern.patternType,
+        patternType: pattern.patternType as "image" | "css",
         patternValue: pattern.patternValue 
       });
     }
@@ -190,7 +190,7 @@ export default function SurfaceCustomizer({
                       type: 'pattern',
                       value: pattern.code, // Use pattern code for data-pattern attribute
                       patternData: {
-                        patternType: pattern.patternType,
+                        patternType: pattern.patternType as "image" | "css",
                         patternValue: pattern.patternValue
                       }
                     };

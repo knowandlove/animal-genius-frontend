@@ -183,8 +183,8 @@ function LessonCard({ lesson, isComplete, onMarkComplete, isMarkingComplete }: L
             </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-6">
-                {Object.entries(lesson.sections).map(([key, section]) => (
-                  <LessonSection key={key} title={section.title} section={section} />
+                {Object.entries((lesson as any).sections || {}).map(([key, section]) => (
+                  <LessonSection key={key} title={(section as any).title} section={section as any} />
                 ))}
               </div>
             </AccordionContent>

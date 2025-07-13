@@ -26,7 +26,6 @@ export default function StableRiveWrapper({
         alignment: Alignment.Center,
       }),
       autoplay: false, // Don't autoplay - we'll control it with hover
-      loop: true, // Enable looping
       onLoad: () => {
         console.log('Rive loaded successfully!');
         // Pause immediately on load

@@ -6,33 +6,43 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Download, Users, UserCheck, Clock, AlertCircle, Heart, Brain, Zap, Monitor } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
+import { AuthenticatedLayout } from "@/components/layouts/AuthenticatedLayout";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function ClassReport() {
   const [, params] = useRoute("/class-report/:classId");
   const classId = params?.classId;
   const [, setLocation] = useLocation();
-  const [token, setToken] = useState<string | null>(null);
+  const { user, isLoading: authLoading } = useAuth();
+
+  // Fetch real analytics data - MOVED BEFORE conditional logic
+  const { data: analytics, isLoading: analyticsLoading, error: analyticsError } = useQuery({
+    queryKey: [`/api/classes/${classId}/analytics`],
+    enabled: !!classId && !!localStorage.getItem("authToken") && !authLoading && !!user
+  });
+
+  // Fetch real pairings data - MOVED BEFORE conditional logic
+  const { data: pairings, isLoading: pairingsLoading, error: pairingsError } = useQuery({
+    queryKey: [`/api/classes/${classId}/pairings`],
+    enabled: !!classId && !!localStorage.getItem("authToken") && !authLoading && !!user
+  });
 
   useEffect(() => {
-    const authToken = localStorage.getItem("authToken");
-    if (!authToken) {
+    if (!authLoading && !user) {
       setLocation("/login");
-      return;
     }
-    setToken(authToken);
-  }, [setLocation]);
+  }, [user, authLoading, setLocation]);
 
-  // Fetch real analytics data
-  const { data: analytics, isLoading: analyticsLoading } = useQuery({
-    queryKey: [`/api/classes/${classId}/analytics`],
-    enabled: !!classId && !!token
-  });
+  const handleLogout = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("authTokenChanged"));
+    setLocation("/");
+  };
 
-  // Fetch real pairings data
-  const { data: pairings, isLoading: pairingsLoading } = useQuery({
-    queryKey: [`/api/classes/${classId}/pairings`],
-    enabled: !!classId && !!token
-  });
+  if (authLoading || !user) {
+    return <div>Loading...</div>;
+  }
 
   // Helper function to navigate to student view
   const handleStudentClick = (submissionId: number) => {
@@ -42,12 +52,19 @@ export default function ClassReport() {
   // Show loading state
   if (analyticsLoading || pairingsLoading) {
     return (
-      <div className="min-h-screen p-4 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading class data...</p>
+      <AuthenticatedLayout 
+        showSidebar={true}
+        classId={classId}
+        user={user}
+        onLogout={handleLogout}
+      >
+        <div className="min-h-screen p-4 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Loading class data...</p>
+          </div>
         </div>
-      </div>
+      </AuthenticatedLayout>
     );
   }
 
@@ -84,6 +101,17 @@ export default function ClassReport() {
   const typedAnalytics = analytics as AnalyticsResponse;
   const typedPairings = pairings as PairingsResponse;
   
+  // Debug logging
+  console.log('🔍 Class Report Debug:');
+  console.log('   classId:', classId);
+  console.log('   analyticsLoading:', analyticsLoading);
+  console.log('   pairingsLoading:', pairingsLoading);
+  console.log('   analytics:', analytics);
+  console.log('   pairings:', pairings);
+  console.log('   analyticsError:', analyticsError);
+  console.log('   pairingsError:', pairingsError);
+  console.log('   hasToken:', !!localStorage.getItem("authToken"));
+  
   const classData = typedAnalytics?.class ? {
     name: typedAnalytics.class.name,
     totalStudents: typedAnalytics.stats?.totalSubmissions || 0,
@@ -119,14 +147,51 @@ export default function ClassReport() {
     }
   } : null;
 
+  // Show error state with details
+  if (analyticsError || pairingsError) {
+    return (
+      <AuthenticatedLayout 
+        showSidebar={true}
+        classId={classId}
+        user={user}
+        onLogout={handleLogout}
+      >
+        <div className="min-h-screen p-4 flex items-center justify-center">
+          <div className="text-center">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Error Loading Class Data</h2>
+            <p className="text-gray-600 mb-4">
+              {analyticsError ? `Analytics: ${analyticsError.message}` : ''}
+              {pairingsError ? `Pairings: ${pairingsError.message}` : ''}
+            </p>
+            <Button onClick={() => setLocation('/')} className="mt-4">Back to Dashboard</Button>
+          </div>
+        </div>
+      </AuthenticatedLayout>
+    );
+  }
+
   if (!classData) {
     return (
-      <div className="min-h-screen p-4 flex items-center justify-center">
-        <div className="text-center">
-          <p>No class data available</p>
-          <Button onClick={() => setLocation('/')} className="mt-4">Back to Dashboard</Button>
+      <AuthenticatedLayout 
+        showSidebar={true}
+        classId={classId}
+        user={user}
+        onLogout={handleLogout}
+      >
+        <div className="min-h-screen p-4 flex items-center justify-center">
+          <div className="text-center">
+            <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">No Class Data Available</h2>
+            <p className="text-gray-600 mb-4">
+              Analytics loaded: {!!analytics ? 'Yes' : 'No'}<br/>
+              Analytics class: {(analytics as any)?.class ? 'Yes' : 'No'}<br/>
+              Class ID: {classId}
+            </p>
+            <Button onClick={() => setLocation('/')} className="mt-4">Back to Dashboard</Button>
+          </div>
         </div>
-      </div>
+      </AuthenticatedLayout>
     );
   }
 
@@ -143,6 +208,13 @@ export default function ClassReport() {
   };
 
   return (
+    <AuthenticatedLayout 
+      showSidebar={true}
+      classId={classId}
+      className={classData?.name}
+      user={user}
+      onLogout={handleLogout}
+    >
     <div className="min-h-screen p-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -473,5 +545,6 @@ export default function ClassReport() {
         </div>
       </div>
     </div>
+    </AuthenticatedLayout>
   );
 }

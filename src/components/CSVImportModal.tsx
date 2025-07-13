@@ -14,7 +14,7 @@ import { Upload, FileSpreadsheet, CheckCircle, X } from "lucide-react";
 interface CSVImportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  classId: number;
+  classId: string;
   onImportComplete?: () => void;
 }
 

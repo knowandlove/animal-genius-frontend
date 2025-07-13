@@ -68,8 +68,8 @@ export function StoreDataProvider({ children }: { children: ReactNode }) {
   }, [storeItems]);
 
   const contextValue: StoreDataContextType = {
-    storeItems,
-    itemPositions,
+    storeItems: storeItems as any[],
+    itemPositions: itemPositions as any[],
     isLoading: isLoadingStore || isLoadingPositions,
     error: storeError || positionsError,
     refetchPositions: () => refetchPositions(),

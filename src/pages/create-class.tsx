@@ -5,6 +5,20 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Class } from "@shared/schema";
 import { z } from "zod";
+import { 
+  BookOpen, 
+  GraduationCap, 
+  Palette, 
+  Microscope, 
+  Calculator, 
+  Globe, 
+  Rocket, 
+  Star, 
+  Heart, 
+  Lightbulb, 
+  Music, 
+  TreePine 
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,13 +26,36 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { getIconColor } from "@/utils/icon-utils";
 import Header from "@/components/header";
+
+// Icon mapping system
+const iconOptions = [
+  { id: 'book-open', component: BookOpen, label: 'Reading/Literature' },
+  { id: 'graduation-cap', component: GraduationCap, label: 'General Education' },
+  { id: 'palette', component: Palette, label: 'Art/Creative' },
+  { id: 'microscope', component: Microscope, label: 'Science' },
+  { id: 'calculator', component: Calculator, label: 'Math' },
+  { id: 'globe', component: Globe, label: 'Geography/Social Studies' },
+  { id: 'rocket', component: Rocket, label: 'Technology/STEM' },
+  { id: 'star', component: Star, label: 'Special Programs' },
+  { id: 'heart', component: Heart, label: 'Health/PE' },
+  { id: 'lightbulb', component: Lightbulb, label: 'Innovation' },
+  { id: 'music', component: Music, label: 'Music/Arts' },
+  { id: 'tree-pine', component: TreePine, label: 'Environmental/Nature' },
+];
+
+// Helper function to get icon component by id
+const getIconComponent = (iconId: string) => {
+  const icon = iconOptions.find(icon => icon.id === iconId);
+  return icon ? icon.component : BookOpen;
+};
 
 // Create a standalone schema for class creation
 const createClassSchema = z.object({
   name: z.string().min(1, "Class name is required"),
-  iconEmoji: z.string().default("📚"),
-  iconColor: z.string().default("hsl(202 25% 65%)"), // Panda blue
+  icon: z.string().default("book-open"),
+  backgroundColor: z.string().default("#829B79"), // Convert to hex color
 });
 type CreateClassData = z.infer<typeof createClassSchema>;
 
@@ -61,8 +98,8 @@ export default function CreateClass() {
     resolver: zodResolver(createClassSchema),
     defaultValues: {
       name: "",
-      iconEmoji: "📚",
-      iconColor: "hsl(202 25% 65%)", // Panda blue
+      icon: "book-open",
+      backgroundColor: "#829B79", // Default brand color
     },
   });
 
@@ -122,10 +159,13 @@ export default function CreateClass() {
             <Card className="shadow-xl">
               <CardContent className="p-8 text-center">
                 <div 
-                  className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl"
-                  style={{ backgroundColor: createdClass.iconColor || "hsl(202 25% 65%)" }}
+                  className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+                  style={{ backgroundColor: createdClass.backgroundColor || "#829B79" }}
                 >
-                  {createdClass.iconEmoji || "📚"}
+                  {(() => {
+                    const IconComponent = getIconComponent(createdClass.icon || "book-open");
+                    return <IconComponent className="w-10 h-10 text-white" />;
+                  })()}
                 </div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-4">Class Created Successfully!</h2>
                 <p className="text-gray-600 mb-8">Your new class is ready for students. Here are the sharing details:</p>
@@ -227,7 +267,7 @@ export default function CreateClass() {
                   <div className="grid md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
-                      name="iconEmoji"
+                      name="icon"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Class Icon</FormLabel>
@@ -235,26 +275,36 @@ export default function CreateClass() {
                             <div className="space-y-3">
                               <div className="flex items-center gap-3 mb-3">
                                 <div 
-                                  className="w-12 h-12 rounded-full flex items-center justify-center text-xl"
-                                  style={{ backgroundColor: form.watch("iconColor") }}
+                                  className="w-12 h-12 rounded-full flex items-center justify-center"
+                                  style={{ backgroundColor: form.watch("backgroundColor") }}
                                 >
-                                  {field.value}
+                                  {(() => {
+                                    const IconComponent = getIconComponent(field.value);
+                                    return <IconComponent className="w-6 h-6 text-white" />;
+                                  })()}
                                 </div>
                                 <span className="text-sm text-gray-600">Preview</span>
                               </div>
-                              <div className="grid grid-cols-5 gap-2">
-                                {["📚", "🎓", "✏️", "🔬", "🎨", "⚗️", "📊", "🧮", "🌟", "💡"].map((emoji) => (
-                                  <button
-                                    key={emoji}
-                                    type="button"
-                                    onClick={() => field.onChange(emoji)}
-                                    className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center text-lg hover:bg-gray-50 transition-colors ${
-                                      field.value === emoji ? "border-blue-500 bg-blue-50" : "border-gray-200"
-                                    }`}
-                                  >
-                                    {emoji}
-                                  </button>
-                                ))}
+                              <div className="grid grid-cols-4 gap-3">
+                                {iconOptions.map((iconOption) => {
+                                  const IconComponent = iconOption.component;
+                                  return (
+                                    <button
+                                      key={iconOption.id}
+                                      type="button"
+                                      onClick={() => field.onChange(iconOption.id)}
+                                      className={`w-16 h-16 rounded-lg border-2 flex flex-col items-center justify-center text-xs hover:bg-gray-50 transition-colors ${
+                                        field.value === iconOption.id ? "border-blue-500 bg-blue-50" : "border-gray-200"
+                                      }`}
+                                      title={iconOption.label}
+                                    >
+                                      <IconComponent className="w-6 h-6 text-gray-600 mb-1" />
+                                      <span className="text-xs text-gray-500 text-center leading-tight">
+                                        {iconOption.label.split('/')[0]}
+                                      </span>
+                                    </button>
+                                  );
+                                })}
                               </div>
                             </div>
                           </FormControl>
@@ -265,7 +315,7 @@ export default function CreateClass() {
 
                     <FormField
                       control={form.control}
-                      name="iconColor"
+                      name="backgroundColor"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Background Color</FormLabel>
@@ -273,7 +323,7 @@ export default function CreateClass() {
                             <div className="space-y-3">
                               <div className="grid grid-cols-4 gap-2">
                                 {[
-                                  "hsl(202 25% 65%)", "hsl(334 19% 60%)", "hsl(150 30% 55%)", "hsl(32 72% 72%)",
+                                  "#829B79", "#BD85C8", "#BAC97D", "#FACC7D",
                                   "#8db3d4", "#b68cd4", "#d48ca8", "#90d4c5",
                                   "#d4c590", "#a8d490", "#d490b6", "#90b6d4"
                                 ].map((color) => (

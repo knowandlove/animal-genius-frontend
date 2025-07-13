@@ -5,8 +5,8 @@ import { AnimatePresence } from 'framer-motion';
 import { Trash2, Loader2, Check } from 'lucide-react';
 import { getAssetUrl } from '@/utils/cloud-assets';
 import FishbowlPlaceholder from './FishbowlPlaceholder';
-import FishbowlModal from './FishbowlModal';
-import FishBowl from '@/components/pets/FishBowl';
+import FishbowlModal from '@/components/pets/display/FishbowlModal';
+import FishBowl from '@/components/pets/animations/FishBowl';
 
 interface DragState {
   itemId: string;
@@ -579,8 +579,9 @@ export default function RoomSticker() {
         }}
         pet={selectedFishbowl}
         canInteract={canEdit}
-        balance={avatar?.currencyBalance || 0}
+        balance={(avatar as any)?.currencyBalance || 0}
         passportCode={passportCode || ''}
+        classId={useRoomStore.getState().classId}
       />
     )}
     </>

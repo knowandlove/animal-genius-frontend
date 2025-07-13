@@ -102,6 +102,9 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
+  options?: {
+    headers?: Record<string, string>;
+  }
 ): Promise<any> {
   const token = localStorage.getItem("authToken");
   
@@ -110,7 +113,9 @@ export async function apiRequest(
     console.log('[AUTH DEBUG] Has token:', !!token);
   }
   
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = {
+    ...(options?.headers || {})
+  };
   if (data && !(data instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }

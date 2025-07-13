@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import type { StoreItem } from '@shared/currency-types';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { getPassportAuthHeaders } from '@/lib/passport-auth';
 import type { StudentPet, PetAnimation } from '@/types/pet';
 
 // Simple debounce function
@@ -74,6 +75,7 @@ export interface RoomStore {
   playerName: string;
   balance: number;
   canEdit: boolean; // Whether the current user can edit this room
+  classId?: string; // The class ID for leaderboards
   
   // Avatar state
   avatar: {
@@ -227,6 +229,7 @@ export const useRoomStore = create<RoomStore>()(
     playerName: '',
     balance: 0,
     canEdit: false, // Default to read-only for security
+    classId: undefined,
     
     avatar: {
       type: 'dolphin',
@@ -302,6 +305,7 @@ export const useRoomStore = create<RoomStore>()(
         playerName: data.studentName,
         balance: data.currencyBalance,
         canEdit: data.canEdit || false, // Set edit permission from server
+        classId: data.classId,
         avatar: {
           type: data.animalType.toLowerCase(),
           equipped: equipped,
@@ -750,6 +754,8 @@ export const useRoomStore = create<RoomStore>()(
           // Save current avatar state
           await apiRequest('POST', `/api/room/${state.passportCode}/avatar`, {
             equipped: state.draftAvatar.equipped,
+          }, {
+            headers: getPassportAuthHeaders()
           });
           }
         
@@ -767,7 +773,9 @@ export const useRoomStore = create<RoomStore>()(
             furniture: state.draftRoom.placedItems,
           };
           
-          await apiRequest('POST', `/api/room/${state.passportCode}/room`, saveData);
+          await apiRequest('POST', `/api/room/${state.passportCode}/room`, saveData, {
+            headers: getPassportAuthHeaders()
+          });
         }
         
         // After successful save, update the main state with draft changes

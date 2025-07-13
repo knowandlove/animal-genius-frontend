@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { api } from "@/config/api";
-import Header from "@/components/header";
-import { CoTeachersList, InviteCoTeacherModal, CollaboratorBadge } from "@/components/collaborators";
-import { Settings, Users, ArrowLeft, UserPlus } from "lucide-react";
+import { AuthenticatedLayout } from "@/components/layouts/AuthenticatedLayout";
+import { Settings, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { getIconComponent, getIconColor } from "@/utils/icon-utils";
 
 interface ClassData {
   id: number;
@@ -19,7 +19,8 @@ interface ClassData {
   teacherId: number;
   iconEmoji?: string;
   iconColor?: string;
-  role?: 'owner' | 'editor' | 'viewer';
+  icon?: string; // Backend returns this instead of iconEmoji
+  backgroundColor?: string; // Backend returns this instead of iconColor
 }
 
 export default function ClassSettings() {
@@ -27,7 +28,17 @@ export default function ClassSettings() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
-  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("authTokenChanged"));
+    toast({
+      title: "Signed out successfully",
+      description: "You have been logged out of your account.",
+    });
+    setLocation("/");
+  };
 
   const { data: classData, isLoading } = useQuery<ClassData>({
     queryKey: [`/api/classes/${classId}`],
@@ -48,89 +59,81 @@ export default function ClassSettings() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen">
-        <Header isAuthenticated={true} user={user || undefined} onLogout={() => {}} />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">Loading class settings...</div>
-        </div>
-      </div>
+      <AuthenticatedLayout 
+        showSidebar={true}
+        classId={classId}
+        className={undefined}
+        classCode={undefined}
+        user={user || undefined}
+        onLogout={handleLogout}
+      >
+        <div className="text-center py-16">Loading class settings...</div>
+      </AuthenticatedLayout>
     );
   }
 
   if (!classData) {
     return (
-      <div className="min-h-screen">
-        <Header isAuthenticated={true} user={user || undefined} onLogout={() => {}} />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Class Not Found
-            </h2>
-            <Button onClick={() => setLocation("/dashboard")}>
-              Back to Dashboard
-            </Button>
-          </div>
+      <AuthenticatedLayout 
+        showSidebar={true}
+        classId={classId}
+        user={user || undefined}
+        onLogout={handleLogout}
+      >
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Class Not Found
+          </h2>
+          <Button onClick={() => setLocation("/dashboard")}>
+            Back to Dashboard
+          </Button>
         </div>
-      </div>
+      </AuthenticatedLayout>
     );
   }
 
-  const isOwner = classData.role === 'owner' || classData.teacherId === user?.id;
-  const canManageCollaborators = isOwner;
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Header isAuthenticated={true} user={user || undefined} onLogout={() => {}} />
-      
-      <div className="container mx-auto px-4 py-8">
+    <AuthenticatedLayout 
+      showSidebar={true}
+      classId={classId}
+      className={classData.name}
+      classCode={classData.code}
+      user={user || undefined}
+      onLogout={handleLogout}
+    >
         {/* Header */}
         <Card className="mb-8">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setLocation(`/class/${classId}/analytics`)}
-                  className="mr-2"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-1" />
-                  Back
-                </Button>
+            <div className="flex items-center gap-4">
                 <div 
                   className="w-12 h-12 rounded-full flex items-center justify-center text-xl flex-shrink-0"
-                  style={{ backgroundColor: classData.iconColor || "#c5d49f" }}
+                  style={{ backgroundColor: getIconColor(classData.iconColor, classData.backgroundColor) }}
                 >
-                  {classData.iconEmoji || "📚"}
+                  {(() => {
+                    const IconComponent = getIconComponent(classData.icon || classData.iconEmoji);
+                    return <IconComponent className="w-6 h-6 text-white" />;
+                  })()}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <h1 className="text-2xl font-bold text-gray-900">
                       {classData.name} - Settings
                     </h1>
-                    {classData.role && (
-                      <CollaboratorBadge role={classData.role} />
-                    )}
                   </div>
                   <p className="text-gray-600">
                     Class Code: <span className="font-mono">{classData.code}</span>
                   </p>
                 </div>
-              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Settings Tabs */}
         <Tabs defaultValue="general" className="space-y-4">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-md grid-cols-1">
             <TabsTrigger value="general" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               General
-            </TabsTrigger>
-            <TabsTrigger value="collaborators" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Co-Teachers
             </TabsTrigger>
           </TabsList>
 
@@ -174,41 +177,9 @@ export default function ClassSettings() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="collaborators" className="space-y-4">
-            {canManageCollaborators && (
-              <div className="flex justify-end">
-                <Button onClick={() => setInviteModalOpen(true)}>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Invite Co-Teacher
-                </Button>
-              </div>
-            )}
-            
-            <CoTeachersList 
-              classId={classId!} 
-              canManageCollaborators={canManageCollaborators}
-            />
 
-            {!canManageCollaborators && (
-              <Card>
-                <CardContent className="p-6">
-                  <p className="text-sm text-gray-600 text-center">
-                    Only the class owner can manage co-teachers.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
         </Tabs>
-      </div>
 
-      {/* Invite Modal */}
-      <InviteCoTeacherModal
-        isOpen={inviteModalOpen}
-        onClose={() => setInviteModalOpen(false)}
-        classId={classId!}
-        className={classData.name}
-      />
-    </div>
+    </AuthenticatedLayout>
   );
 }

@@ -8,7 +8,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { CheckCircle, Clock, BookOpen, Users, Target, ListChecks, ArrowLeft, PlayCircle, Printer, FileText } from "lucide-react";
 import { lessons, type Lesson, type Activity } from "@shared/lessons";
 import { apiRequest } from "@/lib/queryClient";
+import { getIconComponent, getIconColor } from "@/utils/icon-utils";
 import { LoadingSpinner } from "@/components/loading-spinner";
+import { AuthenticatedLayout } from "@/components/layouts/AuthenticatedLayout";
 
 export default function LearningLounge() {
   const [, setLocation] = useLocation();
@@ -17,6 +19,13 @@ export default function LearningLounge() {
   const [token, setToken] = useState<string | null>(null);
   const [classId, setClassId] = useState<string | null>(null);
   const [className, setClassName] = useState<string | null>(null);
+
+  const handleLogout = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("authTokenChanged"));
+    setLocation("/");
+  };
 
   useEffect(() => {
     const authToken = localStorage.getItem("authToken");
@@ -35,7 +44,7 @@ export default function LearningLounge() {
   }, [setLocation]);
 
   // Fetch class name if classId is provided
-  const { data: classData } = useQuery<{ id: string; name: string; passportCode: string; teacherId: string; iconEmoji?: string; iconColor?: string }>({
+  const { data: classData } = useQuery<{ id: string; name: string; passportCode: string; teacherId: string; iconEmoji?: string; iconColor?: string; icon?: string; backgroundColor?: string }>({
     queryKey: [`/api/classes/${classId}`],
     enabled: !!token && !!classId,
   });
@@ -73,17 +82,33 @@ export default function LearningLounge() {
 
   if (!token) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <LoadingSpinner size="lg" />
-      </div>
+      <AuthenticatedLayout 
+        showSidebar={true}
+        classId={classId || undefined}
+        className={className || undefined}
+        user={undefined}
+        onLogout={handleLogout}
+      >
+        <div className="flex justify-center items-center min-h-[400px]">
+          <LoadingSpinner size="lg" />
+        </div>
+      </AuthenticatedLayout>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <LoadingSpinner size="lg" />
-      </div>
+      <AuthenticatedLayout 
+        showSidebar={true}
+        classId={classId || undefined}
+        className={className || undefined}
+        user={undefined}
+        onLogout={handleLogout}
+      >
+        <div className="flex justify-center items-center min-h-[400px]">
+          <LoadingSpinner size="lg" />
+        </div>
+      </AuthenticatedLayout>
     );
   }
 
@@ -101,58 +126,65 @@ export default function LearningLounge() {
   }
 
   return (
-    <div className="min-h-screen bg-white p-4">
-      <div className="max-w-6xl mx-auto">
-        <Card className="mb-8">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                {classData && (
-                  <div 
-                    className="w-16 h-16 rounded-full flex items-center justify-center text-2xl flex-shrink-0"
-                    style={{ backgroundColor: classData.iconColor || "#c5d49f" }}
-                  >
-                    {classData.iconEmoji || "📚"}
-                  </div>
-                )}
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">
-                    {className ? `Learning Lounge - ${className}` : "Learning Lounge"}
-                  </h1>
-                  <p className="text-gray-600 mt-2">
-                    {className 
-                      ? `Professional development resources and lesson plans for ${className}`
-                      : "Professional development resources and lesson plans"
-                    }
-                  </p>
+    <AuthenticatedLayout 
+      showSidebar={true}
+      classId={classId || undefined}
+      className={className || undefined}
+      user={undefined}
+      onLogout={handleLogout}
+    >
+      <Card className="mb-8">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {classData && (
+                <div 
+                  className="w-16 h-16 rounded-full flex items-center justify-center text-2xl flex-shrink-0"
+                  style={{ backgroundColor: getIconColor(classData.iconColor, classData.backgroundColor) }}
+                >
+                  {(() => {
+                    const IconComponent = getIconComponent(classData.icon || classData.iconEmoji);
+                    return <IconComponent className="w-8 h-8 text-white" />;
+                  })()}
                 </div>
+              )}
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {className ? `Learning Lounge - ${className}` : "Learning Lounge"}
+                </h1>
+                <p className="text-gray-600 mt-2">
+                  {className 
+                    ? `Professional development resources and lesson plans for ${className}`
+                    : "Professional development resources and lesson plans"
+                  }
+                </p>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => setLocation("/dashboard")}
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
-              </Button>
             </div>
-          </CardContent>
-        </Card>
+            <Button
+              variant="outline"
+              onClick={() => setLocation("/dashboard")}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Dashboard
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-        <div className="grid gap-6">
-          {lessons.map((lesson) => (
-            <LessonCard
-              key={lesson.id}
-              lesson={lesson}
-              isComplete={isLessonComplete(lesson.id)}
-              onSelect={() => setSelectedLesson(lesson.id)}
-              onMarkComplete={() => handleMarkComplete(lesson.id)}
-              isMarkingComplete={markCompleteMutation.isPending}
-            />
-          ))}
-        </div>
+      <div className="grid gap-6">
+        {lessons.map((lesson) => (
+          <LessonCard
+            key={lesson.id}
+            lesson={lesson}
+            isComplete={isLessonComplete(lesson.id)}
+            onSelect={() => setSelectedLesson(lesson.id)}
+            onMarkComplete={() => handleMarkComplete(lesson.id)}
+            isMarkingComplete={markCompleteMutation.isPending}
+          />
+        ))}
       </div>
-    </div>
+    </AuthenticatedLayout>
   );
 }
 
@@ -299,8 +331,21 @@ function LessonDetailView({ lesson, isComplete, onMarkComplete, onBack, isMarkin
     setLocation("/pre-assessment");
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("authTokenChanged"));
+    setLocation("/");
+  };
+
   return (
-    <div className="min-h-screen bg-white p-4">
+    <AuthenticatedLayout 
+      showSidebar={true}
+      classId={undefined}
+      className={undefined}
+      user={undefined}
+      onLogout={handleLogout}
+    >
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <Button
@@ -381,7 +426,7 @@ function LessonDetailView({ lesson, isComplete, onMarkComplete, onBack, isMarkin
           </div>
         </div>
       </div>
-    </div>
+    </AuthenticatedLayout>
   );
 }
 

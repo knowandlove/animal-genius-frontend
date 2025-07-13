@@ -198,11 +198,21 @@ export default function QuizResults() {
               className="w-24 h-24 rounded-full flex items-center justify-center"
               style={{ backgroundColor: animalColor }}
             >
-              <img 
-                src={animalData?.imagePath || "/images/kal-character.png"} 
-                alt={animalData?.name || "Animal"}
-                className="w-16 h-16 object-contain"
-              />
+              {animalData?.imagePath ? (
+                <img 
+                  src={animalData.imagePath} 
+                  alt={animalData?.name || "Animal"}
+                  className="w-16 h-16 object-contain"
+                  onError={(e) => {
+                    // Hide image if it fails to load instead of showing fallback
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                <span className="text-white text-3xl font-bold">
+                  {result.animal.charAt(0).toUpperCase()}
+                </span>
+              )}
             </div>
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
@@ -265,11 +275,21 @@ export default function QuizResults() {
                   className="w-32 h-32 rounded-full mx-auto shadow-lg flex items-center justify-center mb-6"
                   style={{ backgroundColor: animalColor }}
                 >
-                  <img 
-                    src={animalData?.imagePath || "/images/kal-character.png"} 
-                    alt={animalData?.name || "Animal"}
-                    className="w-24 h-24 object-contain"
-                  />
+                  {animalData?.imagePath ? (
+                    <img 
+                      src={animalData.imagePath} 
+                      alt={animalData?.name || "Animal"}
+                      className="w-24 h-24 object-contain"
+                      onError={(e) => {
+                        // Hide image if it fails to load instead of showing fallback
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <span className="text-white text-5xl font-bold">
+                      {result.animal.charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </div>
               </div>
               <h2 className="text-4xl font-bold text-gray-900 mb-2">

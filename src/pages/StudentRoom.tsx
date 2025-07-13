@@ -21,6 +21,7 @@ import { useRoomStore, ROOM_ITEM_LIMIT } from "@/stores/roomStore";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { authenticateStudent, checkSession, isAuthError, isPermissionError } from "@/lib/student-auth";
+import { storePassportCode, getPassportAuthHeaders } from "@/lib/passport-auth";
 import { useStoreData } from "@/contexts/StoreDataContext";
 
 // Import new components
@@ -61,7 +62,7 @@ interface PageData {
     avatarData: any;
     roomData: any;
     className: string;
-    classId: number;
+    classId: string;
     classCode?: string;
     completedAt: string;
     roomVisibility?: string;
@@ -72,7 +73,7 @@ interface PageData {
   storeStatus: {
     isOpen: boolean;
     message: string;
-    classId: number;
+    classId: string;
     className: string;
   };
   storeCatalog: StoreItem[];
@@ -159,7 +160,9 @@ export default function StudentRoom() {
     queryKey: [`/api/room-page-data/${passportCode}`],
     queryFn: async () => {
       try {
-        return await apiRequest('GET', `/api/room-page-data/${passportCode}`);
+        return await apiRequest('GET', `/api/room-page-data/${passportCode}`, undefined, {
+          headers: getPassportAuthHeaders()
+        });
       } catch (err: any) {
         
         // Handle authentication errors
@@ -199,7 +202,7 @@ export default function StudentRoom() {
   useEffect(() => {
     if (pageData) {
       console.log('StudentRoom - pageData received:', pageData);
-      const { room, storeCatalog, access, pet } = pageData;
+      const { room, storeCatalog, access, pet } = pageData as any;
       
       console.log('StudentRoom - Extracted pet data:', {
         pet,
@@ -218,7 +221,7 @@ export default function StudentRoom() {
       }
       
       // Use inventory items from the room data (already properly formatted from backend)
-      const inventoryItems = room.inventoryItems || [];
+      const inventoryItems = (room as any).inventoryItems || [];
       
       // If we have the old format, convert it (for backwards compatibility)
       if (!inventoryItems.length && room.avatarData?.owned) {
@@ -258,6 +261,8 @@ export default function StudentRoom() {
       apiRequest('POST', `/api/store-direct/purchase`, { 
         passportCode: passportCode!,
         itemId 
+      }, {
+        headers: getPassportAuthHeaders()
       }),
     onSuccess: (data) => {
       // Update local balance immediately
@@ -317,6 +322,9 @@ export default function StudentRoom() {
     try {
       setAuthError(null);
       const authResult = await authenticateStudent(code);
+      
+      // Store passport code for API requests
+      storePassportCode(code);
       
       // Set the authenticated viewer name
       if (authResult.studentName) {

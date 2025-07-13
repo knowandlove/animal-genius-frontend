@@ -21,10 +21,10 @@ export interface AnimalType {
 function getAnimalImagePath(animalName: string): string {
   // Map animal names to their file names
   const fileMap: Record<string, string> = {
-    'Meerkat': 'meerkat.svg',
+    'Meerkat': 'meerkat.png',
     'Panda': 'panda.png',
     'Owl': 'owl.png',
-    'Beaver': 'beaver.svg',
+    'Beaver': 'beaver.png',
     'Elephant': 'elephant.png',
     'Otter': 'otter.png',
     'Parrot': 'parrot.png',

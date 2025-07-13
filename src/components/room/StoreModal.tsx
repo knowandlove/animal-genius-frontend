@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { HardHat, Glasses, Gem, Sofa, Package, Palette, Sparkles, Coins, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -13,6 +15,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useRoomStore } from '@/stores/roomStore';
 import { LoadingSpinner } from '@/components/loading-spinner';
+import { useToast } from '@/hooks/use-toast';
 
 interface StoreModalProps {
   open: boolean;
@@ -32,9 +35,37 @@ export default function StoreModal({
   onPurchaseClick
 }: StoreModalProps) {
   const [activeTab, setActiveTab] = useState('pets');
+  const [imageLoadErrors, setImageLoadErrors] = useState<Record<string, boolean>>({});
+  const [imageLoading, setImageLoading] = useState<Record<string, boolean>>({});
+  const [showPetNameDialog, setShowPetNameDialog] = useState(false);
+  const [selectedPetForAdoption, setSelectedPetForAdoption] = useState<any>(null);
+  const [petNameInput, setPetNameInput] = useState('');
+  const [petNameError, setPetNameError] = useState('');
   const queryClient = useQueryClient();
   const pet = useRoomStore((state) => state.pet);
   const passportCode = useRoomStore((state) => state.passportCode);
+  const { toast } = useToast();
+  
+  // Pet name validation regex - alphanumeric, spaces, hyphens, apostrophes
+  const petNameRegex = /^[a-zA-Z0-9\s'-]{1,20}$/;
+  
+  const validatePetName = (name: string): string => {
+    const trimmedName = name.trim();
+    
+    if (!trimmedName) {
+      return 'Pet name cannot be empty';
+    }
+    
+    if (trimmedName.length > 20) {
+      return 'Pet name cannot exceed 20 characters';
+    }
+    
+    if (!petNameRegex.test(trimmedName)) {
+      return 'Only letters, numbers, spaces, hyphens, and apostrophes are allowed';
+    }
+    
+    return ''; // No error
+  };
   
   // Fetch pet catalog
   const { data: petCatalog, isLoading: petsLoading } = usePetCatalog();
@@ -56,14 +87,21 @@ export default function StoreModal({
       queryClient.invalidateQueries({ queryKey: [`/api/room-page-data/${passportCode}`] });
       
       // Show success message
-      alert(`🎉 Congratulations! You've adopted ${data.pet.customName}!`);
+      toast({
+        title: "🎉 Congratulations!",
+        description: `You've adopted ${data.pet.customName}!`,
+      });
     },
     onError: (error: any) => {
       console.error('Pet purchase error:', error);
       const errorMessage = error.details ? 
         `${error.message}: ${JSON.stringify(error.details)}` : 
         (error.message || 'Failed to purchase pet');
-      alert(`❌ ${errorMessage}`);
+      toast({
+        title: "Purchase Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   });
 
@@ -140,6 +178,56 @@ export default function StoreModal({
       case 'rare': return 'bg-purple-500';
       default: return 'bg-gray-400';
     }
+  };
+
+  // Component for handling image loading and errors
+  const ItemImage = ({ item }: { item: any }) => {
+    const itemId = item.id;
+    const hasError = imageLoadErrors[itemId];
+    const isLoading = imageLoading[itemId] !== false; // Default to loading
+    
+    // Use thumbnail for grid display (faster loading)
+    const imageUrl = item.thumbnailUrl || item.imageUrl;
+    
+    return (
+      <div className="aspect-square bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg mb-2 flex items-center justify-center overflow-hidden relative">
+        {/* Loading state */}
+        {isLoading && !hasError && imageUrl && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+            <LoadingSpinner className="w-6 h-6" />
+          </div>
+        )}
+        
+        {/* Show image if we have URL and no error */}
+        {imageUrl && !hasError && (
+          <img 
+            src={imageUrl} 
+            alt={item.name}
+            className="w-full h-full object-contain"
+            onLoad={() => {
+              setImageLoading(prev => ({ ...prev, [itemId]: false }));
+            }}
+            onError={() => {
+              setImageLoadErrors(prev => ({ ...prev, [itemId]: true }));
+              setImageLoading(prev => ({ ...prev, [itemId]: false }));
+            }}
+            loading="lazy"
+          />
+        )}
+        
+        {/* Fallback to emoji if no image or error */}
+        {(!imageUrl || hasError) && !isLoading && (
+          <span className="text-3xl">{getItemEmoji(item)}</span>
+        )}
+        
+        {/* Show RIVE badge if it's an animation */}
+        {item.assetType === 'rive' && item.thumbnailUrl && !hasError && (
+          <div className="absolute top-1 left-1 bg-purple-600 text-white text-xs px-1 rounded">
+            RIVE
+          </div>
+        )}
+      </div>
+    );
   };
 
   const renderPetGrid = () => {
@@ -243,13 +331,9 @@ export default function StoreModal({
                       disabled={availableBalance < pet.cost || purchasePetMutation.isPending}
                       variant={availableBalance >= pet.cost ? 'default' : 'secondary'}
                       onClick={() => {
-                        const petName = prompt(`What would you like to name your ${pet.name}?`, pet.name);
-                        if (petName && petName.trim()) {
-                          purchasePetMutation.mutate({ 
-                            petId: pet.id, 
-                            petName: petName.trim() 
-                          });
-                        }
+                        setSelectedPetForAdoption(pet);
+                        setPetNameInput(pet.name);
+                        setShowPetNameDialog(true);
                       }}
                     >
                       {purchasePetMutation.isPending ? (
@@ -305,26 +389,8 @@ export default function StoreModal({
                     </Badge>
                   )}
                   
-                  {/* Item display */}
-                  <div className="aspect-square bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg mb-2 flex items-center justify-center overflow-hidden">
-                    {item.imageUrl ? (
-                      <img 
-                        src={item.imageUrl} 
-                        alt={item.name}
-                        className="w-full h-full object-contain"
-                        onError={(e) => {
-                          // Fallback to emoji if image fails
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.parentElement?.insertAdjacentHTML(
-                            'beforeend',
-                            `<span class="text-3xl">${getItemEmoji(item)}</span>`
-                          );
-                        }}
-                      />
-                    ) : (
-                      <span className="text-3xl">{getItemEmoji(item)}</span>
-                    )}
-                  </div>
+                  {/* Item display - using our new ItemImage component */}
+                  <ItemImage item={item} />
                   
                   {/* Item info */}
                   <h4 className="font-medium text-sm truncate mb-1">{item.name}</h4>
@@ -358,8 +424,24 @@ export default function StoreModal({
     );
   };
 
+  // Preload images when store catalog loads
+  useEffect(() => {
+    if (storeCatalog && storeCatalog.length > 0) {
+      const preloadImages = (items: any[]) => {
+        items.forEach(item => {
+          if (item.thumbnailUrl || item.imageUrl) {
+            const img = new Image();
+            img.src = item.thumbnailUrl || item.imageUrl;
+          }
+        });
+      };
+      preloadImages(storeCatalog);
+    }
+  }, [storeCatalog]);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
         <DialogHeader className="px-6 pt-6">
           <DialogTitle className="text-2xl flex items-center gap-2">
@@ -479,5 +561,88 @@ export default function StoreModal({
         )}
       </DialogContent>
     </Dialog>
+
+    {/* Pet Naming Dialog */}
+    <Dialog open={showPetNameDialog} onOpenChange={setShowPetNameDialog}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Name Your New Pet!</DialogTitle>
+          <DialogDescription>
+            What would you like to name your {selectedPetForAdoption?.name}?
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          <Label htmlFor="pet-name">Pet Name</Label>
+          <Input
+            id="pet-name"
+            value={petNameInput}
+            onChange={(e) => {
+              const value = e.target.value;
+              setPetNameInput(value);
+              // Validate on change
+              const error = validatePetName(value);
+              setPetNameError(error);
+            }}
+            placeholder="Enter a name for your pet"
+            maxLength={20}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                const error = validatePetName(petNameInput);
+                if (!error && petNameInput.trim()) {
+                  purchasePetMutation.mutate({
+                    petId: selectedPetForAdoption.id,
+                    petName: petNameInput.trim()
+                  });
+                  setShowPetNameDialog(false);
+                }
+              }
+            }}
+            className={petNameError ? 'border-red-500' : ''}
+          />
+          {petNameError ? (
+            <p className="text-sm text-red-500 mt-2">{petNameError}</p>
+          ) : (
+            <p className="text-sm text-muted-foreground mt-2">
+              Letters, numbers, spaces, hyphens, and apostrophes only
+            </p>
+          )}
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setShowPetNameDialog(false);
+              setPetNameError('');
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              const error = validatePetName(petNameInput);
+              if (error) {
+                setPetNameError(error);
+                return;
+              }
+              
+              purchasePetMutation.mutate({
+                petId: selectedPetForAdoption.id,
+                petName: petNameInput.trim()
+              });
+              setShowPetNameDialog(false);
+              setPetNameError('');
+            }}
+            disabled={!!petNameError || !petNameInput.trim() || purchasePetMutation.isPending}
+          >
+            {purchasePetMutation.isPending ? (
+              <><LoadingSpinner className="w-4 h-4 mr-2" /> Adopting...</>
+            ) : (
+              'Adopt Pet'
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

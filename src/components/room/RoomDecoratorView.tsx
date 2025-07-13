@@ -107,10 +107,10 @@ export default function RoomDecoratorView() {
       // Update color and set proper wall/floor object
       if (surface === 'wall') {
         updateRoomColors(newValue.value, undefined);
-        updateRoomPatterns({ type: 'color', value: newValue.value }, undefined); // Set wall as color type
+        updateRoomPatterns({ type: 'color' as const, value: newValue.value }, undefined); // Set wall as color type
       } else {
         updateRoomColors(undefined, newValue.value);
-        updateRoomPatterns(undefined, { type: 'color', value: newValue.value }); // Set floor as color type
+        updateRoomPatterns(undefined, { type: 'color' as const, value: newValue.value }); // Set floor as color type
       }
     } else if (newValue.type === 'pattern') {
       // Update pattern with full data

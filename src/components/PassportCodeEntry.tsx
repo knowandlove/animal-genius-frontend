@@ -1,63 +1,53 @@
-import { useState } from 'react';
-import { useNavigate } from 'wouter';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, LogIn } from 'lucide-react';
-import { apiRequest } from '@/lib/api-request';
+import { useStudentAuth } from '@/hooks/useStudentAuth';
 
 export function PassportCodeEntry() {
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
   const [passportCode, setPassportCode] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { login, isLoading, error, isAuthenticated, isValidPassportFormat } = useStudentAuth();
 
   // Pre-fill from session storage if available
-  useState(() => {
+  useEffect(() => {
     const savedCode = sessionStorage.getItem('lastPassportCode');
     if (savedCode) {
       setPassportCode(savedCode);
     }
   }, []);
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLocation('/room');
+    }
+  }, [isAuthenticated, setLocation]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     
     // Basic validation
     const code = passportCode.trim().toUpperCase();
     if (!code) {
-      setError('Please enter your passport code');
       return;
     }
 
-    // Allow both XXX-XXX and XXX-XXXX formats for backward compatibility
-    if (!/^[A-Z]{3}-[A-Z0-9]{3,4}$/.test(code)) {
-      setError('Invalid passport code format. Example: OWL-123');
+    if (!isValidPassportFormat(code)) {
       return;
     }
 
-    setIsLoading(true);
+    const result = await login(code);
 
-    try {
-      const response = await apiRequest('/api/room/authenticate', {
-        method: 'POST',
-        body: JSON.stringify({ passportCode: code })
-      });
-
-      if (response.success) {
-        // Save to session storage for convenience
-        sessionStorage.setItem('lastPassportCode', code);
-        
-        // Redirect to room
-        navigate('/room');
-      }
-    } catch (err: any) {
-      setError(err.error || 'Invalid passport code. Please try again.');
-    } finally {
-      setIsLoading(false);
+    if (result.success) {
+      // Save to session storage for convenience
+      sessionStorage.setItem('lastPassportCode', code);
+      
+      // Redirect will happen automatically via useEffect when isAuthenticated becomes true
     }
   };
 
@@ -67,7 +57,7 @@ export function PassportCodeEntry() {
     
     // Add dash after 3 characters
     if (cleaned.length > 3) {
-      cleaned = cleaned.slice(0, 3) + '-' + cleaned.slice(3, 7); // Allow up to 4 chars after dash
+      cleaned = cleaned.slice(0, 3) + '-' + cleaned.slice(3, 6); // XXX-XXX format
     }
     
     return cleaned;
@@ -76,7 +66,6 @@ export function PassportCodeEntry() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPassportCode(e.target.value);
     setPassportCode(formatted);
-    setError(null);
   };
 
   return (
@@ -99,7 +88,7 @@ export function PassportCodeEntry() {
                 value={passportCode}
                 onChange={handleInputChange}
                 className="text-center text-lg font-mono"
-                maxLength={8} // XXX-XXXX
+                maxLength={7} // XXX-XXX
                 disabled={isLoading}
                 autoComplete="off"
                 autoFocus

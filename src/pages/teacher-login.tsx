@@ -139,8 +139,6 @@ export default function TeacherLogin() {
                 </form>
               </Form>
 
-
-
               <p className="text-center text-sm text-gray-600 mt-6">
                 Don't have an account?{" "}
                 <Button variant="link" className="p-0" onClick={() => setLocation("/register")}>

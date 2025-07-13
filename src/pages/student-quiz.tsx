@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { questions } from '@shared/quiz-questions';
 import { calculateResults, type QuizAnswer, type QuizResults } from '@shared/scoring';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { submitQuiz } from '@/lib/edge-functions/client';
+import { storePassportCode, storeStudentData } from '@/lib/passport-auth';
 import { Link } from 'wouter';
 // Removed icon imports to optimize build performance
 import confetti from 'canvas-confetti';
@@ -98,6 +100,40 @@ export default function StudentQuiz() {
     }
   }, [currentQuestion, answers, answeredQuestions, firstName, lastInitial, gradeLevel, showStudentInfo, hasSubmitted, quizComplete, results, classCode]);
 
+  // Handle keyboard shortcuts for answer selection
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Only work during active quiz (not on student info screen or results)
+      if (showStudentInfo || quizComplete) return;
+      
+      const question = questions[currentQuestion];
+      const isVARK = question.dimension === 'VARK';
+      
+      // Number keys 1-4 or A-D keys
+      if (e.key === '1' || e.key.toLowerCase() === 'a') {
+        handleAnswerSelect('A');
+      } else if (e.key === '2' || e.key.toLowerCase() === 'b') {
+        handleAnswerSelect('B');
+      } else if ((e.key === '3' || e.key.toLowerCase() === 'c') && isVARK && question.options.C) {
+        handleAnswerSelect('C');
+      } else if ((e.key === '4' || e.key.toLowerCase() === 'd') && isVARK && question.options.D) {
+        handleAnswerSelect('D');
+      } else if (e.key === 'Enter' && selectedAnswer) {
+        // Enter key submits current answer
+        handleSubmitAnswer();
+      } else if (e.key === 'ArrowLeft' && currentQuestion > 0 && answeredQuestions.includes(currentQuestion - 1)) {
+        // Left arrow goes to previous answered question
+        handleTimelineNavigation(currentQuestion - 1);
+      } else if (e.key === 'ArrowRight' && answeredQuestions.includes(currentQuestion + 1)) {
+        // Right arrow goes to next answered question
+        handleTimelineNavigation(currentQuestion + 1);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [currentQuestion, selectedAnswer, showStudentInfo, quizComplete, answeredQuestions]);
+
   // Prevent accidental page navigation/refresh during quiz
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -137,87 +173,76 @@ export default function StudentQuiz() {
 
   // Submit quiz results
   const submitResultsMutation = useMutation({
-    mutationFn: async (submissionData: { studentName: string; gradeLevel: string; classId: number; scores: any; personalityType: string; animalType: string; geniusType: string }) => {
+    mutationFn: async () => {
       // Validate submission data
-      if (!submissionData.studentName?.trim()) {
-        throw new Error("Student name is required");
+      if (!firstName.trim() || !lastInitial.trim()) {
+        throw new Error("Name is required");
       }
-      if (!submissionData.gradeLevel?.trim()) {
+      if (!gradeLevel.trim()) {
         throw new Error("Grade level is required");
       }
-      if (!submissionData.classId) {
-        throw new Error("Class ID is required");
+      if (!classCode) {
+        throw new Error("Class code is required");
       }
       
-      return apiRequest('POST', '/api/quiz/submissions', submissionData);
+      // Convert answers array to object format for Edge Function
+      const answersObj: Record<string, 'A' | 'B' | 'C' | 'D'> = {};
+      answers.forEach((answer) => {
+        answersObj[`q${answer.questionId}`] = answer.answer;
+      });
+      
+      // Call Edge Function
+      return submitQuiz({
+        classCode,
+        firstName,
+        lastInitial,
+        grade: gradeLevel,
+        answers: answersObj,
+      });
     },
     onSuccess: (data) => {
       console.log('Quiz submission response:', data);
-      
-      // Invalidate relevant caches so teachers see new results immediately
-      queryClient.invalidateQueries({ queryKey: ["/api/classes"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/submissions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/analytics"] });
       
       // Clear saved quiz state after successful submission
       if (classCode) {
         localStorage.removeItem(`quiz-state-${classCode}`);
       }
       
-      // Store quiz results for display on next page
+      // Store passport code and student data
+      if (data.passportCode) {
+        storePassportCode(data.passportCode);
+        storeStudentData({
+          id: data.studentId || '',
+          name: `${data.firstName} ${lastInitial}.`,
+          animalType: data.animalType,
+          geniusType: results?.animalGenius || '',
+          classId: classInfo?.id?.toString() || '',
+          passportCode: data.passportCode,
+          schoolYear: gradeLevel,
+        });
+      }
+      
+      // Store quiz results for display
       const quizResultsData = {
-        studentName: `${firstName} ${lastInitial}.`,
+        studentName: `${data.firstName} ${lastInitial}.`,
         gradeLevel,
-        animalType: results?.animal || '',
+        animalType: data.animalType,
         personalityType: results?.mbtiType || '',
         scores: results?.scores,
         learningStyle: results?.learningStyle,
         learningScores: results?.learningScores,
-        ...data // Include any data from server response
+        passportCode: data.passportCode,
       };
+      
+      sessionStorage.setItem('quizResults', JSON.stringify(quizResultsData));
+      
+      // Update submission data state
+      setSubmissionData(data);
       
       toast({
         title: "Quiz completed! 🎉",
-        description: "Your results have been saved successfully.",
+        description: data.message || "Your results have been saved successfully.",
       });
-
-      // Check response for passport code or ID
-      if (data && data.passportCode) {
-        console.log('Received passport code:', data.passportCode);
-        
-        // Store results for the room welcome page
-        sessionStorage.setItem('quizResults', JSON.stringify(quizResultsData));
-        
-        // Show success message with passport code
-        toast({
-          title: "Your Passport Code",
-          description: `${data.passportCode} - Save this to visit your room anytime!`,
-          duration: 10000, // Show for 10 seconds
-        });
-        
-        // No auto-redirect - let them read their results!
-      } else if (data && data.id) {
-        // If we only have an ID, show a message
-        console.log('No passport code in response, but got ID:', data.id);
-        
-        // Store results for potential future use
-        sessionStorage.setItem('quizResults', JSON.stringify(quizResultsData));
-        
-        // Show message to ask teacher
-        toast({
-          title: "Results Saved!",
-          description: "Ask your teacher for your passport code to visit your room.",
-          duration: 10000,
-        });
-      } else {
-        // If no passport code or ID, show error but keep user on completion screen
-        console.error('Incomplete response from server:', data);
-        toast({
-          title: "⚠️ Important",
-          description: "Your results were saved, but no passport code was generated. Please ask your teacher for your passport code to access your room.",
-          variant: "destructive",
-        });
-      }
     },
     onError: (error: Error) => {
       toast({
@@ -388,23 +413,9 @@ export default function StudentQuiz() {
       return;
     }
 
-    const studentName = `${firstName} ${lastInitial}.`;
-    const submissionData = {
-      classId: classInfo?.id || 0,
-      studentName,
-      gradeLevel,
-      answers, // Include raw answers for audit trail
-      personalityType: results?.mbtiType || '', // Map mbtiType to personalityType for database
-      animalType: results?.animal || '',
-      geniusType: results?.animalGenius || '', // Map animalGenius to geniusType for API
-      scores: results?.scores || { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 },
-      learningStyle: results?.learningStyle || 'visual',
-      learningScores: results?.learningScores || { visual: 0, auditory: 0, kinesthetic: 0, readingWriting: 0 },
-    };
-
-    console.log('Submitting quiz data:', submissionData);
+    console.log('Submitting quiz via Edge Function');
     setHasSubmitted(true);
-    submitResultsMutation.mutate(submissionData);
+    submitResultsMutation.mutate();
   };
 
   // Play audio narration
@@ -548,7 +559,7 @@ export default function StudentQuiz() {
     // Map correct animal emojis for your 8 animals
     const animal = ANIMAL_TYPES[results.animal] || {
       name: results.animal,
-      imagePath: "/images/default-animal.svg",
+      imagePath: null, // Don't use a fallback image
       description: `You have the personality traits of a ${results.animal}!`,
       traits: [],
       emoji: '🐾'
@@ -558,10 +569,6 @@ export default function StudentQuiz() {
       <div className="max-w-4xl mx-auto p-6 min-h-screen" style={{
         background: 'linear-gradient(135deg, #d3f2ed 0%, #e8f7f3 40%, #f0faf7 100%)'
       }}>
-        <KalCharacter 
-          message={`You're a ${results.animal}! ${animal.description}`} 
-          mood="celebrating" 
-        />
         
         <Card className="p-8 text-center">
           <motion.div
@@ -570,11 +577,21 @@ export default function StudentQuiz() {
             transition={{ type: "spring", duration: 0.5 }}
           >
             <div className="mb-4 flex justify-center">
-              <img 
-                src={animal.imagePath} 
-                alt={animal.name}
-                className="w-24 h-24 object-contain"
-              />
+              {animal.imagePath ? (
+                <img 
+                  src={animal.imagePath} 
+                  alt={animal.name}
+                  className="w-24 h-24 object-contain"
+                  onError={(e) => {
+                    // Hide image if it fails to load
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-4xl font-bold">
+                  {results.animal.charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
             <h1 className="text-4xl font-heading text-foreground mb-2">You're a {results.animal}!</h1>
             <p className="text-xl font-body text-muted-foreground mb-4">{animal.traits}</p>
@@ -583,7 +600,7 @@ export default function StudentQuiz() {
             {/* Show passport code if already received */}
             {submissionData?.passportCode && (
               <div className="bg-green-100 border-2 border-green-300 rounded-lg p-4 mb-6">
-                <h3 className="font-semibold text-green-800 mb-2">Your Island Passport Code:</h3>
+                <h3 className="font-semibold text-green-800 mb-2">Your Passport Code:</h3>
                 <div className="text-3xl font-mono font-bold text-green-900">
                   {submissionData.passportCode}
                 </div>
@@ -591,10 +608,10 @@ export default function StudentQuiz() {
                   Save this code! You'll need it to visit your room.
                 </p>
                 <Button 
-                  onClick={() => setLocation(`/room/${submissionData.passportCode}`)}
+                  onClick={() => setLocation('/student/dashboard')}
                   className="mt-3 bg-green-600 hover:bg-green-700"
                 >
-                  🏝️ Visit Your Island Now
+                  🎯 Go to Your Dashboard
                 </Button>
               </div>
             )}
@@ -750,6 +767,7 @@ export default function StudentQuiz() {
               className="px-8 py-2"
             >
               Submit Answer
+              <span className="ml-2 text-xs opacity-70">(Enter)</span>
             </Button>
             
             <Button
@@ -759,6 +777,10 @@ export default function StudentQuiz() {
             >
               🔊 Listen to Question
             </Button>
+          </div>
+          
+          <div className="mt-4 text-center text-sm text-muted-foreground">
+            <p>💡 Tip: Use number keys 1-4 or letters A-D to select answers</p>
           </div>
         </motion.div>
       </Card>

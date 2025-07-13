@@ -5,10 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
-import Header from "@/components/header";
 import { useToast } from "@/hooks/use-toast";
 import { Shuffle, Users, Printer, RotateCcw, Download, Grid3X3, Square, Rows, Move } from "lucide-react";
 import { calculateResults } from "@shared/scoring";
+import { AuthenticatedLayout } from "@/components/layouts/AuthenticatedLayout";
 
 // Helper function to get animal image path
 function getAnimalImagePath(animalType: string): string {
@@ -74,6 +74,9 @@ export default function GroupMaker() {
   const fromAnalytics = urlParams.get('from') === 'analytics';
   const urlMode = urlParams.get('mode') as Mode | null;
   
+  // Determine if we're in class-specific mode
+  const isClassSpecific = preselectedClassId && preselectedClassId !== "";
+  
   const [selectedClassId, setSelectedClassId] = useState<string>(preselectedClassId);
   const [mode, setMode] = useState<Mode>(urlMode || "groups");
   const [groupSize, setGroupSize] = useState<number>(3);
@@ -126,7 +129,10 @@ export default function GroupMaker() {
   const students: Student[] = studentsData?.submissions || [];
 
   const handleLogout = () => {
-    setLocation("/login");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("authTokenChanged"));
+    setLocation("/");
   };
 
   const generateGroups = () => {
@@ -505,16 +511,14 @@ export default function GroupMaker() {
   const selectedClass = classes?.find((c: ClassData) => c.id.toString() === selectedClassId);
 
   return (
-    <div className="min-h-screen print:bg-white">
-      <div className="print:hidden">
-        <Header
-          isAuthenticated={true}
-          user={user}
-          onLogout={handleLogout}
-        />
-      </div>
-
-      <div className="py-8 print:py-4">
+    <AuthenticatedLayout 
+      showSidebar={!!isClassSpecific}
+      classId={isClassSpecific ? preselectedClassId : undefined}
+      className={selectedClass?.name}
+      user={user}
+      onLogout={handleLogout}
+    >
+      <div className="min-h-screen print:bg-white py-8 print:py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <Card className="mb-8 print:mb-4">
@@ -574,47 +578,49 @@ export default function GroupMaker() {
 
           {mode === "groups" && !showResults ? (
             /* Groups Configuration Section */
-            <div className="grid lg:grid-cols-3 gap-8 print:hidden">
+            <div className={`grid gap-8 print:hidden ${isClassSpecific ? 'lg:grid-cols-2' : 'lg:grid-cols-3'}`}>
               {/* Class Selection */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    Class Selection
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Class
-                    </label>
-                    <Select value={selectedClassId} onValueChange={setSelectedClassId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose a class..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {classes?.map((cls: ClassData) => (
-                          <SelectItem key={cls.id} value={cls.id.toString()}>
-                            {cls.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {selectedClass && (
-                    <div className="p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-gray-700">
-                        <span className="font-medium">{students.length}</span> students 
-                        have completed the quiz
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Class Code: {selectedClass.code}
-                      </p>
+              {!isClassSpecific && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      Class Selection
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Class
+                      </label>
+                      <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a class..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {classes?.map((cls: ClassData) => (
+                            <SelectItem key={cls.id} value={cls.id.toString()}>
+                              {cls.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      
+                      {selectedClass && (
+                        <div className="p-3 bg-blue-50 rounded-lg mt-3">
+                          <p className="text-sm text-gray-700">
+                            <span className="font-medium">{students.length}</span> students 
+                            have completed the quiz
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Class Code: {selectedClass.code}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Group Configuration */}
               <Card>
@@ -716,47 +722,49 @@ export default function GroupMaker() {
             </div>
           ) : mode === "seating" && !showSeatingResults ? (
             /* Seating Configuration Section */
-            <div className="grid lg:grid-cols-3 gap-8 print:hidden">
+            <div className={`grid gap-8 print:hidden ${isClassSpecific ? 'lg:grid-cols-2' : 'lg:grid-cols-3'}`}>
               {/* Class Selection */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    Class Selection
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Class
-                    </label>
-                    <Select value={selectedClassId} onValueChange={setSelectedClassId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose a class..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {classes?.map((cls: ClassData) => (
-                          <SelectItem key={cls.id} value={cls.id.toString()}>
-                            {cls.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {selectedClass && (
-                    <div className="p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-gray-700">
-                        <span className="font-medium">{students.length}</span> students 
-                        have completed the quiz
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Class Code: {selectedClass.code}
-                      </p>
+              {!isClassSpecific && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      Class Selection
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Class
+                      </label>
+                      <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a class..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {classes?.map((cls: ClassData) => (
+                            <SelectItem key={cls.id} value={cls.id.toString()}>
+                              {cls.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      
+                      {selectedClass && (
+                        <div className="p-3 bg-blue-50 rounded-lg mt-3">
+                          <p className="text-sm text-gray-700">
+                            <span className="font-medium">{students.length}</span> students 
+                            have completed the quiz
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Class Code: {selectedClass.code}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Layout Selection */}
               <Card>
@@ -1231,6 +1239,6 @@ export default function GroupMaker() {
           ) : null}
         </div>
       </div>
-    </div>
+    </AuthenticatedLayout>
   );
 }

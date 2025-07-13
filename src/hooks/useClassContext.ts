@@ -2,13 +2,12 @@ import { useEffect, useState } from "react";
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import type { CollaboratorRole } from "@/types/collaborators";
 
 interface ClassContext {
   classId: string | undefined;
   className: string | undefined;
-  role: 'owner' | CollaboratorRole | undefined;
   isLoading: boolean;
+  role?: string;
 }
 
 export function useClassContext(): ClassContext {
@@ -51,7 +50,7 @@ export function useClassContext(): ClassContext {
   return {
     classId,
     className: data?.name,
-    role: data?.role,
     isLoading: !!classId && isLoading,
+    role: data?.role || 'teacher', // Default to teacher role
   };
 }

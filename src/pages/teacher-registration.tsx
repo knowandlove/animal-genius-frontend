@@ -8,14 +8,13 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/header";
 
-// Create a proper registration schema
+// Create a proper registration schema matching the backend
 const registrationSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
@@ -23,8 +22,8 @@ const registrationSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string().min(1, "Please confirm your password"),
   schoolOrganization: z.string().min(1, "School/organization is required"),
-  roleTitle: z.string().nullable(),
-  howHeardAbout: z.string().nullable(),
+  roleTitle: z.string().optional(),
+  howHeardAbout: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -55,20 +54,29 @@ export default function TeacherRegistration() {
       return apiRequest("POST", "/api/auth/register", data);
     },
     onSuccess: (data) => {
-      localStorage.setItem("authToken", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      if (data.refreshToken) {
-        localStorage.setItem("refreshToken", data.refreshToken);
+      if (data.requiresEmailVerification) {
+        toast({
+          title: "Registration Successful!",
+          description: "Please check your email to verify your account before logging in.",
+        });
+        setLocation("/login");
+      } else {
+        // Auto-login if no email verification required
+        localStorage.setItem("authToken", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        if (data.refreshToken) {
+          localStorage.setItem("refreshToken", data.refreshToken);
+        }
+        
+        // Dispatch custom event to update router state
+        window.dispatchEvent(new Event('authTokenChanged'));
+        
+        toast({
+          title: "Welcome to Animal Genius!",
+          description: "Your account has been created successfully.",
+        });
+        setLocation("/dashboard");
       }
-      
-      // Dispatch custom event to update router state
-      window.dispatchEvent(new Event('authTokenChanged'));
-      
-      toast({
-        title: "Welcome to Animal Genius Quiz!",
-        description: "Your account has been created successfully.",
-      });
-      setLocation("/dashboard");
     },
     onError: (error) => {
       toast({
@@ -96,7 +104,7 @@ export default function TeacherRegistration() {
                 <span className="text-white text-xl">👩‍🏫</span>
               </div>
               <CardTitle className="text-3xl font-bold text-gray-900">Create Teacher Account</CardTitle>
-              <p className="text-gray-600">Get started with your Animal Genius Quiz classroom</p>
+              <p className="text-gray-600">Get started with your Animal Genius classroom</p>
             </CardHeader>
             
             <CardContent className="p-8">
@@ -193,7 +201,7 @@ export default function TeacherRegistration() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Role/Title</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select your role" />
@@ -217,7 +225,7 @@ export default function TeacherRegistration() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>How did you hear about us?</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Please select" />
