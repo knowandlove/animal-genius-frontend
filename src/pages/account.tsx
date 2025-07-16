@@ -184,17 +184,7 @@ export default function Account() {
     },
   });
 
-  // Update form defaults when user data loads
-  if (user && !profileForm.getValues().firstName) {
-    profileForm.reset({
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      schoolOrganization: user.schoolOrganization,
-      roleTitle: user.roleTitle || "",
-      howHeardAbout: user.howHeardAbout || "",
-    });
-  }
+  // Remove this duplicate logic - it's already handled in the useEffect above
 
   const onProfileSubmit = (data: ProfileForm) => {
     updateProfileMutation.mutate(data);
@@ -234,7 +224,11 @@ export default function Account() {
   return (
     <AuthenticatedLayout 
       showSidebar={false}
-      user={user ? { firstName: user.firstName, lastName: user.lastName } : undefined}
+      user={user ? { 
+        firstName: user.firstName, 
+        lastName: user.lastName,
+        personalityAnimal: user.personalityAnimal 
+      } : undefined}
       onLogout={handleLogout}
     >
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

@@ -17,7 +17,8 @@ import {
   Heart, 
   Lightbulb, 
   Music, 
-  TreePine 
+  TreePine,
+  Sparkles
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -207,15 +208,15 @@ export default function CreateClass() {
                 </Card>
 
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button onClick={() => setLocation("/dashboard")} className="flex-1">
-                    Go to Dashboard
+                  <Button onClick={() => setLocation(`/class/${createdClass.id}/dashboard`)} className="flex-1">
+                    Go to Class Dashboard
                   </Button>
                   <Button 
-                    onClick={() => setLocation(`/class/${createdClass.id}/analytics`)} 
+                    onClick={() => setLocation(`/live-discovery/${createdClass.classCode}`)} 
                     variant="outline" 
                     className="flex-1"
                   >
-                    View Class Results
+                    View Live Discovery Board
                   </Button>
                 </div>
               </CardContent>
@@ -241,7 +242,9 @@ export default function CreateClass() {
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <Card className="shadow-xl">
             <CardHeader className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full mb-4 mx-auto"></div>
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 mx-auto">
+                <Sparkles className="w-8 h-8 text-primary" />
+              </div>
               <CardTitle className="text-3xl font-bold text-gray-900">Create New Class</CardTitle>
               <p className="text-gray-600">Set up a new class for your students to take the Animal Genius Quiz</p>
             </CardHeader>
@@ -293,15 +296,12 @@ export default function CreateClass() {
                                       key={iconOption.id}
                                       type="button"
                                       onClick={() => field.onChange(iconOption.id)}
-                                      className={`w-16 h-16 rounded-lg border-2 flex flex-col items-center justify-center text-xs hover:bg-gray-50 transition-colors ${
+                                      className={`w-16 h-16 rounded-lg border-2 flex items-center justify-center hover:bg-gray-50 transition-colors ${
                                         field.value === iconOption.id ? "border-blue-500 bg-blue-50" : "border-gray-200"
                                       }`}
                                       title={iconOption.label}
                                     >
-                                      <IconComponent className="w-6 h-6 text-gray-600 mb-1" />
-                                      <span className="text-xs text-gray-500 text-center leading-tight">
-                                        {iconOption.label.split('/')[0]}
-                                      </span>
+                                      <IconComponent className="w-6 h-6 text-gray-600" />
                                     </button>
                                   );
                                 })}

@@ -50,7 +50,12 @@ export function useAuth() {
       if (!response.ok) {
         throw new Error("Failed to fetch user data");
       }
-      return response.json();
+      const data = await response.json();
+      // Handle the nested response structure from the API
+      if (data.success && data.data) {
+        return data.data;
+      }
+      return data;
     },
     enabled: hasInitialized && !!localStorage.getItem("authToken") && !user,
     retry: 1,
@@ -105,7 +110,9 @@ export function useAuth() {
         },
       });
       if (response.ok) {
-        const userData = await response.json();
+        const data = await response.json();
+        // Handle the nested response structure from the API
+        const userData = data.success && data.data ? data.data : data;
         setUser(userData);
         localStorage.setItem("user", JSON.stringify(userData));
       }

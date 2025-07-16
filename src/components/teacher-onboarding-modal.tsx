@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { useLocation } from 'wouter';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface TeacherOnboardingModalProps {
   isOpen: boolean;
@@ -16,14 +17,14 @@ interface TeacherOnboardingModalProps {
 }
 
 const animalTypes = [
-  { id: 'otter', name: 'Otter', emoji: '🦦' },
-  { id: 'owl', name: 'Owl', emoji: '🦉' },
-  { id: 'dolphin', name: 'Dolphin', emoji: '🐬' },
-  { id: 'elephant', name: 'Elephant', emoji: '🐘' },
-  { id: 'bee', name: 'Bee', emoji: '🐝' },
-  { id: 'octopus', name: 'Octopus', emoji: '🐙' },
-  { id: 'wolf', name: 'Wolf', emoji: '🐺' },
-  { id: 'cheetah', name: 'Cheetah', emoji: '🐆' }
+  { id: 'Meerkat', name: 'Meerkat', image: '/images/meerkat.png' },
+  { id: 'Panda', name: 'Panda', image: '/images/panda.png' },
+  { id: 'Owl', name: 'Owl', image: '/images/owl.png' },
+  { id: 'Beaver', name: 'Beaver', image: '/images/beaver.png' },
+  { id: 'Elephant', name: 'Elephant', image: '/images/elephant.png' },
+  { id: 'Otter', name: 'Otter', image: '/images/otter.png' },
+  { id: 'Parrot', name: 'Parrot', image: '/images/parrot.png' },
+  { id: 'Border Collie', name: 'Border Collie', image: '/images/collie.png' }
 ];
 
 export function TeacherOnboardingModal({ isOpen, onClose, teacherName = "Teacher", onOpenQuiz }: TeacherOnboardingModalProps) {
@@ -31,13 +32,22 @@ export function TeacherOnboardingModal({ isOpen, onClose, teacherName = "Teacher
   const [selectedAnimal, setSelectedAnimal] = useState<string | null>(null);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { refreshUser } = useAuth();
+  const queryClient = useQueryClient();
 
   // Mutation to update teacher's animal type
   const updateAnimalMutation = useMutation({
     mutationFn: async (animalType: string) => {
       return apiRequest('PUT', '/api/me/profile', { personalityAnimal: animalType });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Refresh user data to reflect the new animal
+      if (refreshUser) {
+        await refreshUser();
+      }
+      // Invalidate the /api/me query to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/me'] });
+      
       toast({
         title: "Animal type saved!",
         description: "Your personality animal has been updated.",
@@ -126,14 +136,21 @@ export function TeacherOnboardingModal({ isOpen, onClose, teacherName = "Teacher
                   <button
                     key={animal.id}
                     onClick={() => setSelectedAnimal(animal.id)}
-                    className={`p-4 rounded-lg border-2 transition-all ${
+                    className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center ${
                       selectedAnimal === animal.id
                         ? 'border-primary bg-primary/5'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <div className="text-3xl mb-1">{animal.emoji}</div>
-                    <div className="text-xs font-medium">{animal.name}</div>
+                    <img 
+                      src={animal.image} 
+                      alt={animal.name}
+                      className="w-16 h-16 object-contain mb-1"
+                      onError={(e) => {
+                        e.currentTarget.src = '/images/kal-character.png';
+                      }}
+                    />
+                    <div className="text-xs font-medium text-center">{animal.name}</div>
                   </button>
                 ))}
               </div>
