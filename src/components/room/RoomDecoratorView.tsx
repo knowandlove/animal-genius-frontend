@@ -85,7 +85,7 @@ export default function RoomDecoratorView() {
 
   // Filter inventory for room items and pets
   const roomItems = inventory.items.filter(item => 
-    item.type === 'room_decoration' || item.type === 'room_furniture' || item.type === 'pets'
+    (item.type as string) === 'room_decoration' || (item.type as string) === 'room_furniture' || (item.type as string) === 'pets'
   );
 
   // Categorize items
@@ -98,7 +98,7 @@ export default function RoomDecoratorView() {
   );
   
   const petItems = roomItems.filter(item => 
-    item.type === 'pets' || item.name === 'Fish Bowl' // Include fishbowl in pets
+    (item.type as string) === 'pets' || item.name === 'Fish Bowl' // Include fishbowl in pets
   );
   
   // Handler for surface updates
@@ -107,10 +107,10 @@ export default function RoomDecoratorView() {
       // Update color and set proper wall/floor object
       if (surface === 'wall') {
         updateRoomColors(newValue.value, undefined);
-        updateRoomPatterns({ type: 'color' as const, value: newValue.value }, undefined); // Set wall as color type
+        updateRoomPatterns(null, undefined); // Clear wall pattern when setting color
       } else {
         updateRoomColors(undefined, newValue.value);
-        updateRoomPatterns(undefined, { type: 'color' as const, value: newValue.value }); // Set floor as color type
+        updateRoomPatterns(undefined, null); // Clear floor pattern when setting color
       }
     } else if (newValue.type === 'pattern') {
       // Update pattern with full data

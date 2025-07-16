@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { CheckCircle, Clock, BookOpen, Users, Target, ListChecks, ArrowLeft, PlayCircle, Printer, FileText, Check as CheckIcon, Sun, Battery, Lock, ArrowRight, Calendar, Trophy } from "lucide-react";
+import { CheckCircle, Clock, BookOpen, Users, Target, ListChecks, ArrowLeft, PlayCircle, Printer, FileText, Check as CheckIcon, Sun, Battery, Lock, ArrowRight, Calendar, Trophy, Vote, RotateCcw } from "lucide-react";
 import { lessons, type Lesson, type Activity } from "@shared/lessons";
 import { modules, type Module, getModuleById } from "@/shared/modules";
 import { apiRequest } from "@/lib/queryClient";
@@ -14,6 +14,7 @@ import { api } from "@/config/api";
 import { getIconComponent, getIconColor } from "@/utils/icon-utils";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { AuthenticatedLayout } from "@/components/layouts/AuthenticatedLayout";
+import { ClassValuesSessionModal } from "@/components/ClassValuesSessionModal";
 
 export default function LearningLounge() {
   const [, setLocation] = useLocation();
@@ -74,11 +75,13 @@ export default function LearningLounge() {
 
   // Fetch lesson progress
   const { data: progressData, isLoading } = useQuery({
-    queryKey: classId ? [`/api/classes/${classId}/lessons/progress`] : ["/api/lessons/progress"],
+    queryKey: classId ? [`/api/classes/${classId}/lessons/progress`] : ["no-class-progress"],
     queryFn: async () => {
-      const endpoint = classId 
-        ? api(`/api/classes/${classId}/lessons/progress`)
-        : api("/api/lessons/progress");
+      if (!classId) {
+        // Return empty progress when no class is selected
+        return { lessons: [], completedLessons: 0, totalLessons: 5 };
+      }
+      const endpoint = api(`/api/classes/${classId}/lessons/progress`);
       const response = await fetch(endpoint, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -86,11 +89,17 @@ export default function LearningLounge() {
       });
       if (!response.ok) throw new Error("Failed to fetch lesson progress");
       const data = await response.json();
-      setLessonProgressData(data);
       return data;
     },
     enabled: !!token,
   });
+
+  // Update lessonProgressData when progressData changes
+  useEffect(() => {
+    if (progressData) {
+      setLessonProgressData(progressData);
+    }
+  }, [progressData]);
 
   const markCompleteMutation = useMutation({
     mutationFn: async (lessonId: number) => {
@@ -132,6 +141,34 @@ export default function LearningLounge() {
         queryKey: [`/api/classes/${classId}/lessons/progress`]
       });
     },
+  });
+
+  const resetValuesVotingMutation = useMutation({
+    mutationFn: async () => {
+      // First check if there's an active session
+      const statusResponse = await apiRequest('GET', `/api/classes/${classId}/lessons/4/activity/2/status`);
+      if (statusResponse?.hasActiveSession) {
+        // Reset the active session
+        return await apiRequest('POST', `/api/class-values/reset-session/${statusResponse.sessionId}`);
+      }
+      return null;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/classes/${classId}/lessons/progress`]
+      });
+      toast({
+        title: "Voting Reset!",
+        description: "All votes have been cleared and the session has been reset.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Reset Failed",
+        description: "Could not reset the voting session. Please try again.",
+        variant: "destructive"
+      });
+    }
   });
 
   const isLessonComplete = (lessonId: number) => {
@@ -193,6 +230,7 @@ export default function LearningLounge() {
       onMarkComplete={() => handleMarkComplete(lesson.id)}
       onStartLesson={() => startLessonMutation.mutate(lesson.id)}
       onCompleteActivity={(activityNumber) => completeActivityMutation.mutate({ lessonId: lesson.id, activityNumber })}
+      onResetValuesVoting={() => resetValuesVotingMutation.mutate()}
       onBack={() => {
         setSelectedLesson(null);
         // Update URL to show module view
@@ -201,7 +239,9 @@ export default function LearningLounge() {
         window.history.replaceState({}, '', newUrl.toString());
       }}
       isMarkingComplete={markCompleteMutation.isPending}
+      isResettingVoting={resetValuesVotingMutation.isPending}
       classId={classId}
+      className={className}
     />;
   }
   
@@ -332,11 +372,11 @@ export default function LearningLounge() {
             </div>
             <Button
               variant="outline"
-              onClick={() => setLocation("/dashboard")}
+              onClick={() => setLocation(classId ? `/class/${classId}/dashboard` : "/dashboard")}
               className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Dashboard
+              {classId ? "Back to Class Dashboard" : "Back to Dashboard"}
             </Button>
           </div>
         </CardContent>
@@ -498,14 +538,18 @@ interface LessonDetailViewProps {
   onMarkComplete: () => void;
   onStartLesson: () => void;
   onCompleteActivity: (activityNumber: number) => void;
+  onResetValuesVoting: () => void;
   onBack: () => void;
   isMarkingComplete: boolean;
+  isResettingVoting: boolean;
   classId: string | null;
+  className?: string | null;
 }
 
-function LessonDetailView({ lesson, lessonProgress, isComplete, onMarkComplete, onStartLesson, onCompleteActivity, onBack, isMarkingComplete, classId }: LessonDetailViewProps) {
+function LessonDetailView({ lesson, lessonProgress, isComplete, onMarkComplete, onStartLesson, onCompleteActivity, onResetValuesVoting, onBack, isMarkingComplete, isResettingVoting, classId, className }: LessonDetailViewProps) {
   const [, setLocation] = useLocation();
   const [startingLesson, setStartingLesson] = useState(false);
+  const [showValuesVotingModal, setShowValuesVotingModal] = useState(false);
   
   // Start lesson if not started
   useEffect(() => {
@@ -513,7 +557,7 @@ function LessonDetailView({ lesson, lessonProgress, isComplete, onMarkComplete, 
       setStartingLesson(true);
       onStartLesson();
     }
-  }, [lessonProgress, startingLesson, isComplete, onStartLesson]);
+  }, [lessonProgress, startingLesson, isComplete]); // Removed onStartLesson from dependencies
   
   // Check if activity is complete
   const isActivityComplete = (activityNumber: number) => {
@@ -538,8 +582,8 @@ function LessonDetailView({ lesson, lessonProgress, isComplete, onMarkComplete, 
   return (
     <AuthenticatedLayout 
       showSidebar={true}
-      classId={undefined}
-      className={undefined}
+      classId={classId || undefined}
+      className={className || undefined}
       user={undefined}
       onLogout={handleLogout}
     >
@@ -619,7 +663,11 @@ function LessonDetailView({ lesson, lessonProgress, isComplete, onMarkComplete, 
               lesson={lesson} 
               lessonProgress={lessonProgress}
               onCompleteActivity={onCompleteActivity}
+              onResetValuesVoting={onResetValuesVoting}
               isActivityComplete={isActivityComplete}
+              isResettingVoting={isResettingVoting}
+              classId={classId}
+              onShowValuesVoting={() => setShowValuesVotingModal(true)}
             />
           </div>
           
@@ -627,16 +675,33 @@ function LessonDetailView({ lesson, lessonProgress, isComplete, onMarkComplete, 
             <LessonSidebar lesson={lesson} />
           </div>
         </div>
+
+        {/* Class Values Voting Modal */}
+        {classId && (
+          <ClassValuesSessionModal
+            isOpen={showValuesVotingModal}
+            onClose={() => setShowValuesVotingModal(false)}
+            classId={classId}
+            onSessionComplete={() => {
+              // Refresh the lesson progress when voting session completes
+              window.location.reload();
+            }}
+          />
+        )}
       </div>
     </AuthenticatedLayout>
   );
 }
 
-function LessonSectionsView({ lesson, lessonProgress, onCompleteActivity, isActivityComplete }: { 
+function LessonSectionsView({ lesson, lessonProgress, onCompleteActivity, onResetValuesVoting, isActivityComplete, isResettingVoting, classId, onShowValuesVoting }: { 
   lesson: Lesson; 
   lessonProgress?: any;
   onCompleteActivity: (activityNumber: number) => void;
+  onResetValuesVoting: () => void;
   isActivityComplete: (activityNumber: number) => boolean;
+  isResettingVoting: boolean;
+  classId: string | null;
+  onShowValuesVoting: () => void;
 }) {
   // Check if lesson has activities (new structure) or sections (old structure)
   if (!lesson.activities) {
@@ -729,7 +794,46 @@ function LessonSectionsView({ lesson, lessonProgress, onCompleteActivity, isActi
                   )}
                 </CardTitle>
                 <div>
-                  {isComplete ? (
+                  {/* Special handling for Activity 2 of Lesson 4 (Class Values Voting) - always show buttons for testing */}
+                  {lesson.id === 4 && number === 2 ? (
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={onShowValuesVoting}
+                        size="sm"
+                        className="bg-[#85B2C8] hover:bg-[#6d94a6] text-white text-xs"
+                      >
+                        <Vote className="w-3 h-3 mr-1" />
+                        Start Class Values Voting
+                      </Button>
+                      {isComplete && (
+                        <Button
+                          onClick={() => window.open(`/class-values-results/${classId}`, '_blank')}
+                          size="sm"
+                          variant="outline"
+                          className="text-xs"
+                        >
+                          <Trophy className="w-3 h-3 mr-1" />
+                          View Results
+                        </Button>
+                      )}
+                      <Button
+                        onClick={onResetValuesVoting}
+                        size="sm"
+                        variant="destructive"
+                        className="text-xs"
+                        disabled={isResettingVoting}
+                      >
+                        {isResettingVoting ? (
+                          <LoadingSpinner size="sm" />
+                        ) : (
+                          <>
+                            <RotateCcw className="w-3 h-3 mr-1" />
+                            Reset Voting
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ) : isComplete ? (
                     <div className="flex items-center text-green-600">
                       <CheckIcon className="w-5 h-5 mr-1" />
                       <span className="text-sm font-medium">Complete</span>

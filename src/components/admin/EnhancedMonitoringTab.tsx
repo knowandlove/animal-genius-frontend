@@ -57,11 +57,22 @@ export function EnhancedMonitoringTab() {
   });
 
   // Fetch health status
-  const { data: healthStatus, isLoading: healthLoading } = useQuery({
+  const { data: healthStatus, isLoading: healthLoading, error: healthError } = useQuery({
     queryKey: ['/api/health/ready'],
-    queryFn: () => apiRequest('GET', '/api/health/ready'),
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/health/ready');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[HEALTH DEBUG] Raw response:', response);
+      }
+      return response;
+    },
     refetchInterval: autoRefresh ? 15000 : false,
   });
+  
+  // Debug health endpoint
+  if (process.env.NODE_ENV === 'development' && healthError) {
+    console.error('[HEALTH DEBUG] Error fetching health:', healthError);
+  }
 
   if (statsLoading || errorsLoading || healthLoading) {
     return (
@@ -75,6 +86,13 @@ export function EnhancedMonitoringTab() {
   const alerts = quickStats?.alerts || [];
   const errors = errorSummary || {};
   const health = healthStatus || {};
+  
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[HEALTH DEBUG] healthStatus:', healthStatus);
+    console.log('[HEALTH DEBUG] health:', health);
+    console.log('[HEALTH DEBUG] health.status:', health.status);
+  }
   
   // Check if we have API access
   const hasApiAccess = !(!quickStats && !errorSummary && !healthStatus);
@@ -137,7 +155,9 @@ export function EnhancedMonitoringTab() {
               )}
               <div>
                 <p className="text-sm text-muted-foreground">Overall Status</p>
-                <p className="text-lg font-semibold capitalize">{health.status || 'Unknown'}</p>
+                <p className="text-lg font-semibold capitalize">
+                  {health?.status ? health.status : (healthStatus ? 'Loading...' : 'Unknown')}
+                </p>
               </div>
             </div>
             
@@ -145,7 +165,9 @@ export function EnhancedMonitoringTab() {
               <Clock className="h-8 w-8 text-blue-500" />
               <div>
                 <p className="text-sm text-muted-foreground">Uptime</p>
-                <p className="text-lg font-semibold">{performance.uptime ? `${performance.uptime} min` : 'N/A'}</p>
+                <p className="text-lg font-semibold">
+                  {performance?.uptime !== undefined ? `${performance.uptime} min` : 'N/A'}
+                </p>
               </div>
             </div>
             

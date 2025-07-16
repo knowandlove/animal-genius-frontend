@@ -274,13 +274,12 @@ export default function AdminPanel() {
       </div>
 
       <Tabs defaultValue="dashboard" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="monitoring">Health</TabsTrigger>
           <TabsTrigger value="teachers">Teachers</TabsTrigger>
           <TabsTrigger value="classes">Classes</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="metrics">Performance</TabsTrigger>
           <TabsTrigger value="avatar-tools">Store Tools</TabsTrigger>
         </TabsList>
 
@@ -464,10 +463,6 @@ export default function AdminPanel() {
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-
-        <TabsContent value="metrics" className="space-y-4">
-          <MetricsTab />
         </TabsContent>
 
         <TabsContent value="avatar-tools" className="space-y-4">
@@ -665,240 +660,6 @@ export default function AdminPanel() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-function MetricsTab() {
-  const [autoRefresh, setAutoRefresh] = useState(true);
-
-  const { data: metrics, isLoading, error } = useQuery({
-    queryKey: ['/api/admin/metrics'],
-    queryFn: () => apiRequest('GET', '/api/admin/metrics'),
-    refetchInterval: autoRefresh ? 5000 : false, // Refresh every 5 seconds if enabled
-  });
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <LoadingSpinner />
-        <span className="ml-2">Loading metrics...</span>
-      </div>
-    );
-  }
-
-  if (error || !metrics) {
-    return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Failed to load metrics. The monitoring service may be unavailable.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  const formatUptime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return `${hours}h ${minutes}m`;
-  };
-
-  const formatDuration = (ms: number) => {
-    if (ms < 1000) return `${ms}ms`;
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
-    return `${seconds}s`;
-  };
-
-  if (isLoading) return <LoadingSpinner />;
-  if (error) return <div className="text-red-500">Failed to load metrics</div>;
-  if (!metrics) return <div>No metrics available</div>;
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">WebSocket Performance Metrics</h2>
-          <p className="text-muted-foreground">Real-time monitoring of game system performance</p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Switch
-            checked={autoRefresh}
-            onCheckedChange={setAutoRefresh}
-            id="auto-refresh"
-          />
-          <Label htmlFor="auto-refresh">Auto-refresh</Label>
-        </div>
-      </div>
-
-      {/* Real-time metrics cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Connections */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Connections</CardTitle>
-            <Wifi className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics.connections.activeConnections}</div>
-            <p className="text-xs text-muted-foreground">
-              {metrics.connections.teacherConnections} teachers, {metrics.connections.playerConnections} players
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Peak today: {metrics.connections.connectionsPeakToday}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Messages */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Messages/Second</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics.messages.messagesPerSecond.toFixed(1)}</div>
-            <p className="text-xs text-muted-foreground">
-              Total: {metrics.messages.totalMessages.toLocaleString()}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Error rate: {metrics.messages.errorRate.toFixed(1)}%
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Active Games */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Games</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics.games.activeGames}</div>
-            <p className="text-xs text-muted-foreground">
-              Avg players: {metrics.games.averagePlayersPerGame.toFixed(1)}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Completed today: {metrics.games.gamesCompletedToday}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Database Performance */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Database Avg</CardTitle>
-            <Database className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics.database.averageQueryTime.toFixed(0)}ms</div>
-            <p className="text-xs text-muted-foreground">
-              {metrics.database.queryCount.toLocaleString()} queries
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {metrics.database.failedQueries} failed
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Detailed metrics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* System Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              System Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium">Memory Usage</Label>
-                <p className="text-2xl font-bold">{metrics.system.memoryUsage.toFixed(1)} MB</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Uptime</Label>
-                <p className="text-2xl font-bold">{formatUptime(metrics.system.uptime)}</p>
-              </div>
-            </div>
-            <div>
-              <Label className="text-sm font-medium">Last Updated</Label>
-              <p className="text-sm text-muted-foreground">
-                {new Date(metrics.timestamp).toLocaleTimeString()}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Game Statistics */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Game Statistics
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium">Total Games Created</Label>
-                <p className="text-2xl font-bold">{metrics.games.totalGamesCreated}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Total Players</Label>
-                <p className="text-2xl font-bold">{metrics.games.totalPlayersJoined}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Peak Games</Label>
-                <p className="text-2xl font-bold">{metrics.games.peakActiveGames}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Avg Duration</Label>
-                <p className="text-2xl font-bold">
-                  {formatDuration(metrics.games.averageGameDuration)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Slow Queries */}
-      {metrics.database.slowQueries.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-yellow-600">
-              <Database className="h-4 w-4" />
-              Slow Database Queries
-            </CardTitle>
-            <CardDescription>
-              Queries taking longer than 1 second
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {metrics.database.slowQueries.map((query, index) => (
-                <div key={index} className="flex justify-between items-center p-2 bg-yellow-50 rounded">
-                  <span className="font-mono text-sm">{query.query}</span>
-                  <div className="text-right">
-                    <Badge variant="outline" className="text-yellow-700">
-                      {query.duration}ms
-                    </Badge>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(query.timestamp).toLocaleTimeString()}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

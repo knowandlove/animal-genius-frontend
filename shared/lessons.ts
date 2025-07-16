@@ -197,35 +197,78 @@ export const lessons: Lesson[] = [
   },
   {
     id: 4,
-    title: "Leadership and Teamwork",
-    duration: "40 minutes",
-    description: "Students learn how different personality types contribute to leadership and teamwork in unique ways.",
+    title: "Create Our Pack Agreements",
+    duration: "35-45 minutes",
+    description: "Students will co-create their classroom agreements using shared core values. Through discussion, voting, and reflection, they'll establish a foundation of trust, collaboration, and shared expectations.",
     objectives: [
-      "Students will recognize different leadership styles",
-      "Students will practice collaborative problem-solving",
-      "Students will appreciate diverse contributions to team success"
+      "Students will co-create their classroom agreements using shared core values",
+      "Students will participate in democratic decision-making through values voting",
+      "Students will establish a foundation of trust and collaboration",
+      "Students will understand how shared values support classroom community"
     ],
     materialsNeeded: [
-      "Team challenge materials",
-      "Leadership style cards",
-      "Reflection journals"
+      "Student devices for voting (Chromebooks/tablets)",
+      "Projector for displaying voting session",
+      "Class tree poster or digital display",
+      "Optional: Leaf templates for reflection activity"
     ],
     activities: {
       activity1: {
-        title: "Activity 1",
-        steps: [{ instruction: "Coming soon" }]
+        title: "Choose Your Roots (Core Values Discussion)",
+        steps: [
+          { 
+            instruction: "Display the Core Values list and invite students to read each value aloud",
+            tips: ["Take turns reading or read together as a class", "Ensure every student understands each value"]
+          },
+          { 
+            instruction: "Discuss what values mean to your class community",
+            guidingQuestions: ["What does this value look like in our classroom?", "How might this value help us learn together?"]
+          }
+        ]
       },
       activity2: {
-        title: "Activity 2",
-        steps: [{ instruction: "Coming soon" }]
+        title: "Core Values Voting",
+        steps: [
+          { 
+            instruction: "Launch the digital voting session for your class",
+            tips: ["Project the voting URL or QR code for students to access", "Ensure all students can join before starting"]
+          },
+          { 
+            instruction: "Students vote on their top 3 values in each of the 4 clusters",
+            tips: ["Monitor live progress to ensure all students participate", "Provide gentle reminders for students who need more time"]
+          },
+          { 
+            instruction: "Review voting results together as a class",
+            guidingQuestions: ["What do our chosen values tell us about who we want to be as a class?", "How can these values guide our daily interactions?"]
+          }
+        ]
       },
       activity3: {
-        title: "Activity 3",
-        steps: [{ instruction: "Coming soon" }]
+        title: "Create Class Agreements",
+        steps: [
+          { 
+            instruction: "Use sentence starters to co-write agreements based on your class values",
+            tips: ["Group values into the 4 themes", "Let students help craft the language for each agreement"]
+          },
+          { 
+            instruction: "Vote to finalize 3-5 class agreements that everyone commits to follow",
+            guidingQuestions: ["Which agreements feel most important for our class?", "How will these agreements help us all succeed?"]
+          }
+        ]
       },
       activity4: {
-        title: "Activity 4",
-        steps: [{ instruction: "Coming soon" }]
+        title: "Sign the Classroom Tree (Optional)",
+        optional: true,
+        steps: [
+          { 
+            instruction: "Have each student sign their name on the classroom tree as a symbol of commitment",
+            tips: ["Use the digital tree display or print a large poster version"]
+          },
+          { 
+            instruction: "Optional: Students create leaves sharing what they need to thrive",
+            guidingQuestions: ["What do you personally need to grow and learn in our classroom?", "How can our class values support your growth?"]
+          }
+        ]
       }
     }
   },

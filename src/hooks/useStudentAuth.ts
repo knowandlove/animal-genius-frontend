@@ -1,12 +1,70 @@
 import { useState, useEffect, useCallback } from 'react';
 import { 
-  getCurrentAuthState, 
-  loginWithPassportCode,
-  getStudentProfile,
+  getStoredPassportCode,
+  storePassportCode,
   logoutStudent,
-  type AuthState,
-  type StudentProfile
+  getPassportAuthHeaders,
+  type StudentData
 } from '../lib/passport-auth';
+import { apiRequest } from '../lib/queryClient';
+
+interface AuthState {
+  isAuthenticated: boolean;
+  student: StudentData | null;
+  passportCode: string | null;
+}
+
+interface StudentProfile extends StudentData {
+  // Additional profile fields if needed
+}
+
+function getCurrentAuthState(): AuthState {
+  const passportCode = getStoredPassportCode();
+  // TODO: Retrieve student data from localStorage or make an API call
+  return {
+    isAuthenticated: !!passportCode,
+    student: null,
+    passportCode
+  };
+}
+
+async function getStudentProfile(): Promise<StudentProfile | null> {
+  try {
+    const response = await apiRequest('GET', '/api/student/profile', undefined, {
+      headers: getPassportAuthHeaders()
+    });
+    return response as StudentProfile;
+  } catch (error) {
+    console.error('Failed to get student profile:', error);
+    return null;
+  }
+}
+
+async function loginWithPassportCode(passportCode: string): Promise<AuthState> {
+  try {
+    const response = await apiRequest('POST', '/api/student-passport/validate', {
+      passportCode
+    });
+    
+    if (response.valid) {
+      storePassportCode(passportCode);
+      return {
+        isAuthenticated: true,
+        student: response.student,
+        passportCode
+      };
+    }
+    
+    return {
+      isAuthenticated: false,
+      student: null,
+      passportCode: null
+    };
+  } catch (error) {
+    console.error('Login failed:', error);
+    throw error;
+  }
+}
 
 export function useStudentAuth() {
   const [authState, setAuthState] = useState<AuthState>(() => getCurrentAuthState());
@@ -43,7 +101,7 @@ export function useStudentAuth() {
     try {
       const profile = await getStudentProfile();
       if (profile) {
-        setAuthState(prev => ({
+        setAuthState((prev: AuthState) => ({
           ...prev,
           student: profile
         }));
@@ -60,7 +118,7 @@ export function useStudentAuth() {
   // Login with passport code
   const login = useCallback(async (passportCode: string): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
-    setAuthState(prev => ({ ...prev, error: undefined }));
+    setAuthState((prev: AuthState) => ({ ...prev, error: undefined }));
 
     try {
       const result = await loginWithPassportCode(passportCode);

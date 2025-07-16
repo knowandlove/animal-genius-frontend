@@ -223,11 +223,12 @@ export default function StudentQuiz() {
       }
       
       // Store quiz results for display
+      // FIX: Use backend calculation for both animal AND personality to ensure consistency
       const quizResultsData = {
         studentName: `${data.firstName} ${lastInitial}.`,
         gradeLevel,
         animalType: data.animalType,
-        personalityType: results?.mbtiType || '',
+        personalityType: data.mbtiType || results?.mbtiType || '', // Use backend first, frontend fallback
         scores: results?.scores,
         learningStyle: results?.learningStyle,
         learningScores: results?.learningScores,

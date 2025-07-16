@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { LogOut, User, GraduationCap, Sparkles, Users } from 'lucide-react';
 import { useStudentAuth } from '@/hooks/useStudentAuth';
-import { getClassInfo, getStudentProgress, getClassmates } from '@/lib/passport-auth';
+// TODO: These functions need to be implemented
+// import { getClassInfo, getStudentProgress, getClassmates } from '@/lib/passport-auth';
 
 export function StudentDashboard() {
   const { student, logout, isLoading } = useStudentAuth();
@@ -20,15 +21,16 @@ export function StudentDashboard() {
 
       setDataLoading(true);
       try {
-        const [classData, progressData, classmatesData] = await Promise.all([
-          getClassInfo(),
-          getStudentProgress(),
-          getClassmates()
-        ]);
+        // TODO: Implement these API calls
+        // const [classData, progressData, classmatesData] = await Promise.all([
+        //   getClassInfo(),
+        //   getStudentProgress(),
+        //   getClassmates()
+        // ]);
 
-        setClassInfo(classData);
-        setProgress(progressData);
-        setClassmates(classmatesData);
+        // setClassInfo(classData);
+        // setProgress(progressData);
+        // setClassmates(classmatesData);
       } catch (error) {
         console.error('Failed to load student data:', error);
       } finally {

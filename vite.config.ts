@@ -1,11 +1,33 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  // Load env files
+  const env = loadEnv(mode, process.cwd(), '');
+  
+  return {
   plugins: [
     react(),
-  ],
+    // Only add Sentry plugin in production builds
+    process.env.NODE_ENV === 'production' && sentryVitePlugin({
+      org: env.SENTRY_ORG,
+      project: env.SENTRY_PROJECT,
+      authToken: env.SENTRY_AUTH_TOKEN,
+      sourcemaps: {
+        include: ["./dist"],
+        ignore: ["node_modules"],
+        filesToDeleteAfterUpload: ["./dist/**/*.js.map"],
+      },
+      release: {
+        name: process.env.VITE_APP_VERSION || `${Date.now()}`,
+        setCommits: {
+          auto: true,
+        },
+      },
+    }),
+  ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "src"),
@@ -17,6 +39,7 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true,
+    sourcemap: true, // Enable source maps for Sentry
     rollupOptions: {
       output: {
         manualChunks: {
@@ -47,4 +70,5 @@ export default defineConfig({
       },
     },
   },
+  };
 });

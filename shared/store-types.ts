@@ -8,7 +8,8 @@ export type ItemType =
   | 'room_furniture'
   | 'room_decoration'
   | 'room_wallpaper'
-  | 'room_flooring';
+  | 'room_flooring'
+  | 'pets';
 
 export type ItemRarity = 'common' | 'rare' | 'legendary';
 

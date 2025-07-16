@@ -40,6 +40,8 @@ const ClassIsland = lazy(() => import("@/pages/ClassIsland"));
 const ColorPreview = lazy(() => import("@/pages/color-preview"));
 const ClassEconomy = lazy(() => import("@/pages/class-economy"));
 const ClassDashboard = lazy(() => import("@/pages/class-dashboard"));
+const ClassValuesVoting = lazy(() => import("@/pages/ClassValuesVoting"));
+const ClassValuesResults = lazy(() => import("@/pages/ClassValuesResults"));
 // Test pages removed during cleanup
 const AvatarEditor = lazy(() => import("@/pages/avatar-editor"));
 const AvatarItemPositioner = lazy(() => import("@/pages/admin/avatar-item-positioner"));
@@ -119,6 +121,12 @@ function Router() {
         {/* Student quiz routes - always available with /q/ prefix */}
         <Route path="/q/:classCode" component={StudentQuiz} />
         <Route path="/results/:submissionId" component={QuizResults} />
+        
+        {/* Class values voting - available to students via direct link */}
+        <Route path="/class-values-voting/:sessionId" component={ClassValuesVoting} />
+        
+        {/* Class values results - available to teachers */}
+        <Route path="/class-values-results/:classId" component={ClassValuesResults} />
         
         
         {/* Student authentication and room routes */}

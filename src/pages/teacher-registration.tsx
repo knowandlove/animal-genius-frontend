@@ -19,7 +19,12 @@ const registrationSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string()
+    .min(6, "Password must be at least 6 characters")
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+      "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+    ),
   confirmPassword: z.string().min(1, "Please confirm your password"),
   schoolOrganization: z.string().min(1, "School/organization is required"),
   roleTitle: z.string().optional(),
@@ -78,10 +83,23 @@ export default function TeacherRegistration() {
         setLocation("/dashboard");
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      // Check if it's a validation error with specific field messages
+      let errorMessage = error.message || "Registration failed";
+      
+      // If the backend returns validation errors, show them
+      if (error.response?.data?.errors) {
+        const errors = error.response.data.errors;
+        errorMessage = Object.entries(errors)
+          .map(([field, message]) => `${field}: ${message}`)
+          .join(", ");
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
       toast({
         title: "Registration Failed",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     },

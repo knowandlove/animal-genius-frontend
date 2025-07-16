@@ -23,6 +23,7 @@ import { QuestionIcon } from "@/components/QuestionIcon";
 import { TeacherQuizModal } from "@/components/TeacherQuizModal";
 import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { AuthenticatedLayout } from "@/components/layouts/AuthenticatedLayout";
+import { TeacherOnboardingModal } from "@/components/teacher-onboarding-modal";
 
 // Helper function for animal image paths
 function getAnimalImagePath(animal: string): string {
@@ -90,6 +91,7 @@ export default function TeacherDashboard() {
   const [deleteClassId, setDeleteClassId] = useState<string | null>(null);
   const [showQuizModal, setShowQuizModal] = useState(false);
   const [deletingClassId, setDeletingClassId] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const { toast } = useToast();
   const { user, isLoading: authLoading, logout, refreshUser } = useAuth();
   const queryClient = useQueryClient();
@@ -172,6 +174,20 @@ export default function TeacherDashboard() {
       });
     }
   }, [user, classes, isLoading, error]);
+
+  // Check if user needs onboarding (first login)
+  useEffect(() => {
+    if (user && !authLoading && !isLoading) {
+      // Check if user has completed onboarding
+      const hasCompletedOnboarding = localStorage.getItem(`onboarding_completed_${user.id}`);
+      const hasNoClasses = !classes || classes.length === 0;
+      
+      // Show onboarding if they haven't completed it and have no classes
+      if (!hasCompletedOnboarding && hasNoClasses) {
+        setShowOnboarding(true);
+      }
+    }
+  }, [user, authLoading, classes, isLoading]);
 
   const handleLogout = () => {
     logout();
@@ -579,6 +595,27 @@ export default function TeacherDashboard() {
               description: "Failed to save your animal. Please try again.",
               variant: "destructive",
             });
+          }
+        }}
+      />
+      
+      {/* Onboarding Modal */}
+      <TeacherOnboardingModal
+        isOpen={showOnboarding}
+        onClose={() => {
+          setShowOnboarding(false);
+          // Mark onboarding as completed
+          if (user) {
+            localStorage.setItem(`onboarding_completed_${user.id}`, 'true');
+          }
+        }}
+        teacherName={user?.firstName}
+        onOpenQuiz={() => {
+          setShowOnboarding(false);
+          setShowQuizModal(true);
+          // Mark onboarding as completed since they're taking the quiz
+          if (user) {
+            localStorage.setItem(`onboarding_completed_${user.id}`, 'true');
           }
         }}
       />

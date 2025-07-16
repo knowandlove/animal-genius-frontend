@@ -97,7 +97,7 @@ export default function ClassAnalytics() {
   const [isCurrencyModalOpen, setIsCurrencyModalOpen] = useState(false);
   const [showCurrencySection, setShowCurrencySection] = useState(false);
   
-  const itemsPerPage = 10;
+  const itemsPerPage = 20;
   
   // Permission checks based on role
   const isOwner = role === 'owner';
@@ -253,12 +253,12 @@ export default function ClassAnalytics() {
     selectedLearningStyle,
   ]);
 
-  // Animal color mapping and SVG paths
+  // Animal color mapping and image paths
   const animalColors: Record<string, { color: string; svg: string }> = {
-    Meerkat: { color: "#4B4959", svg: getAssetUrl("/images/meerkat.svg") },
+    Meerkat: { color: "#4B4959", svg: getAssetUrl("/images/meerkat.png") },
     Panda: { color: "#82BCC8", svg: getAssetUrl("/images/panda.png") },
     Owl: { color: "#BAC97D", svg: getAssetUrl("/images/owl.png") },
-    Beaver: { color: "#829B79", svg: getAssetUrl("/images/beaver.svg") },
+    Beaver: { color: "#829B79", svg: getAssetUrl("/images/beaver.png") },
     Elephant: { color: "#BD85C8", svg: getAssetUrl("/images/elephant.png") },
     Otter: { color: "#FACC7D", svg: getAssetUrl("/images/otter.png") },
     Parrot: { color: "#FF8070", svg: getAssetUrl("/images/parrot.png") },
@@ -297,6 +297,12 @@ export default function ClassAnalytics() {
   const personalityPreferences = useMemo(() => {
     if (!analyticsData?.submissions) return null;
 
+    console.log('🔍 Analytics Debug - All submissions:', analyticsData.submissions.map(s => ({
+      name: s.studentName,
+      personality: s.personalityType,
+      animal: s.animalType
+    })));
+
     const prefs = {
       EI: { E: 0, I: 0 },
       SN: { S: 0, N: 0 },
@@ -306,10 +312,23 @@ export default function ClassAnalytics() {
 
     analyticsData.submissions.forEach((submission) => {
       const type = submission.personalityType;
-      prefs.EI[type[0] as "E" | "I"]++;
-      prefs.SN[type[1] as "S" | "N"]++;
-      prefs.TF[type[2] as "T" | "F"]++;
-      prefs.JP[type[3] as "J" | "P"]++;
+      
+      // Validate personality type format (should be 4 characters like ENFP)
+      if (!type || type.length !== 4) {
+        console.log(`Invalid personality type for ${submission.studentName}: "${type}"`);
+        return;
+      }
+      
+      // Use actual personality type
+      const ei = type[0] as "E" | "I";
+      const sn = type[1] as "S" | "N";
+      const tf = type[2] as "T" | "F";
+      const jp = type[3] as "J" | "P";
+      
+      if (ei === "E" || ei === "I") prefs.EI[ei]++;
+      if (sn === "S" || sn === "N") prefs.SN[sn]++;
+      if (tf === "T" || tf === "F") prefs.TF[tf]++;
+      if (jp === "J" || jp === "P") prefs.JP[jp]++;
     });
 
     return prefs;
@@ -319,9 +338,10 @@ export default function ClassAnalytics() {
   const personalityPieChartData = useMemo(() => {
     if (!personalityPreferences?.EI || !analyticsData?.stats.totalSubmissions)
       return [];
+    
     return [
       {
-        name: "E",
+        name: "Extrovert",
         value: personalityPreferences.EI.E,
         percentage: Math.round(
           (personalityPreferences.EI.E / analyticsData.stats.totalSubmissions) *
@@ -331,7 +351,7 @@ export default function ClassAnalytics() {
         svg: "/images/parrot.png",
       },
       {
-        name: "I",
+        name: "Introvert",
         value: personalityPreferences.EI.I,
         percentage: Math.round(
           (personalityPreferences.EI.I / analyticsData.stats.totalSubmissions) *
@@ -486,11 +506,17 @@ export default function ClassAnalytics() {
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                    {analyticsData?.class?.name || "Class"} - Overview
+                    {analyticsData?.class?.name || "Class"} - Analytics
                   </h1>
                   <p className="text-gray-600">
                     Class Code: {analyticsData?.class?.code || ""}
                   </p>
+                  <div className="flex items-center space-x-2 text-sm mt-2">
+                    <span className="text-gray-600 text-[22px]">Total Submissions:</span>
+                    <span className="font-bold text-blue-600 text-[27px]">
+                      {analyticsData.stats.totalSubmissions}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -517,57 +543,17 @@ export default function ClassAnalytics() {
 
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Class Overview</span>
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setLocation(`/class-report/${classId}`)}
-                  className="flex items-center gap-2"
-                >
-                  View Class Report
-                </Button>
-                {/* Live Discovery Board - temporarily hidden
-                <Button 
-                  onClick={() => setLocation(`/classes/${classId}/live`)}
-                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <Monitor className="h-4 w-4" />
-                  Live Discovery Board
-                </Button>
-                */}
-                <Button
-                  variant="outline"
-                  onClick={() => setLocation(`/group-maker?classId=${classId}&from=analytics`)}
-                  className="flex items-center gap-2"
-                >
-                  Groups & Seating
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setLocation(`/classes/${classId}/economy`)}
-                  className="flex items-center gap-2"
-                >
-                  <Coins className="h-4 w-4" />
-                  Class Economy
-                </Button>
-                <div className="flex items-center space-x-2 text-sm">
-                  <span className="text-gray-600 text-[22px]">Total Submissions:</span>
-                  <span className="font-bold text-blue-600 text-[27px]">
-                    {analyticsData.stats.totalSubmissions}
-                  </span>
-                </div>
-              </div>
+            <CardTitle>
             </CardTitle>
           </CardHeader>
           <CardContent>
             {analyticsData?.stats?.totalSubmissions > 0 ? (
               <>
-                {/* Charts Section */}
-                <div className="mb-8">
-                  <div className="flex justify-between items-center mb-4">
+                {/* Compact Animal Filter Squares at Top */}
+                <div className="mb-6">
+                  <div className="flex justify-between items-center mb-3">
                     <h3 className="text-lg font-semibold text-gray-900">
-                      Distribution Charts
+                      Filter Students by Animal Type
                     </h3>
                     <div className="flex gap-2">
                       {selectedAnimal && (
@@ -577,103 +563,357 @@ export default function ClassAnalytics() {
                           onClick={() => setSelectedAnimal(null)}
                           className="text-sm"
                         >
-                          Clear Animal Filter ({selectedAnimal})
-                        </Button>
-                      )}
-                      {selectedPersonality && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedPersonality(null)}
-                          className="text-sm"
-                        >
-                          Clear Personality Filter ({selectedPersonality})
-                        </Button>
-                      )}
-                      {selectedGenius && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedGenius(null)}
-                          className="text-sm"
-                        >
-                          Clear Genius Filter ({selectedGenius})
-                        </Button>
-                      )}
-                      {selectedLearningStyle && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedLearningStyle(null)}
-                          className="text-sm"
-                        >
-                          Clear Learning Style Filter (
-                          {selectedLearningStyle === "readingWriting"
-                            ? "Reading/Writing"
-                            : selectedLearningStyle}
-                          )
+                          Clear Filter ({selectedAnimal})
                         </Button>
                       )}
                     </div>
                   </div>
+                  
+                  {/* Animal Filter Pills - 2 rows of 4 */}
+                  <div className="grid grid-cols-4 gap-3 mb-4">
+                    {Object.entries(
+                      analyticsData?.stats?.animalDistribution || {},
+                    ).map(([animalName, count]) => {
+                      const animalInfo = animalColors[animalName] || {
+                        color: "#6366F1",
+                        svg: "/images/meerkat.svg",
+                      };
+                      const percentage = Math.round(
+                        (count /
+                          (analyticsData?.stats?.totalSubmissions || 1)) *
+                          100,
+                      );
+                      const isSelected = selectedAnimal === animalName;
 
-                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-6">
-                    {/* Animal List - Left Column */}
-                    <div className="text-left pl-[0px] pr-[0px] pt-[10px] pb-[10px]">
+                      return (
+                        <div
+                          key={animalName}
+                          className={`py-2 px-3 rounded-lg font-medium shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between ${
+                            isSelected
+                              ? "ring-2 ring-blue-400 shadow-lg transform scale-105"
+                              : "hover:transform hover:scale-102"
+                          }`}
+                          style={{ 
+                            backgroundColor: isSelected ? animalInfo.color : animalInfo.color,
+                            color: "white",
+                            opacity: isSelected ? 1 : 0.9
+                          }}
+                          onClick={() => {
+                            setSelectedPersonality(null);
+                            setSelectedGenius(null);
+                            setSelectedLearningStyle(null);
+                            setSelectedAnimal(
+                              isSelected ? null : animalName,
+                            );
+                          }}
+                          title={`Click to filter by ${animalName} (${count} students, ${percentage}%)`}
+                        >
+                          <span className="text-sm font-bold">{animalName}</span>
+                          <span className="text-sm font-bold opacity-90">{count} ({percentage}%)</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Main Dashboard Layout: Student List (70%) | Charts (30%) */}
+                <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
+                  
+                  {/* Left Side: Full Height Student List (70%) */}
+                  <div className="lg:col-span-7 bg-white rounded-lg border flex flex-col h-[700px]">
+                    <div className="p-4 border-b">
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Students
+                          {(selectedAnimal || selectedPersonality || selectedGenius || selectedLearningStyle) && (
+                            <span className="text-sm font-normal text-blue-600 ml-2">
+                              ({filteredSubmissions.length} filtered)
+                            </span>
+                          )}
+                        </h3>
+                        <PermissionGate 
+                          canAccess={canManageStudents}
+                          tooltip="Only class owners and editors can import students"
+                        >
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsCSVModalOpen(true)}
+                            className="flex items-center gap-2"
+                          >
+                            <Upload className="h-3 w-3" />
+                            Import
+                          </Button>
+                        </PermissionGate>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Search students..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    
+                    {/* Student Table - Fixed Height Like Spreadsheet */}
+                    <div className="flex-1 flex flex-col">
+                      <div className="h-[500px] overflow-hidden border border-gray-200 rounded-lg">
+                        <table className="min-w-full table-fixed">
+                          <thead className="bg-gray-50 sticky top-0">
+                            <tr>
+                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase border-b border-gray-200">Name</th>
+                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase border-b border-gray-200">Animal</th>
+                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase border-b border-gray-200">Genius</th>
+                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase border-b border-gray-200">Coins</th>
+                              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase border-b border-gray-200">Report</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white">
+                            {/* Render exactly 20 rows - filled or empty */}
+                            {Array.from({ length: itemsPerPage }, (_, index) => {
+                              const submission = paginatedSubmissions[index];
+                              if (!submission) {
+                                // Empty row for consistent table height
+                                return (
+                                  <tr key={`empty-${index}`} className="h-12 border-b border-gray-100">
+                                    <td className="px-3 py-2 h-12">&nbsp;</td>
+                                    <td className="px-3 py-2 h-12">&nbsp;</td>
+                                    <td className="px-3 py-2 h-12">&nbsp;</td>
+                                    <td className="px-3 py-2 h-12">&nbsp;</td>
+                                    <td className="px-3 py-2 h-12">&nbsp;</td>
+                                  </tr>
+                                );
+                              }
+                              
+                              // Filled row with student data
+                              const animal = getAnimalByName(submission.animalType);
+                              return (
+                                <tr
+                                  key={submission.id}
+                                  className="h-12 hover:bg-gray-50 cursor-pointer border-b border-gray-100"
+                                  onClick={() => setLocation(`/teacher/student/${submission.id}?classId=${classId}&from=analytics`)}
+                                >
+                                  <td className="px-3 py-2 h-12">
+                                    <div className="text-sm font-medium text-blue-600 hover:text-blue-800">
+                                      {submission.studentName}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      {submission.learningStyle === "readingWriting" 
+                                        ? "R/W" 
+                                        : submission.learningStyle === "visual" 
+                                          ? "Visual"
+                                          : submission.learningStyle === "auditory"
+                                            ? "Auditory" 
+                                            : submission.learningStyle === "kinesthetic"
+                                              ? "Kinesthetic"
+                                              : submission.learningStyle?.charAt(0).toUpperCase() || "N/A"}
+                                    </div>
+                                  </td>
+                                  <td className="px-3 py-2 h-12">
+                                    <div className="flex items-center">
+                                      <div className="w-8 h-8 mr-3 flex-shrink-0 bg-gray-50 rounded-sm overflow-hidden">
+                                        <img 
+                                          src={animalColors[submission.animalType]?.svg || getAssetUrl("/images/meerkat.svg")} 
+                                          alt={submission.animalType} 
+                                          className="w-8 h-8 object-cover" 
+                                        />
+                                      </div>
+                                      <span className="text-xs text-gray-900">
+                                        {submission.animalType}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="px-3 py-2 h-12">
+                                    <span
+                                      className="px-2 py-1 text-xs font-semibold rounded-full text-white"
+                                      style={{
+                                        backgroundColor:
+                                          (submission.geniusType || submission.animalGenius) === "Thinker"
+                                            ? "#8B5CF6"
+                                            : (submission.geniusType || submission.animalGenius) === "Feeler"
+                                              ? "#10B981"
+                                              : "#F59E0B",
+                                      }}
+                                    >
+                                      {submission.geniusType || submission.animalGenius || 'Unknown'}
+                                    </span>
+                                  </td>
+                                  <td className="px-3 py-2 h-12">
+                                    <div 
+                                      className="flex items-center gap-1 cursor-pointer hover:bg-yellow-50 rounded px-2 py-1 transition-colors"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setLocation(`/teacher/class/${classId}/economy`);
+                                      }}
+                                      title="View class economy"
+                                    >
+                                      <Coins className="w-3 h-3 text-yellow-600" />
+                                      <span className="text-sm font-semibold text-yellow-700">
+                                        {submission.currencyBalance || 0}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="px-3 py-2 h-12">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setLocation(`/teacher/student/${submission.id}?classId=${classId}&from=analytics`);
+                                      }}
+                                      className="h-6 px-2 text-xs"
+                                    >
+                                      View Report
+                                    </Button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                    
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-between px-6 py-4 bg-white border-t border-gray-200">
+                        <div className="flex items-center">
+                          <span className="text-sm text-gray-600">
+                            Showing{" "}
+                            <span className="font-semibold text-gray-900">
+                              {(currentPage - 1) * itemsPerPage + 1}
+                            </span>{" "}
+                            to{" "}
+                            <span className="font-semibold text-gray-900">
+                              {Math.min(currentPage * itemsPerPage, filteredSubmissions.length)}
+                            </span>{" "}
+                            of{" "}
+                            <span className="font-semibold text-gray-900">
+                              {filteredSubmissions.length}
+                            </span>{" "}
+                            students
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                            className="h-8 px-3 text-xs font-medium"
+                          >
+                            Previous
+                          </Button>
+                          <div className="flex items-center space-x-1">
+                            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                              const page = i + 1;
+                              return (
+                                <Button
+                                  key={page}
+                                  variant={currentPage === page ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={() => setCurrentPage(page)}
+                                  className={`h-8 w-8 p-0 text-xs ${
+                                    currentPage === page 
+                                      ? "bg-blue-600 hover:bg-blue-700 text-white border-blue-600" 
+                                      : "text-gray-700 hover:bg-gray-50"
+                                  }`}
+                                >
+                                  {page}
+                                </Button>
+                              );
+                            })}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                            className="h-8 px-3 text-xs font-medium"
+                          >
+                            Next
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Simple Footer for Single Page */}
+                    {totalPages <= 1 && (
+                      <div className="px-6 py-4 bg-white border-t border-gray-200">
+                        <span className="text-sm text-gray-600">
+                          Showing{" "}
+                          <span className="font-semibold text-gray-900">
+                            {filteredSubmissions.length}
+                          </span>{" "}
+                          students
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Side: Charts (30%) */}
+                  <div className="lg:col-span-3 space-y-4">
+                    {/* Learning Styles - Moved Above Charts */}
+                    <div className="bg-white rounded-lg border p-4">
                       <h4 className="text-md font-medium text-gray-700 mb-3">
-                        Click an animal to filter submissions
+                        Learning Styles
                       </h4>
-                      <div className="space-y-2">
-                        {Object.entries(
-                          analyticsData?.stats?.animalDistribution || {},
-                        ).map(([animalName, count]) => {
-                          const animalInfo = animalColors[animalName] || {
-                            color: "#6366F1",
-                            svg: "/images/meerkat.svg",
+                      <div className="grid grid-cols-2 gap-3">
+                        {Object.entries(analyticsData.stats.learningStyleDistribution || {}).map(([style, count]) => {
+                          const percentage = analyticsData.stats.totalSubmissions > 0
+                            ? Math.round((count / analyticsData.stats.totalSubmissions) * 100)
+                            : 0;
+                          
+                          const learningStyleIcons = {
+                            "Visual": { name: "Visual", color: "#4F46E5", icon: "Eye" },
+                            "Auditory": { name: "Auditory", color: "#059669", icon: "Volume2" },
+                            "Kinesthetic": { name: "Kinesthetic", color: "#DC2626", icon: "Zap" },
+                            "Reading/Writing": { name: "Reading/Writing", color: "#7C2D12", icon: "BookOpen" },
                           };
-                          const percentage = Math.round(
-                            (count /
-                              (analyticsData?.stats?.totalSubmissions || 1)) *
-                              100,
-                          );
-                          const isSelected = selectedAnimal === animalName;
+
+                          const iconComponents = { Eye, Volume2, Zap, BookOpen, Monitor };
+                          const styleInfo = learningStyleIcons[style as keyof typeof learningStyleIcons] || {
+                            name: style.charAt(0).toUpperCase() + style.slice(1),
+                            color: "#6B7280",
+                            icon: "Monitor",
+                          };
 
                           return (
                             <div
-                              key={animalName}
-                              className={`cursor-pointer p-3 bg-white rounded-lg shadow-sm border-2 transition-all hover:shadow-md ${
-                                isSelected
-                                  ? "border-blue-500 bg-blue-50"
-                                  : "border-gray-200 hover:border-gray-300"
+                              key={style}
+                              className={`text-center p-3 rounded-lg cursor-pointer transition-all ${
+                                selectedLearningStyle === style
+                                  ? "bg-blue-100 border-2 border-blue-400"
+                                  : "bg-gray-50 hover:bg-gray-100 border-2 border-transparent"
                               }`}
                               onClick={() => {
-                                setSelectedPersonality(null); // Clear personality filter
-                                setSelectedAnimal(
-                                  isSelected ? null : animalName,
-                                );
+                                setSelectedAnimal(null);
+                                setSelectedPersonality(null);
+                                setSelectedGenius(null);
+                                setSelectedLearningStyle(selectedLearningStyle === style ? null : style);
                               }}
                             >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
-                                  <div className="w-8 h-8">
-                                    <img 
-                                      src={animalInfo.svg} 
-                                      alt={animalName} 
-                                      className="w-full h-full object-contain"
+                              <div className="w-6 h-6 mb-1 mx-auto">
+                                {(() => {
+                                  const IconComponent = iconComponents[styleInfo.icon as keyof typeof iconComponents];
+                                  return IconComponent ? (
+                                    <IconComponent 
+                                      className="w-full h-full" 
+                                      style={{ color: styleInfo.color }}
                                     />
-                                  </div>
-                                  <div>
-                                    <div className="font-medium text-gray-900 text-sm">
-                                      {animalName}
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                      {percentage}%
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="text-xl font-bold text-blue-600">
-                                  {count}
-                                </div>
+                                  ) : null;
+                                })()}
+                              </div>
+                              <div className="font-medium text-xs">{styleInfo.name}</div>
+                              <div className="text-xs text-gray-600">{count}</div>
+                              <div className="w-full h-1 rounded-full bg-gray-200 mt-1">
+                                <div
+                                  className="h-full rounded-full transition-all duration-300"
+                                  style={{
+                                    backgroundColor: styleInfo.color,
+                                    width: `${percentage}%`,
+                                  }}
+                                />
                               </div>
                             </div>
                           );
@@ -681,515 +921,40 @@ export default function ClassAnalytics() {
                       </div>
                     </div>
 
-                    {/* Charts - Right Columns */}
-                    <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {/* Animal Distribution Pie Chart */}
-                      <div className="relative">
-                        <h4 className="text-md font-medium text-gray-700 mb-3">
-                          Animal Types
-                        </h4>
-                        <div className="bg-white rounded-lg shadow-sm border p-4">
-                          <InteractivePieChart
-                            data={pieChartData}
-                            selectedAnimal={selectedAnimal}
-                            onAnimalClick={(animal) => {
-                              setSelectedPersonality(null); // Clear personality filter
-                              setSelectedAnimal(animal);
-                            }}
-                          />
-                        </div>
-                      </div>
+                    {/* Personality Distribution - Swapped to First */}
+                    <div className="bg-white rounded-lg border p-4">
+                      <h4 className="text-md font-medium text-gray-700 mb-3">
+                        Extroversion vs Introversion
+                      </h4>
+                      <InteractivePieChart
+                        data={personalityPieChartData}
+                        selectedAnimal={selectedPersonality}
+                        onAnimalClick={(personality) => {
+                          setSelectedAnimal(null);
+                          setSelectedGenius(null);
+                          setSelectedLearningStyle(null);
+                          setSelectedPersonality(personality === selectedPersonality ? null : personality);
+                        }}
+                      />
+                    </div>
 
-                      {/* Animal Genius Distribution Pie Chart */}
-                      <div className="relative">
-                        <h4 className="text-md font-medium text-gray-700 mb-3">
-                          Animal Genius
-                        </h4>
-                        <div className="bg-white rounded-lg shadow-sm border p-4">
-                          <InteractivePieChart
-                            data={animalGeniusPieChartData}
-                            selectedAnimal={selectedGenius}
-                            onAnimalClick={(genius) => {
-                              setSelectedAnimal(null); // Clear other filters
-                              setSelectedPersonality(null);
-                              setSelectedLearningStyle(null);
-                              setSelectedGenius(genius);
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Personality Distribution Pie Chart */}
-                      <div className="relative">
-                        <h4 className="text-md font-medium text-gray-700 mb-3">
-                          Extroversion vs Introversion
-                        </h4>
-                        <div className="bg-white rounded-lg shadow-sm border p-4">
-                          <InteractivePieChart
-                            data={personalityPieChartData}
-                            selectedAnimal={selectedPersonality}
-                            onAnimalClick={(personality) => {
-                              setSelectedAnimal(null); // Clear animal filter
-                              setSelectedPersonality(personality);
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Learning Style Distribution */}
-                      <div className="md:col-span-3 mt-6">
-                        <h4 className="text-md font-medium text-gray-700 mb-3">
-                          Learning Styles
-                        </h4>
-                        <div className="bg-white rounded-lg shadow-sm border p-4">
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {Object.entries(
-                              analyticsData.stats.learningStyleDistribution ||
-                                {},
-                            ).map(([style, count]) => {
-                              const percentage =
-                                analyticsData.stats.totalSubmissions > 0
-                                  ? Math.round(
-                                      (count /
-                                        analyticsData.stats.totalSubmissions) *
-                                        100,
-                                    )
-                                  : 0;
-                              
-                              // Learning style icon mapping using lucide icons
-                              const learningStyleIcons = {
-                                "Visual": {
-                                  name: "Visual",
-                                  color: "#4F46E5",
-                                  icon: "Eye", // Eye icon for visual learners
-                                },
-                                "Auditory": {
-                                  name: "Auditory", 
-                                  color: "#059669",
-                                  icon: "Volume2", // Speaker icon for auditory learners
-                                },
-                                "Kinesthetic": {
-                                  name: "Kinesthetic",
-                                  color: "#DC2626", 
-                                  icon: "Zap", // Lightning icon for kinesthetic learners
-                                },
-                                "Reading/Writing": {
-                                  name: "Reading/Writing",
-                                  color: "#7C2D12",
-                                  icon: "BookOpen", // Book icon for reading/writing learners
-                                },
-                              };
-
-                              // Icon component mapping for dynamic rendering
-                              const iconComponents = {
-                                Eye,
-                                Volume2,
-                                Zap,
-                                BookOpen,
-                                Monitor,
-                              };
-                              
-                              // Get style info with proper fallback
-                              const styleInfo = learningStyleIcons[style as keyof typeof learningStyleIcons] || {
-                                name: style.charAt(0).toUpperCase() + style.slice(1),
-                                color: "#6B7280",
-                                icon: "Monitor",
-                              };
-
-                              return (
-                                <div
-                                  key={style}
-                                  className={`text-center p-3 rounded-lg cursor-pointer transition-all ${
-                                    selectedLearningStyle === style
-                                      ? "bg-blue-100 border-2 border-blue-400"
-                                      : "bg-gray-50 hover:bg-gray-100 border-2 border-transparent"
-                                  }`}
-                                  onClick={() => {
-                                    setSelectedAnimal(null); // Clear other filters
-                                    setSelectedPersonality(null);
-                                    setSelectedGenius(null);
-                                    setSelectedLearningStyle(
-                                      selectedLearningStyle === style
-                                        ? null
-                                        : style,
-                                    );
-                                  }}
-                                >
-                                  <div className="w-8 h-8 mb-1 mx-auto">
-                                    {(() => {
-                                      const IconComponent = iconComponents[styleInfo.icon as keyof typeof iconComponents];
-                                      return IconComponent ? (
-                                        <IconComponent 
-                                          className="w-full h-full" 
-                                          style={{ color: styleInfo.color }}
-                                        />
-                                      ) : null;
-                                    })()}
-                                  </div>
-                                  <div className="font-medium text-sm">
-                                    {styleInfo.name}
-                                  </div>
-                                  <div className="text-xs text-gray-600 mb-1">
-                                    {count} students
-                                  </div>
-                                  <div className="w-full h-2 rounded-full bg-gray-200">
-                                    <div
-                                      className="h-full rounded-full transition-all duration-300"
-                                      style={{
-                                        backgroundColor: styleInfo.color,
-                                        width: `${percentage}%`,
-                                      }}
-                                    />
-                                  </div>
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    {percentage}%
-                                  </div>
-                                </div>
-                              );
-                        })}
-                          </div>
-                        </div>
-                      </div>
+                    {/* Animal Genius Distribution - Swapped to Second */}
+                    <div className="bg-white rounded-lg border p-4">
+                      <h4 className="text-md font-medium text-gray-700 mb-3">
+                        Animal Genius Types
+                      </h4>
+                      <InteractivePieChart
+                        data={animalGeniusPieChartData}
+                        selectedAnimal={selectedGenius}
+                        onAnimalClick={(genius) => {
+                          setSelectedAnimal(null);
+                          setSelectedPersonality(null);
+                          setSelectedLearningStyle(null);
+                          setSelectedGenius(genius === selectedGenius ? null : genius);
+                        }}
+                      />
                     </div>
                   </div>
-
-                {/* Student Submissions Table */}
-                {analyticsData.submissions &&
-                  analyticsData.submissions.length > 0 && (
-                    <div className="mb-6">
-                      <div className="flex justify-between items-center mb-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            Student Submissions
-                            {(selectedAnimal || selectedPersonality) && (
-                              <span className="text-sm font-normal text-blue-600 ml-2">
-                                (Filtered by{" "}
-                                {[selectedAnimal, selectedPersonality]
-                                  .filter(Boolean)
-                                  .join(" & ")}
-                                : {filteredSubmissions.length} students)
-                              </span>
-                            )}
-                          </h3>
-                          {!selectedAnimal && !selectedPersonality && (
-                            <p className="text-sm text-gray-500 mt-1">
-                              Showing {filteredSubmissions.length} of{" "}
-                              {analyticsData.submissions.length} submissions
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <PermissionGate 
-                            canAccess={canManageStudents}
-                            tooltip="Only class owners and editors can import students"
-                          >
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setIsCSVModalOpen(true)}
-                              className="flex items-center gap-2"
-                            >
-                              <Upload className="h-4 w-4" />
-                              Import CSV
-                            </Button>
-                          </PermissionGate>
-                          <input
-                            type="text"
-                            placeholder="Search students..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Name
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Animal
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Animal Genius
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Learning Style
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Completed
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Island
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Coins
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-200">
-                            {paginatedSubmissions.map(
-                              (submission: Submission) => {
-                                const animal = getAnimalByName(
-                                  submission.animalType,
-                                );
-                                return (
-                                  <tr
-                                    key={submission.id}
-                                    className="hover:bg-gray-50"
-                                  >
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                      <button
-                                        onClick={() => setLocation(`/teacher/student/${submission.id}?classId=${classId}&from=analytics`)}
-                                        className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
-                                      >
-                                        {submission.studentName}
-                                      </button>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                      <div className="flex items-center">
-                                        <div className="w-6 h-6 mr-2">
-                                          <img 
-                                            src={animalColors[submission.animalType]?.svg || getAssetUrl("/images/meerkat.svg")} 
-                                            alt={submission.animalType} 
-                                            className="w-full h-full object-contain" 
-                                          />
-                                        </div>
-                                        <span className="text-sm font-medium text-gray-900">
-                                          {animal?.name ||
-                                            submission.animalType}
-                                        </span>
-                                      </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                      <span
-                                        className="px-2 py-1 text-xs font-semibold rounded-full text-white"
-                                        style={{
-                                          backgroundColor:
-                                            (submission.geniusType || submission.animalGenius) ===
-                                            "Thinker"
-                                              ? "#8B5CF6"
-                                              : (submission.geniusType || submission.animalGenius) ===
-                                                  "Feeler"
-                                                ? "#10B981"
-                                                : "#F59E0B",
-                                        }}
-                                      >
-                                        {submission.geniusType || submission.animalGenius || 'Unknown'}
-                                      </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                      <span className="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-800 rounded-full">
-                                        {submission.learningStyle ===
-                                        "readingWriting"
-                                          ? "Reading/Writing"
-                                          : submission.learningStyle
-                                              .charAt(0)
-                                              .toUpperCase() +
-                                            submission.learningStyle.slice(1)}
-                                      </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                      {format(
-                                        new Date(submission.completedAt),
-                                        "MMM d, yyyy h:mm a",
-                                      )}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                      {submission.passportCode ? (
-                                        <button
-                                          onClick={() => setLocation(`/island/${submission.passportCode}`)}
-                                          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline"
-                                          title={`Visit ${submission.studentName}'s Island`}
-                                        >
-                                          <MapPin className="w-4 h-4" />
-                                          <span className="font-mono text-xs">{submission.passportCode}</span>
-                                        </button>
-                                      ) : (
-                                        <span className="text-gray-400 text-xs">No passport</span>
-                                      )}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                      <div className="flex items-center gap-2">
-                                        <Coins className="w-4 h-4 text-yellow-600" />
-                                        <span className="font-semibold">
-                                          {submission.currencyBalance || 0}
-                                        </span>
-                                      </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() =>
-                                          setLocation(
-                                            `/teacher/student/${submission.id}?classId=${classId}&from=analytics`,
-                                          )
-                                        }
-                                      >
-                                        View Profile
-                                      </Button>
-                                      {showCurrencySection && (
-                                        <>
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => {
-                                              setSelectedStudent(submission);
-                                              setCurrencyAction('give');
-                                              setIsCurrencyModalOpen(true);
-                                            }}
-                                            className="text-green-600 hover:text-green-700"
-                                          >
-                                            <Plus className="w-3 h-3 mr-1" />
-                                            Give
-                                          </Button>
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => {
-                                              setSelectedStudent(submission);
-                                              setCurrencyAction('take');
-                                              setIsCurrencyModalOpen(true);
-                                            }}
-                                            className="text-red-600 hover:text-red-700"
-                                          >
-                                            <Minus className="w-3 h-3 mr-1" />
-                                            Take
-                                          </Button>
-                                        </>
-                                      )}
-                                      <PermissionGate 
-                                        canAccess={canManageStudents}
-                                        tooltip="Only class owners and editors can delete students"
-                                      >
-                                        <Button
-                                          variant="destructive"
-                                          size="sm"
-                                          onClick={() =>
-                                            handleDeleteSubmission(submission.id)
-                                          }
-                                        >
-                                          Delete
-                                        </Button>
-                                      </PermissionGate>
-                                    </td>
-                                  </tr>
-                                );
-                              },
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      {/* Pagination */}
-                      {totalPages > 1 && (
-                        <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
-                          <div className="flex justify-between flex-1 sm:hidden">
-                            <Button
-                              variant="outline"
-                              onClick={() =>
-                                setCurrentPage((prev) => Math.max(prev - 1, 1))
-                              }
-                              disabled={currentPage === 1}
-                            >
-                              Previous
-                            </Button>
-                            <Button
-                              variant="outline"
-                              onClick={() =>
-                                setCurrentPage((prev) =>
-                                  Math.min(prev + 1, totalPages),
-                                )
-                              }
-                              disabled={currentPage === totalPages}
-                            >
-                              Next
-                            </Button>
-                          </div>
-                          <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                            <div>
-                              <p className="text-sm text-gray-700">
-                                Showing{" "}
-                                <span className="font-medium">
-                                  {(currentPage - 1) * itemsPerPage + 1}
-                                </span>{" "}
-                                to{" "}
-                                <span className="font-medium">
-                                  {Math.min(
-                                    currentPage * itemsPerPage,
-                                    filteredSubmissions.length,
-                                  )}
-                                </span>{" "}
-                                of{" "}
-                                <span className="font-medium">
-                                  {filteredSubmissions.length}
-                                </span>{" "}
-                                results
-                              </p>
-                            </div>
-                            <div>
-                              <nav
-                                className="isolate inline-flex -space-x-px rounded-md shadow-sm"
-                                aria-label="Pagination"
-                              >
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    setCurrentPage((prev) =>
-                                      Math.max(prev - 1, 1),
-                                    )
-                                  }
-                                  disabled={currentPage === 1}
-                                >
-                                  Previous
-                                </Button>
-                                {Array.from(
-                                  { length: Math.min(totalPages, 5) },
-                                  (_, i) => {
-                                    const page = i + 1;
-                                    return (
-                                      <Button
-                                        key={page}
-                                        variant={
-                                          currentPage === page
-                                            ? "default"
-                                            : "outline"
-                                        }
-                                        size="sm"
-                                        onClick={() => setCurrentPage(page)}
-                                      >
-                                        {page}
-                                      </Button>
-                                    );
-                                  },
-                                )}
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    setCurrentPage((prev) =>
-                                      Math.min(prev + 1, totalPages),
-                                    )
-                                  }
-                                  disabled={currentPage === totalPages}
-                                >
-                                  Next
-                                </Button>
-                              </nav>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               </>
             ) : (
