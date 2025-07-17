@@ -129,69 +129,267 @@ export const lessons: Lesson[] = [
   },
   {
     id: 2,
-    title: "Building Our Classroom Community",
-    duration: "45 minutes",
-    description: "Students work together to create classroom norms and build a supportive community that values all personality types.",
+    title: "Build Our Habitat",
+    duration: "50-60 minutes",
+    description: "Students gather with others who share their Animal Genius type to co-create a visual 'home' on Personality Island—a space where they feel seen, safe, and understood. Through this creative collaboration, students begin to recognize the common strengths, preferences, and needs of their personality group, building connection and belonging.",
     objectives: [
-      "Students will contribute to creating classroom norms",
-      "Students will understand how to support different personality types",
-      "Students will practice inclusive communication"
+      "Students will identify shared characteristics, perspectives, and emotional needs within their animal group",
+      "Students will practice cooperative planning and shared decision-making",
+      "Students will create a visual representation of their group's ideal habitat",
+      "Students will present their collaborative work to build class community"
     ],
     materialsNeeded: [
-      "Poster board for classroom norms",
-      "Markers and art supplies",
-      "Sticky notes"
+      "Large poster paper or 11x17 blank paper (1 per group)",
+      "Markers, crayons, colored pencils",
+      "Habitat Inspiration Questions (printable or projected)",
+      "Optional: Additional art supplies for decoration"
     ],
     activities: {
       activity1: {
-        title: "Activity 1",
-        steps: [{ instruction: "Coming soon" }]
+        title: "Form Animal Groups & Begin Habitat Design",
+        steps: [
+          {
+            instruction: "Group students by their Animal Genius type",
+            tips: [
+              "If a student is the only one of their animal type, encourage them to design their home independently",
+              "For solo students who prefer to join a group, use these pairings: Meerkat/Owl, Otter/Parrot, Panda/Beaver, Elephant/Border Collie"
+            ]
+          },
+          {
+            instruction: "Explain that their goal is to build a shared habitat home for their group to live in on Personality Island",
+            tips: [
+              "Emphasize this home is for them as humans to live in, not for their actual animal",
+              "They can include elements inspired by their animal's habitat (like treehouses for Owls), but the home should feel like it belongs to them as people"
+            ]
+          },
+          {
+            instruction: "Distribute 1 poster per group and ensure students have creative supplies",
+            tips: [
+              "Have markers, crayons, and colored pencils readily available",
+              "Consider playing soft background music to encourage creativity"
+            ]
+          },
+          {
+            instruction: "Provide the Habitat Inspiration Questions to guide their discussion",
+            tips: [
+              "You can print one copy per group or project the questions on the board",
+              "Questions help spark ideas about what their group needs to feel safe, happy, and able to thrive"
+            ],
+            guidingQuestions: [
+              "What's the big idea behind your home?",
+              "What does your group need to feel safe and happy?",
+              "How will your home show who you are and what's important to your personality?",
+              "What special features will help your group thrive?"
+            ]
+          }
+        ]
       },
       activity2: {
-        title: "Activity 2",
-        steps: [{ instruction: "Coming soon" }]
+        title: "Collaborative Drawing & Design",
+        steps: [
+          {
+            instruction: "Give groups 20-30 minutes to draw, talk, and collaborate on their habitat design",
+            tips: [
+              "Walk around and listen to group discussions",
+              "Offer encouragement and ask clarifying questions",
+              "Remind groups that each member needs their own room in the habitat"
+            ]
+          },
+          {
+            instruction: "Give a 5-minute warning before presentations to help groups wrap up",
+            tips: [
+              "This helps groups finalize their ideas and prepare to share",
+              "Encourage groups to decide who will present which parts"
+            ]
+          }
+        ]
       },
       activity3: {
-        title: "Activity 3",
-        steps: [{ instruction: "Coming soon" }]
+        title: "Group Presentations & Reflection",
+        steps: [
+          {
+            instruction: "Give each group 2 minutes to present their habitat home to the class",
+            tips: [
+              "Create a supportive atmosphere for presentations",
+              "Encourage active listening and appreciation",
+              "Note interesting patterns or unique features each group includes"
+            ]
+          },
+          {
+            instruction: "Lead a brief reflection discussion after all presentations",
+            guidingQuestions: [
+              "What did you notice about how different groups designed their homes?",
+              "How did each group's personality show up in their designs?",
+              "What similarities or differences did you observe between habitats?"
+            ]
+          },
+          {
+            instruction: "Hang the habitat posters on the wall as ongoing visual culture-builders",
+            tips: [
+              "These serve as important references throughout the year",
+              "Students can refer back to understand what each group needs to thrive"
+            ]
+          }
+        ]
       },
       activity4: {
-        title: "Activity 4",
-        steps: [{ instruction: "Coming soon" }]
+        title: "Optional Extension: Individual Room Preview",
+        optional: true,
+        steps: [
+          {
+            instruction: "If time allows, have students sketch their individual room within their group's habitat",
+            tips: [
+              "This creates excitement for Lesson 5 when they'll design their rooms digitally",
+              "Keep sketches simple - just a quick preview of their personal space"
+            ]
+          },
+          {
+            instruction: "Students can share one thing they'd include in their personal room",
+            guidingQuestions: [
+              "What's one special feature you'd want in your room?",
+              "How would your room reflect your personality within the group habitat?"
+            ]
+          }
+        ]
       }
     }
   },
   {
     id: 3,
-    title: "Understanding Your Animal Personality",
-    duration: "45 minutes",
-    description: "Students explore their animal personalities in depth, learning about their unique strengths and how to work with others.",
+    title: "Learn Our Differences",
+    duration: "45-60 minutes",
+    description: "Students will explore their preferences and visually represent their individuality by creating a shape on a graph, learning how each person—though similar in personality—still brings unique qualities to the classroom.",
     objectives: [
-      "Students will understand the characteristics of their personality animal",
-      "Students will identify their personal strengths and growth areas",
-      "Students will learn how different animals work together"
+      "Students will recognize their individual likes, values, and tendencies",
+      "Students will appreciate how differences contribute to group diversity—even within shared traits",
+      "Students will create a visual representation of their preferences using coordinate graphing",
+      "Students will compare and contrast patterns within their animal groups"
     ],
     materialsNeeded: [
-      "Animal personality cards or printouts",
-      "Strength identification worksheet",
-      "Team building activity materials"
+      "Grade-specific Coordinate Graph worksheets (4-5 or 6th grade version)",
+      "Crayons or colored pencils (with all 8 animal colors available)",
+      "Space to display finished graphs by animal group",
+      "Optional: Document camera or projector for demonstration"
     ],
     activities: {
       activity1: {
-        title: "Activity 1",
-        steps: [{ instruction: "Coming soon" }]
+        title: "Our Unique Preferences - Graphing Activity",
+        steps: [
+          {
+            instruction: "Play the student-facing math video with Mrs. Bush explaining coordinate planes",
+            tips: [
+              "Pause the video if students need extra time to understand concepts",
+              "Consider demonstrating on the board alongside the video"
+            ]
+          },
+          {
+            instruction: "Pass out the correct worksheet based on grade level",
+            tips: [
+              "Grade 4-5: Positive X/Y axis graph only",
+              "Grade 6: Four-quadrant coordinate plane with negative values",
+              "Have extra copies available for mistakes"
+            ]
+          },
+          {
+            instruction: "Have students read each pair of preference statements and cross off the option that doesn't feel like them",
+            tips: [
+              "Emphasize there are no right or wrong answers",
+              "Encourage students to go with their first instinct",
+              "Students will use the coordinates of the option they keep"
+            ]
+          },
+          {
+            instruction: "Students plot their points on the graph in the order they appear",
+            tips: [
+              "Remind students: X-axis first (across), then Y-axis (up/down)",
+              "For 6th graders: negative numbers mean go left or down",
+              "Check in with students who might be struggling with coordinate plotting"
+            ]
+          },
+          {
+            instruction: "Students connect the points in order to create a unique shape or pattern",
+            tips: [
+              "Use a ruler for straight lines if available",
+              "The shape should be closed (connect the last point back to the first)"
+            ]
+          },
+          {
+            instruction: "Students color their Personality Pattern using their animal's specific color",
+            tips: [
+              "Owls = Red, Meerkats = Orange, Otters = Yellow, Elephants = Green",
+              "Pandas = Blue, Beavers = Purple, Parrots = Pink, Border Collies = Black",
+              "Post the color key where all students can see it"
+            ]
+          }
+        ]
       },
       activity2: {
-        title: "Activity 2",
-        steps: [{ instruction: "Coming soon" }]
+        title: "Gallery Walk & Reflection",
+        steps: [
+          {
+            instruction: "Group and display student graphs by Animal Genius type",
+            tips: [
+              "Create clearly labeled sections for each animal group",
+              "Consider using wall space or table groupings",
+              "This visual grouping helps students see patterns within their type"
+            ]
+          },
+          {
+            instruction: "Lead a Gallery Walk where students quietly observe all the graphs",
+            tips: [
+              "Set expectations for respectful viewing",
+              "Give students 5-7 minutes to walk and observe",
+              "Encourage them to look at both their own animal group and others"
+            ],
+            guidingQuestions: [
+              "What do you notice about the personality patterns within the same animal group?",
+              "How are the shapes similar? How are they different?",
+              "Which animal groups seem to have the most variety in their shapes?"
+            ]
+          }
+        ]
       },
       activity3: {
-        title: "Activity 3",
-        steps: [{ instruction: "Coming soon" }]
+        title: "Class Discussion & Application",
+        steps: [
+          {
+            instruction: "Facilitate a whole-class discussion about the patterns students observed",
+            guidingQuestions: [
+              "Why do you think every shape looks different, even within the same animal group?",
+              "What does this activity tell us about how we're similar and different?",
+              "How might understanding our preferences help us in group work?",
+              "When might it be helpful to work with someone who has different preferences?"
+            ]
+          },
+          {
+            instruction: "Connect the activity to future classroom collaboration",
+            tips: [
+              "Explain how you'll use this information for future group work",
+              "Emphasize that differences make teams stronger",
+              "Preview how understanding preferences will help with leadership roles"
+            ]
+          }
+        ]
       },
       activity4: {
-        title: "Activity 4",
-        steps: [{ instruction: "Coming soon" }]
+        title: "Optional Extension: Preference Interview",
+        optional: true,
+        steps: [
+          {
+            instruction: "Pair students from different animal groups for preference interviews",
+            tips: [
+              "Provide 2-3 interview questions about learning preferences",
+              "This helps students practice appreciating differences directly"
+            ]
+          },
+          {
+            instruction: "Students share one surprising thing they learned about their partner",
+            guidingQuestions: [
+              "What preference surprised you most about your partner?",
+              "How might you work together effectively knowing these differences?"
+            ]
+          }
+        ]
       }
     }
   },
@@ -274,35 +472,154 @@ export const lessons: Lesson[] = [
   },
   {
     id: 5,
-    title: "Discovering Your Genius Type",
-    duration: "50 minutes",
-    description: "Students explore their genius types and learn how different types of intelligence contribute to problem-solving and creativity.",
+    title: "Activating our Ecosystem",
+    duration: "30 minutes",
+    description: "Students will launch a classroom economy by earning and managing digital coins to contribute to their 'room' in their Habitat Home. They'll be assigned class jobs, gain responsibility, practice collaboration, and learn how their contributions shape the class ecosystem.",
     objectives: [
-      "Students will understand the concept of multiple intelligences",
-      "Students will identify their genius type and its characteristics",
-      "Students will explore careers and activities that match their genius type"
+      "Students will understand the classroom economy system and their role within it",
+      "Students will apply for and receive classroom jobs with specific responsibilities",
+      "Students will learn to manage digital coins through earning and spending",
+      "Students will practice collaboration and responsibility through their job roles"
     ],
     materialsNeeded: [
-      "Genius type descriptions and cards",
-      "Intelligence exploration stations",
-      "Career connection worksheets"
+      "Student devices (computers/tablets) for accessing rooms",
+      "Projector to display job list and economy overview",
+      "Optional: Google Form for job applications",
+      "Optional: Post-it notes for job preference voting"
     ],
     activities: {
       activity1: {
-        title: "Activity 1",
-        steps: [{ instruction: "Coming soon" }]
+        title: "Introduce Classroom Jobs & Economy",
+        steps: [
+          {
+            instruction: "Project the pre-created classroom jobs list on the board",
+            tips: [
+              "Jobs should be added to the system before the lesson",
+              "Include job descriptions and pay rates for each position",
+              "Consider having a variety of jobs to match different interests and abilities"
+            ]
+          },
+          {
+            instruction: "Discuss each job, its responsibilities, and pay rate with the class",
+            tips: [
+              "Explain how the classroom economy mirrors real-world systems",
+              "Emphasize that everyone has an important role to play",
+              "Connect jobs to the class agreements created in Lesson 4"
+            ],
+            guidingQuestions: [
+              "Why do you think this job is important for our classroom?",
+              "How does this job help our classroom ecosystem thrive?",
+              "What skills might you develop by doing this job?"
+            ]
+          },
+          {
+            instruction: "Explain how students will earn and track their coins",
+            tips: [
+              "Show how to access their room and check coin balance",
+              "Explain automatic payroll system",
+              "Mention bonus coins for living out class values"
+            ]
+          }
+        ]
       },
       activity2: {
-        title: "Activity 2",
-        steps: [{ instruction: "Coming soon" }]
+        title: "Job Application & Assignment Process",
+        steps: [
+          {
+            instruction: "Choose and implement a job application method",
+            tips: [
+              "Post-it notes: Students write top 3 job choices",
+              "Google Form: Students submit preferences digitally",
+              "Random assignment: Draw names from a hat",
+              "Teacher selection: Assign based on student strengths",
+              "Choose what works best for your classroom dynamics"
+            ]
+          },
+          {
+            instruction: "Collect job preferences from all students",
+            tips: [
+              "Give students time to think about their choices",
+              "Remind them that jobs can rotate throughout the year",
+              "Consider pausing here to assign jobs during recess/after school"
+            ]
+          },
+          {
+            instruction: "Announce job assignments to the class",
+            tips: [
+              "Build excitement around each role",
+              "If multiple students have the same job, identify them as a team",
+              "Ensure every student has at least one job"
+            ]
+          }
+        ]
       },
       activity3: {
-        title: "Activity 3",
-        steps: [{ instruction: "Coming soon" }]
+        title: "Job Training & Collaboration",
+        steps: [
+          {
+            instruction: "Allow students with the same job to meet and collaborate",
+            tips: [
+              "Give groups 5-7 minutes to discuss their strategy",
+              "Encourage them to brainstorm how to excel at their job",
+              "This builds teamwork and shared responsibility"
+            ],
+            guidingQuestions: [
+              "How can we work together to do this job really well?",
+              "What system should we create to make sure the job gets done?",
+              "How will we communicate with each other about our job?"
+            ]
+          },
+          {
+            instruction: "Provide specific training for jobs that need it",
+            tips: [
+              "Jobs like 'class pet caretaker' or 'teacher assistant' may need direct instruction",
+              "Model the expected behavior for complex jobs",
+              "Set clear expectations for job performance"
+            ]
+          }
+        ]
       },
       activity4: {
-        title: "Activity 4",
-        steps: [{ instruction: "Coming soon" }]
+        title: "Activate the Economy & First Transactions",
+        steps: [
+          {
+            instruction: "Show students how to log into their rooms using their passport codes",
+            tips: [
+              "Demonstrate on the projector if possible",
+              "Have students practice logging in",
+              "Help those who need assistance"
+            ]
+          },
+          {
+            instruction: "Guide students through checking their coin balance and job information",
+            tips: [
+              "Point out where they can see their job title and pay rate",
+              "Show the transaction history feature",
+              "Explain that coins will be added based on the payroll schedule"
+            ]
+          },
+          {
+            instruction: "Introduce the spending options available in their rooms",
+            tips: [
+              "Show how to access the store for room decorations",
+              "Mention future options like digital pets",
+              "Explain any 'real world' rewards in the Other category"
+            ],
+            guidingQuestions: [
+              "What's the first thing you want to save up for?",
+              "How will you make your room reflect your personality?",
+              "What does it mean to be responsible with your coins?"
+            ]
+          },
+          {
+            instruction: "Set expectations for the ongoing economy system",
+            tips: [
+              "Explain when payroll will run (daily/weekly)",
+              "Remind students this is about building trust and responsibility",
+              "Emphasize that coins are earned, never taken away as punishment"
+            ]
+          }
+        ]
       }
     }
   }

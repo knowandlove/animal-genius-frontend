@@ -1100,6 +1100,228 @@ function LessonSidebar({ lesson }: { lesson: Lesson }) {
           </CardContent>
         </Card>
       )}
+
+      {lesson.id === 2 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Core Academic Influences
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Rudine Sims Bishop – "Mirrors, Windows, and Sliding Glass Doors"
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  Bishop's metaphor shows the importance of students seeing themselves and others in the learning environment. This lesson creates a "mirror" by letting students reflect on their shared identity with others in their animal group.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Zaretta Hammond – Culturally Responsive Teaching and the Brain
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  Hammond argues that students need "affinity groups" as launching pads for deeper learning. By designing a home with others who think and feel like them, students build confidence, voice, and comfort.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Brené Brown – Belonging vs. Fitting In
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  Brown defines belonging as being accepted for who you are, while "fitting in" requires you to change yourself. This activity shows students that they already belong, just as they are.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Christina Hinton (Harvard) – Belonging and Learning Are Intertwined
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  Hinton's research confirms that when students feel socially connected and valued, their brains are more open to learning. Designing a physical space that reflects their identity helps foster that connection.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  CASEL Framework – Social Awareness & Relationship Skills
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  This lesson builds social awareness by helping students recognize common traits and shared preferences in their animal group. It sets the stage for building relationship skills as they connect their inner identity to a collective one.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {lesson.id === 3 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Core Academic Influences
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Howard Gardner – Theory of Multiple Intelligences
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  Gardner's work emphasizes that intelligence isn't one-size-fits-all—it's varied and personal. This activity honors different ways of thinking, learning, and creating, helping students name and visualize those preferences without ranking or judgment.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  James A. Banks – Multicultural Education Theory
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  Banks outlines five dimensions of inclusive education, including "knowledge construction" and "prejudice reduction." By analyzing where their preferences land on a graph—and seeing how others differ—students start to build awareness of perspective and reduce judgment around differences.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Carol Dweck – Growth Mindset
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  This lesson helps students reframe preferences not as limitations, but as natural tendencies they can grow from. It reinforces the idea that how you do something today isn't how you'll always do it, which cultivates open-mindedness and self-efficacy.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Daniel Kahneman – Thinking, Fast and Slow
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  Kahneman's research on cognitive processing (System 1 vs. System 2 thinking) supports the idea that people approach tasks in different ways—some intuitively, others methodically. By charting their own preferences, students develop metacognition about their default styles.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-707 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Zaretta Hammond – Culturally Responsive Teaching and the Brain
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  Hammond explains that helping students understand how their brains process information creates pathways for deeper learning. This lesson introduces processing and preference in a visual, engaging way—inviting students to value their "neuro-uniqueness."
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  CASEL Framework – Self-Awareness & Responsible Decision-Making
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  This lesson reinforces self-awareness by helping students name how they prefer to engage with the world. It also begins developing responsible decision-making by showing how their choices and preferences affect group dynamics.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  National Council of Teachers of Mathematics (NCTM)
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  By introducing a simple graphing activity (positive coordinate grid for 4th–5th grade and four-quadrant Cartesian plane for 6th), this lesson bridges math and SEL, showing that data and personal identity can coexist—and that math can help us understand ourselves and others.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {lesson.id === 4 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Core Academic Influences
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Zaretta Hammond – Culturally Responsive Teaching and the Brain
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  Hammond emphasizes the importance of co-created norms for developing "identity safety" and cognitive trust. Shared values anchor a culture where students feel empowered and seen.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Claude Steele – Stereotype Threat and Identity Safety
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  Claude Steele's research shows that students need "identity-safe" environments where they help shape norms. Agreements built on chosen values reduce stereotype threat and increase belonging.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  CASEL – SEL Framework
+                </h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  Individual voice, choice, and safety are central to belonging and classroom trust. This lesson builds all three competencies by giving students agency in creating their shared agreements.
+                </p>
+                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                  Read more
+                </button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
