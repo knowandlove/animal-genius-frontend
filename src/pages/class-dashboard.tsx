@@ -105,6 +105,22 @@ export default function ClassDashboard() {
     enabled: !!classId,
   });
 
+  // Fetch all students in class
+  const { data: studentsData } = useQuery({
+    queryKey: [`/api/classes/${classId}/students`],
+    queryFn: async () => {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(api(`/api/classes/${classId}/students`), {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) throw new Error("Failed to fetch students");
+      return response.json();
+    },
+    enabled: !!classId && !!user,
+  });
+
   // Fetch lesson progress
   const { data: lessonProgressData } = useQuery({
     queryKey: [`/api/classes/${classId}/lessons/progress`],
@@ -395,7 +411,7 @@ export default function ClassDashboard() {
           {/* Student List Table */}
           <div className="mb-8">
             <h2 className="text-xl font-heading text-foreground mb-4">
-              👥 Students ({stats.totalSubmissions}/{stats.totalSubmissions + 3})
+              👥 Students ({studentsData?.totalStudents || stats.totalSubmissions} total, {studentsData?.studentsWithQuiz || stats.totalSubmissions} completed quiz)
             </h2>
             <Card className="hover:shadow-lg transition-shadow">
               <div className="max-h-96 overflow-y-auto">
@@ -413,55 +429,68 @@ export default function ClassDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
-                    {submissions.map((submission) => {
-                      const animal = getAnimalByName(submission.animalType);
+                    {(studentsData?.students || submissions).map((student: any) => {
+                      const animal = getAnimalByName(student.animalType);
+                      const hasCompletedQuiz = !!student.completedAt;
                       return (
-                        <tr key={submission.id} className="hover:bg-gray-50">
+                        <tr key={student.id} className="hover:bg-gray-50">
                           <td className="px-4 py-3">
                             <button className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline">
-                              {submission.studentName}
+                              {student.studentName}
                             </button>
                           </td>
                           <td className="px-4 py-3">
-                            <div className="flex items-center">
-                              <img 
-                                src={getAssetUrl(animal?.imagePath || '/animals/kal-character.png')} 
-                                alt={submission.animalType} 
-                                className="w-6 h-6 rounded-full mr-2"
-                              />
-                              <span className="text-sm">{submission.animalType}</span>
-                            </div>
+                            {hasCompletedQuiz ? (
+                              <div className="flex items-center">
+                                <img 
+                                  src={getAssetUrl(animal?.imagePath || '/animals/kal-character.png')} 
+                                  alt={student.animalType} 
+                                  className="w-6 h-6 rounded-full mr-2"
+                                />
+                                <span className="text-sm">{student.animalType}</span>
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-400">Not taken</span>
+                            )}
                           </td>
                           <td className="px-4 py-3">
-                            <Badge 
-                              variant="secondary" 
-                              className="text-xs text-white"
-                              style={{ 
-                                backgroundColor: submission.geniusType === 'Thinker' ? '#8B5CF6' : 
-                                                submission.geniusType === 'Feeler' ? '#10B981' : '#F59E0B' 
-                              }}
-                            >
-                              {submission.geniusType}
-                            </Badge>
+                            {hasCompletedQuiz ? (
+                              <Badge 
+                                variant="secondary" 
+                                className="text-xs text-white"
+                                style={{ 
+                                  backgroundColor: student.geniusType === 'Thinker' ? '#8B5CF6' : 
+                                                  student.geniusType === 'Feeler' ? '#10B981' : '#F59E0B' 
+                                }}
+                              >
+                                {student.geniusType}
+                              </Badge>
+                            ) : (
+                              <span className="text-sm text-gray-400">-</span>
+                            )}
                           </td>
                           <td className="px-4 py-3">
-                            <span className="text-sm text-gray-900">{submission.learningStyle}</span>
+                            <span className="text-sm text-gray-900">
+                              {hasCompletedQuiz ? student.learningStyle : '-'}
+                            </span>
                           </td>
                           <td className="px-4 py-3">
                             <span className="text-sm text-gray-500">
-                              {format(new Date(submission.completedAt), 'MMM d, h:mm a')}
+                              {hasCompletedQuiz 
+                                ? format(new Date(student.completedAt), 'MMM d, h:mm a')
+                                : 'Not completed'}
                             </span>
                           </td>
                           <td className="px-4 py-3">
                             <button className="inline-flex items-center text-blue-600 hover:text-blue-800 text-xs">
                               <MapPin className="w-3 h-3 mr-1" />
-                              {submission.passportCode || 'N/A'}
+                              {student.passportCode || 'N/A'}
                             </button>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center text-sm">
                               <Coins className="w-4 h-4 text-yellow-500 mr-1" />
-                              {submission.currencyBalance || 50}
+                              {student.currencyBalance || 50}
                             </div>
                           </td>
                           <td className="px-4 py-3">
@@ -504,10 +533,23 @@ export default function ClassDashboard() {
                       </div>
                       <div className="text-xs text-gray-500">Class Code</div>
                     </div>
-                    <Button className="bg-blue-600 hover:bg-blue-700 text-white ml-4">
+                    <Button 
+                      className="bg-blue-600 hover:bg-blue-700 text-white ml-4"
+                      onClick={() => {
+                        const url = `${window.location.origin}/q/${classData.code}`;
+                        navigator.clipboard.writeText(url);
+                        toast({
+                          title: "Link copied!",
+                          description: "Quiz link has been copied to clipboard.",
+                        });
+                      }}
+                    >
                       <Copy className="w-4 h-4 mr-2" />
                       Copy Link
                     </Button>
+                  </div>
+                  <div className="mt-3 text-sm text-gray-600">
+                    Or write this code on the board: <span className="font-bold font-mono text-blue-600">{classData.code}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -523,16 +565,28 @@ export default function ClassDashboard() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="text-center">
-                      <div className="text-sm font-medium text-green-600 bg-green-50 px-4 py-3 rounded-lg border-2 border-green-200 mb-2">
-                        <MapPin className="w-4 h-4 inline mr-2" />
-                        island.com/{classData.code.toLowerCase()}
+                      <div className="text-2xl font-bold font-mono text-green-600 bg-green-50 px-6 py-3 rounded-lg border-2 border-green-200 mb-2">
+                        {classData.code}
                       </div>
-                      <div className="text-xs text-gray-500">Island URL</div>
+                      <div className="text-xs text-gray-500">Class Code</div>
                     </div>
-                    <Button className="bg-green-600 hover:bg-green-700 text-white ml-4">
-                      <Share2 className="w-4 h-4 mr-2" />
-                      Share Link
+                    <Button 
+                      className="bg-green-600 hover:bg-green-700 text-white ml-4"
+                      onClick={() => {
+                        const url = `${window.location.origin}/class/${classData.code}`;
+                        navigator.clipboard.writeText(url);
+                        toast({
+                          title: "Link copied!",
+                          description: "Class Island link has been copied to clipboard.",
+                        });
+                      }}
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy Link
                     </Button>
+                  </div>
+                  <div className="mt-3 text-sm text-gray-600">
+                    Or write this code on the board: <span className="font-bold font-mono text-green-600">{classData.code}</span>
                   </div>
                 </CardContent>
               </Card>

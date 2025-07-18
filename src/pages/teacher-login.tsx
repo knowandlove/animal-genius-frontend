@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -25,6 +25,17 @@ export default function TeacherLogin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { login } = useAuth();
+  const [showRegistrationSuccess, setShowRegistrationSuccess] = useState(false);
+
+  useEffect(() => {
+    // Check if user just registered
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('registered') === 'true') {
+      setShowRegistrationSuccess(true);
+      // Clean up URL
+      window.history.replaceState({}, '', '/login');
+    }
+  }, []);
 
   const form = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
@@ -83,6 +94,26 @@ export default function TeacherLogin() {
             </CardHeader>
             
             <CardContent className="p-8">
+              {showRegistrationSuccess && (
+                <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-6">
+                  <div className="flex">
+                    <div className="text-green-400">
+                      <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-green-800">
+                        Registration Successful!
+                      </h3>
+                      <div className="mt-1 text-sm text-green-700">
+                        Your account has been created. Please check your email to verify your account, then login with your credentials below.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               {loginMutation.isError && (
                 <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
                   <div className="flex">

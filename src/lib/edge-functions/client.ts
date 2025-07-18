@@ -35,7 +35,6 @@ export interface QuizSubmitRequest {
   classCode: string;
   firstName: string;
   lastInitial: string;
-  grade: string;
   answers: Record<string, 'A' | 'B' | 'C' | 'D'>;
 }
 

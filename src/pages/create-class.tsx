@@ -57,6 +57,7 @@ const createClassSchema = z.object({
   name: z.string().min(1, "Class name is required"),
   icon: z.string().default("book-open"),
   backgroundColor: z.string().default("#829B79"), // Convert to hex color
+  gradeLevel: z.string().min(1, "Grade level is required"),
 });
 type CreateClassData = z.infer<typeof createClassSchema>;
 
@@ -101,6 +102,7 @@ export default function CreateClass() {
       name: "",
       icon: "book-open",
       backgroundColor: "#829B79", // Default brand color
+      gradeLevel: "",
     },
   });
 
@@ -141,8 +143,7 @@ export default function CreateClass() {
 
   // Show success page if class was created
   if (createdClass) {
-    const fullUrl = `${window.location.origin}/q/${createdClass.classCode}`;
-    const shortUrl = `${window.location.origin}/q/${createdClass.classCode}`;
+    const quizUrl = `${window.location.origin}/q/${createdClass.classCode}`;
 
     return (
       <div className="min-h-screen">
@@ -173,7 +174,7 @@ export default function CreateClass() {
 
                 <Card className="bg-gray-50 mb-8">
                   <CardContent className="p-6">
-                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                    <div className="grid md:grid-cols-3 gap-4 mb-4">
                       <div>
                         <label className="text-sm font-semibold text-gray-700">Class Name</label>
                         <p className="text-lg font-bold text-gray-900">{createdClass.name}</p>
@@ -182,27 +183,23 @@ export default function CreateClass() {
                         <label className="text-sm font-semibold text-gray-700">Class Code</label>
                         <p className="text-lg font-bold text-blue-600">{createdClass.classCode}</p>
                       </div>
+                      <div>
+                        <label className="text-sm font-semibold text-gray-700">Grade Level</label>
+                        <p className="text-lg font-bold text-gray-900">{createdClass.gradeLevel}</p>
+                      </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-sm font-semibold text-gray-700">Full Quiz URL</label>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <Input value={fullUrl} readOnly className="font-mono text-sm" />
-                          <Button onClick={() => copyToClipboard(fullUrl)} size="sm">
-                            📋
-                          </Button>
-                        </div>
+                    <div className="mt-4">
+                      <label className="text-sm font-semibold text-gray-700">Student Access Link</label>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Input value={quizUrl} readOnly className="font-mono text-sm" />
+                        <Button onClick={() => copyToClipboard(quizUrl)} size="sm">
+                          📋 Copy
+                        </Button>
                       </div>
-                      <div>
-                        <label className="text-sm font-semibold text-gray-700">Short URL</label>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <Input value={shortUrl} readOnly className="font-mono text-sm" />
-                          <Button onClick={() => copyToClipboard(shortUrl)} size="sm">
-                            📋
-                          </Button>
-                        </div>
-                      </div>
+                      <p className="text-sm text-gray-600 mt-2">
+                        Copy this link to share with your students, or have them enter the class code <span className="font-mono font-bold">{createdClass.classCode}</span> on the homepage.
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -212,7 +209,7 @@ export default function CreateClass() {
                     Go to Class Dashboard
                   </Button>
                   <Button 
-                    onClick={() => setLocation(`/live-discovery/${createdClass.classCode}`)} 
+                    onClick={() => setLocation(`/classes/${createdClass.id}/live`)} 
                     variant="outline" 
                     className="flex-1"
                   >
@@ -262,6 +259,30 @@ export default function CreateClass() {
                           <Input placeholder="e.g. 7th Grade Biology, Period 3" {...field} />
                         </FormControl>
                         <p className="text-sm text-gray-500">This will be visible to students when they take the quiz</p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="gradeLevel"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Grade Level *</FormLabel>
+                        <FormControl>
+                          <select
+                            {...field}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          >
+                            <option value="">Select grade level</option>
+                            <option value="6th Grade">6th Grade</option>
+                            <option value="7th Grade">7th Grade</option>
+                            <option value="8th Grade">8th Grade</option>
+                            <option value="9th Grade">9th Grade</option>
+                          </select>
+                        </FormControl>
+                        <p className="text-sm text-gray-500">All students in this class will be assigned this grade level</p>
                         <FormMessage />
                       </FormItem>
                     )}

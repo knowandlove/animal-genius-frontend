@@ -63,8 +63,9 @@ export default function TeacherRegistration() {
         toast({
           title: "Registration Successful!",
           description: "Please check your email to verify your account before logging in.",
+          duration: 5000, // Show for 5 seconds
         });
-        setLocation("/login");
+        setLocation("/login?registered=true");
       } else {
         // Auto-login if no email verification required
         localStorage.setItem("authToken", data.token);
@@ -78,7 +79,8 @@ export default function TeacherRegistration() {
         
         toast({
           title: "Welcome to Animal Genius!",
-          description: "Your account has been created successfully.",
+          description: "Your account has been created successfully. You're now logged in and ready to create your first class.",
+          duration: 5000, // Show for 5 seconds
         });
         setLocation("/dashboard");
       }

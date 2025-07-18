@@ -175,7 +175,7 @@ export default function TeacherStudentView() {
   
   const studentData = {
     name: (submission as any).studentName,
-    grade: (submission as any).gradeLevel || "Not specified",
+    grade: (submission as any).class?.gradeLevel || "Not specified",
     className: (submission as any).class?.name || "Class",
     animal: {
       imagePath: getAnimalImagePath(animalName),

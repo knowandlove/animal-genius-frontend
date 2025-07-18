@@ -152,8 +152,9 @@ function Router() {
         <Route path="/island/:passportCode" component={StudentRoom} />
         <Route path="/room/:passportCode" component={StudentRoom} />
         <Route path="/student-room/:passportCode" component={StudentRoom} />
-        <Route path="/class/:classCode" component={ClassIsland} />
         <Route path="/class-island" component={ClassIsland} />
+        <Route path="/class/:classCode/island" component={ClassIsland} />
+        <Route path="/class/:classCode" component={ClassIsland} />
         
         
         {/* Test/Development routes - removed during cleanup */}

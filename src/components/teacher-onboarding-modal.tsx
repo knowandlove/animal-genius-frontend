@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -38,15 +38,27 @@ export function TeacherOnboardingModal({ isOpen, onClose, teacherName = "Teacher
   // Mutation to update teacher's animal type
   const updateAnimalMutation = useMutation({
     mutationFn: async (animalType: string) => {
-      return apiRequest('PUT', '/api/me/profile', { personalityAnimal: animalType });
+      const result = await apiRequest('PUT', '/api/me/profile', { personalityAnimal: animalType });
+      return { result, animalType };
     },
-    onSuccess: async () => {
+    onSuccess: async ({ result, animalType }) => {
+      // Update the user in localStorage immediately
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      if (currentUser) {
+        currentUser.personalityAnimal = animalType;
+        localStorage.setItem('user', JSON.stringify(currentUser));
+        
+        // Dispatch event to notify other components
+        window.dispatchEvent(new Event('authTokenChanged'));
+      }
+      
       // Refresh user data to reflect the new animal
       if (refreshUser) {
         await refreshUser();
       }
+      
       // Invalidate the /api/me query to ensure fresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/me'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/me'] });
       
       toast({
         title: "Animal type saved!",
@@ -62,13 +74,20 @@ export function TeacherOnboardingModal({ isOpen, onClose, teacherName = "Teacher
     }
   });
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep === 1 && selectedAnimal) {
-      // Save the selected animal
-      updateAnimalMutation.mutate(selectedAnimal);
-    }
-    
-    if (currentStep < 3) {
+      // Save the selected animal and wait for it to complete
+      try {
+        await updateAnimalMutation.mutateAsync(selectedAnimal);
+        // Only proceed to next step after successful save
+        setCurrentStep(currentStep + 1);
+      } catch (error) {
+        // Error is already handled by onError callback
+        console.error('Failed to save animal selection:', error);
+        // Don't proceed to next step if save failed
+        return;
+      }
+    } else if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
     } else {
       onClose();
@@ -256,11 +275,20 @@ export function TeacherOnboardingModal({ isOpen, onClose, teacherName = "Teacher
 
           <Button
             onClick={handleNext}
-            disabled={currentStep === 1 && !selectedAnimal && !updateAnimalMutation.isPending}
+            disabled={(currentStep === 1 && !selectedAnimal) || updateAnimalMutation.isPending}
             className="flex items-center gap-1"
           >
-            {currentStep === 3 ? 'Get Started' : 'Next'}
-            <ChevronRight className="w-4 h-4" />
+            {updateAnimalMutation.isPending ? (
+              <>
+                Saving...
+                <Loader2 className="w-4 h-4 animate-spin" />
+              </>
+            ) : (
+              <>
+                {currentStep === 3 ? 'Get Started' : 'Next'}
+                <ChevronRight className="w-4 h-4" />
+              </>
+            )}
           </Button>
         </div>
       </DialogContent>

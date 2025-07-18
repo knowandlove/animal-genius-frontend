@@ -16,7 +16,6 @@ import { Link } from 'wouter';
 import confetti from 'canvas-confetti';
 import { QuizProgressTimeline } from '@/components/quiz-progress-timeline';
 import { KalCharacter } from '@/components/KalCharacter';
-import { KalSidebar } from '@/components/KalSidebar';
 import { LoadingSpinner } from '@/components/loading-spinner';
 import { ANIMAL_TYPES } from '@/lib/animals';
 
@@ -39,10 +38,8 @@ export default function StudentQuiz() {
   const [quizComplete, setQuizComplete] = useState(false);
   const [results, setResults] = useState<QuizResults | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [kalMessage, setKalMessage] = useState("Welcome! I'm KAL, and I'm here to cheer you on!");
   const [firstName, setFirstName] = useState('');
   const [lastInitial, setLastInitial] = useState('');
-  const [gradeLevel, setGradeLevel] = useState('');
   const [showStudentInfo, setShowStudentInfo] = useState(true);
   const [selectedAnswer, setSelectedAnswer] = useState<'A' | 'B' | 'C' | 'D' | null>(null);
   const [answeredQuestions, setAnsweredQuestions] = useState<number[]>([]);
@@ -61,7 +58,6 @@ export default function StudentQuiz() {
         if (parsed.answeredQuestions) setAnsweredQuestions(parsed.answeredQuestions);
         if (parsed.firstName) setFirstName(parsed.firstName);
         if (parsed.lastInitial) setLastInitial(parsed.lastInitial);
-        if (parsed.gradeLevel) setGradeLevel(parsed.gradeLevel);
         if (parsed.showStudentInfo !== undefined) setShowStudentInfo(parsed.showStudentInfo);
         if (parsed.hasSubmitted !== undefined) setHasSubmitted(parsed.hasSubmitted);
         if (parsed.quizComplete !== undefined) setQuizComplete(parsed.quizComplete);
@@ -73,7 +69,6 @@ export default function StudentQuiz() {
             title: "Quiz Restored",
             description: `Welcome back! Your progress has been saved. You're on question ${parsed.currentQuestion + 1}.`,
           });
-          setKalMessage("Welcome back! I've saved your progress. Let's continue where you left off!");
         }
       } catch (e) {
         console.warn('Failed to restore quiz state:', e);
@@ -90,7 +85,6 @@ export default function StudentQuiz() {
         answeredQuestions,
         firstName,
         lastInitial,
-        gradeLevel,
         showStudentInfo,
         hasSubmitted,
         quizComplete,
@@ -98,7 +92,7 @@ export default function StudentQuiz() {
       };
       localStorage.setItem(`quiz-state-${classCode}`, JSON.stringify(state));
     }
-  }, [currentQuestion, answers, answeredQuestions, firstName, lastInitial, gradeLevel, showStudentInfo, hasSubmitted, quizComplete, results, classCode]);
+  }, [currentQuestion, answers, answeredQuestions, firstName, lastInitial, showStudentInfo, hasSubmitted, quizComplete, results, classCode]);
 
   // Handle keyboard shortcuts for answer selection
   useEffect(() => {
@@ -178,9 +172,6 @@ export default function StudentQuiz() {
       if (!firstName.trim() || !lastInitial.trim()) {
         throw new Error("Name is required");
       }
-      if (!gradeLevel.trim()) {
-        throw new Error("Grade level is required");
-      }
       if (!classCode) {
         throw new Error("Class code is required");
       }
@@ -196,7 +187,6 @@ export default function StudentQuiz() {
         classCode,
         firstName,
         lastInitial,
-        grade: gradeLevel,
         answers: answersObj,
       });
     },
@@ -218,7 +208,6 @@ export default function StudentQuiz() {
           geniusType: results?.animalGenius || '',
           classId: classInfo?.id?.toString() || '',
           passportCode: data.passportCode,
-          schoolYear: gradeLevel,
         });
       }
       
@@ -226,7 +215,6 @@ export default function StudentQuiz() {
       // FIX: Use backend calculation for both animal AND personality to ensure consistency
       const quizResultsData = {
         studentName: `${data.firstName} ${lastInitial}.`,
-        gradeLevel,
         animalType: data.animalType,
         personalityType: data.mbtiType || results?.mbtiType || '', // Use backend first, frontend fallback
         scores: results?.scores,
@@ -277,7 +265,6 @@ export default function StudentQuiz() {
         20: "Halfway there! You're doing amazing! 🌟",
         30: "Final stretch! You're almost done! 🚀"
       };
-      setKalMessage(messages[currentQuestion + 1] || "Keep going!");
       
       setTimeout(() => setShowCelebration(false), 3000);
     }
@@ -316,7 +303,6 @@ export default function StudentQuiz() {
       const quizResults = calculateResults(updatedAnswers);
       setResults(quizResults);
       setQuizComplete(true);
-      setKalMessage(`Congratulations! You're a ${quizResults.animal}! 🎊`);
       
       // Big celebration for completion
       confetti({
@@ -365,21 +351,19 @@ export default function StudentQuiz() {
         ];
       }
       
-      setKalMessage(encouragements[Math.floor(Math.random() * encouragements.length)]);
     }
   };
 
   const handleStartQuiz = () => {
-    if (!firstName.trim() || !lastInitial.trim() || !gradeLevel.trim()) {
+    if (!firstName.trim() || !lastInitial.trim()) {
       toast({
         title: "Missing information",
-        description: "Please enter your first name, last initial, and grade level.",
+        description: "Please enter your first name and last initial.",
         variant: "destructive",
       });
       return;
     }
     setShowStudentInfo(false);
-    setKalMessage("Let's discover your amazing personality! Answer honestly - there are no wrong answers!");
   };
 
   // Handle timeline navigation
@@ -394,12 +378,6 @@ export default function StudentQuiz() {
       const existingAnswer = answers.find(a => a.questionId === questionId);
       setSelectedAnswer(existingAnswer?.answer || null);
       
-      // Update KAL message based on navigation
-      if (answeredQuestions.includes(questionIndex)) {
-        setKalMessage("Reviewing your answer - great job!");
-      } else {
-        setKalMessage("Let's tackle this question together!");
-      }
     }
   };
 
@@ -507,23 +485,6 @@ export default function StudentQuiz() {
                 />
               </div>
             </div>
-            <div>
-              <label htmlFor="gradeLevel" className="block text-sm font-medium mb-1">
-                Grade Level
-              </label>
-              <select
-                id="gradeLevel"
-                value={gradeLevel}
-                onChange={(e) => setGradeLevel(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="">Select your grade</option>
-                <option value="6th Grade">6th Grade</option>
-                <option value="7th Grade">7th Grade</option>
-                <option value="8th Grade">8th Grade</option>
-                <option value="9th Grade">9th Grade</option>
-              </select>
-            </div>
             <Button onClick={handleStartQuiz} className="w-full">
               Start Quiz
             </Button>
@@ -540,7 +501,6 @@ export default function StudentQuiz() {
     setQuizComplete(false);
     setResults(null);
     setShowCelebration(false);
-    setKalMessage("Welcome back! Let's discover your amazing personality again!");
     // Keep student info since it's likely the same student
     setShowStudentInfo(false); // Skip info screen on retry
     setSelectedAnswer(null);
@@ -663,17 +623,8 @@ export default function StudentQuiz() {
   
   return (
     <div className="min-h-screen flex items-center justify-center p-6 main-bg">
-      {/* Main content area with KAL and quiz side by side */}
-      <div className="flex items-stretch gap-8 w-full max-w-5xl">
-        {/* KAL on the left */}
-        <KalSidebar 
-          message={kalMessage}
-          questionProgress={currentQuestion + 1}
-          totalQuestions={questions.length}
-        />
-        
-        {/* Quiz content on the right */}
-        <div className="flex-1">
+      {/* Main content area - centered without KAL */}
+      <div className="w-full max-w-3xl">
           {/* Progress Timeline - same width as card */}
           <div className="mb-6">
             <QuizProgressTimeline
@@ -785,7 +736,6 @@ export default function StudentQuiz() {
           </div>
         </motion.div>
       </Card>
-        </div>
       </div>
     </div>
   );

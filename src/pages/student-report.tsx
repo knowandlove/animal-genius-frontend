@@ -267,7 +267,7 @@ export default function StudentReport() {
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Student Information</h2>
                 <div className="space-y-2">
                   <p><strong>Name:</strong> {submission.studentName}</p>
-                  <p><strong>Grade:</strong> {submission.gradeLevel || "N/A"}</p>
+                  <p><strong>Grade:</strong> {submission.class?.gradeLevel || "N/A"}</p>
                   <p><strong>Class:</strong> {submission.class?.name || "N/A"}</p>
                   <p><strong>Date:</strong> {new Date(submission.completedAt).toLocaleDateString()}</p>
                 </div>

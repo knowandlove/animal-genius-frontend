@@ -643,7 +643,7 @@ export default function ClassEconomy() {
                                 <div>
                                   <div className="font-medium">{student.studentName}</div>
                                   <div className="text-sm text-muted-foreground">
-                                    Grade {student.gradeLevel}
+                                    Grade {economyData.class.gradeLevel}
                                   </div>
                                 </div>
                               </div>
