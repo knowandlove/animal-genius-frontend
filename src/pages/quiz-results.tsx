@@ -285,8 +285,8 @@ export default function QuizResults() {
           </Card>
         )}
 
-        {/* Passport Code */}
-        {result.passportCode && (
+        {/* Passport Code with Auto-Save Status */}
+        {result.passportCode ? (
           <Card className="mb-6 bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
             <CardContent className="p-6 text-center">
               <h3 className="text-lg font-semibold text-gray-800 mb-2">
@@ -300,6 +300,22 @@ export default function QuizResults() {
               <p className="text-sm text-gray-600 mt-2">
                 Save this code to access your room!
               </p>
+              <div className="mt-3">
+                <p className="text-sm text-green-600 font-medium">
+                  ✓ Results saved automatically
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="mb-6 bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200">
+            <CardContent className="p-6 text-center">
+              <div className="flex items-center justify-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
+                <p className="text-sm text-yellow-700 font-medium">
+                  Saving your results...
+                </p>
+              </div>
             </CardContent>
           </Card>
         )}

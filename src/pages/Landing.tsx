@@ -17,17 +17,7 @@ const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-const classCodeSchema = z.object({
-  classCode: z
-    .string()
-    .min(1, "Class code is required")
-    .transform(val => val.toUpperCase().replace(/[^A-Z0-9]/g, ''))
-    .refine(val => val.length === 6, "Class code must be 6 characters")
-    .refine(val => /^[A-Z0-9]{6}$/.test(val), "Class code must contain only letters and numbers"),
-});
-
 type LoginData = z.infer<typeof loginSchema>;
-type ClassCodeData = z.infer<typeof classCodeSchema>;
 
 export default function Landing() {
   const [, setLocation] = useLocation();
@@ -42,12 +32,6 @@ export default function Landing() {
     },
   });
 
-  const classCodeForm = useForm<ClassCodeData>({
-    resolver: zodResolver(classCodeSchema),
-    defaultValues: {
-      classCode: "",
-    },
-  });
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginData) => {
@@ -80,13 +64,6 @@ export default function Landing() {
     loginMutation.mutate(data);
   };
 
-  const onClassCodeSubmit = (data: ClassCodeData) => {
-    // Format the class code with hyphen for display
-    const formattedCode = data.classCode.slice(0, 3) + '-' + data.classCode.slice(3);
-    
-    // Redirect to the quiz page with the class code
-    setLocation(`/q/${formattedCode}`);
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-gray-50 to-zinc-100 flex items-center justify-center p-4">
@@ -158,54 +135,6 @@ export default function Landing() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Student Join Class Section */}
-        <div className="mt-6">
-          <Card className="shadow-xl border-0 bg-primary/5">
-            <CardHeader className="text-center pb-2">
-              <h2 className="text-2xl font-bold">Students Join Here</h2>
-              <p className="text-muted-foreground text-sm">Enter your class code to take the quiz</p>
-            </CardHeader>
-            
-            <CardContent className="p-6">
-              <Form {...classCodeForm}>
-                <form onSubmit={classCodeForm.handleSubmit(onClassCodeSubmit)} className="space-y-4">
-                  <FormField
-                    control={classCodeForm.control}
-                    name="classCode"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Class Code</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="text" 
-                            placeholder="ABC-123" 
-                            className="text-center text-lg uppercase"
-                            maxLength={7}
-                            {...field}
-                            onChange={(e) => {
-                              // Allow typing with or without hyphen
-                              const value = e.target.value.toUpperCase();
-                              field.onChange(value);
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Ask your teacher for the 6-character class code
-                        </p>
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button type="submit" className="w-full" size="lg" variant="default">
-                    Join Class
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Footer */}
         <p className="text-center text-xs text-muted-foreground mt-8">

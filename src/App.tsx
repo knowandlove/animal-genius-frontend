@@ -42,6 +42,7 @@ const ClassEconomy = lazy(() => import("@/pages/class-economy"));
 const ClassDashboard = lazy(() => import("@/pages/class-dashboard"));
 const ClassValuesVoting = lazy(() => import("@/pages/ClassValuesVoting"));
 const ClassValuesResults = lazy(() => import("@/pages/ClassValuesResults"));
+const JoinClass = lazy(() => import("@/pages/JoinClass"));
 // Test pages removed during cleanup
 const AvatarEditor = lazy(() => import("@/pages/avatar-editor"));
 const AvatarItemPositioner = lazy(() => import("@/pages/admin/avatar-item-positioner"));
@@ -156,6 +157,8 @@ function Router() {
         <Route path="/class/:classCode/island" component={ClassIsland} />
         <Route path="/class/:classCode" component={ClassIsland} />
         
+        {/* Student join page */}
+        <Route path="/join" component={JoinClass} />
         
         {/* Test/Development routes - removed during cleanup */}
         <Route path="/avatar-editor" component={AvatarEditor} />

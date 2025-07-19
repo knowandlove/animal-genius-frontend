@@ -85,7 +85,12 @@ export default function ClassIsland() {
   // Fetch class island data - use appropriate endpoint
   const { data, isLoading, error } = useQuery<ClassIslandData>({
     queryKey: [endpoint],
-    queryFn: () => apiRequest('GET', endpoint),
+    queryFn: async () => {
+      console.log('Fetching class island from endpoint:', endpoint);
+      const response = await apiRequest('GET', endpoint);
+      console.log('Class island response:', response);
+      return response;
+    },
     retry: (failureCount, error: any) => {
       // Only retry if it's not an auth error
       if (error?.status === 401) {

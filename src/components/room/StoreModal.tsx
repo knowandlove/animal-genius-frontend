@@ -203,7 +203,11 @@ export default function StoreModal({
           <img 
             src={imageUrl} 
             alt={item.name}
-            className="w-full h-full object-contain"
+            className={cn(
+              "object-contain",
+              // Special sizing for fish bowl
+              item.name === 'Fish Bowl' ? "w-3/4 h-3/4" : "w-full h-full"
+            )}
             onLoad={() => {
               setImageLoading(prev => ({ ...prev, [itemId]: false }));
             }}
@@ -290,14 +294,23 @@ export default function StoreModal({
                   )}
                   
                   {/* Pet display */}
-                  <div className="aspect-square bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                    {pet.assetUrl ? (
+                  <div className="aspect-square bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg mb-3 flex items-center justify-center overflow-hidden p-2">
+                    {pet.species === 'goldfish' ? (
+                      // Special handling for fish - use the thumbnail
+                      <img 
+                        src="https://zqyvfnbwpagguutzdvpy.supabase.co/storage/v1/object/public/store-items/pets/fishpreview.png" 
+                        alt={pet.name}
+                        className="w-full h-full object-contain"
+                      />
+                    ) : pet.assetUrl && !pet.assetUrl.endsWith('.riv') ? (
+                      // Regular images
                       <img 
                         src={pet.assetUrl} 
                         alt={pet.name}
                         className="w-full h-full object-contain p-4"
                       />
                     ) : (
+                      // Fallback to emoji for Rive files or no URL
                       <span className="text-6xl">{getPetEmoji(pet.species)}</span>
                     )}
                   </div>

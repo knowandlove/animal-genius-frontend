@@ -33,6 +33,8 @@ export default function StudentQuiz() {
   const [, setLocation] = useLocation();
   const classCode = params?.classCode;
   
+  console.log('StudentQuiz - classCode from params:', classCode);
+  
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<QuizAnswer[]>([]);
   const [quizComplete, setQuizComplete] = useState(false);
@@ -160,7 +162,7 @@ export default function StudentQuiz() {
   }, [quizComplete, answers.length, toast]);
 
   // Get class information
-  const { data: classInfo, isLoading: classLoading } = useQuery<ClassInfo>({
+  const { data: classInfo, isLoading: classLoading, error: classError } = useQuery<ClassInfo>({
     queryKey: [`/api/classes/class-code/${classCode}`],
     enabled: !!classCode,
   });
@@ -402,6 +404,15 @@ export default function StudentQuiz() {
 
     // In real implementation: new Audio(`/audio/${question.audioFile}`).play();
   };
+
+  // Auto-save results when quiz is completed
+  useEffect(() => {
+    if (quizComplete && results && !hasSubmitted && !submitResultsMutation.isPending) {
+      console.log('Auto-saving quiz results...');
+      submitResultsMutation.mutate();
+      setHasSubmitted(true);
+    }
+  }, [quizComplete, results, hasSubmitted, submitResultsMutation]);
 
   if (classLoading) {
     return (
