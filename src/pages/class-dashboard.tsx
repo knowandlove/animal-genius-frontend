@@ -40,6 +40,7 @@ import {
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { useClassContext } from "@/hooks/useClassContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useLastAccessedClass } from "@/hooks/useLastAccessedClass";
 
 interface User {
   id: number;
@@ -97,7 +98,15 @@ export default function ClassDashboard() {
   const queryClient = useQueryClient();
   const { role } = useClassContext();
   const { user, isLoading: authLoading } = useAuth();
+  const { saveLastAccessedClass } = useLastAccessedClass();
   const [lessonProgress, setLessonProgress] = useState<any>(null);
+
+  // Save this class as the last accessed when the component mounts
+  useEffect(() => {
+    if (classId && user) {
+      saveLastAccessedClass(classId);
+    }
+  }, [classId, user, saveLastAccessedClass]);
 
   // Fetch class analytics data
   const { data, isLoading, error } = useQuery<ClassAnalyticsData>({

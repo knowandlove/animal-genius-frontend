@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { api } from "@/config/api";
 import { useAuth } from "@/hooks/useAuth";
+import { useLastAccessedClass } from "@/hooks/useLastAccessedClass";
 import { Trash2, Clipboard, Loader2 } from "lucide-react";
 import { getIconComponent } from "@/utils/icon-utils";
 import { QuestionIcon } from "@/components/QuestionIcon";
@@ -94,6 +95,7 @@ export default function TeacherDashboard() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { toast } = useToast();
   const { user, isLoading: authLoading, logout, refreshUser } = useAuth();
+  const { saveLastAccessedClass } = useLastAccessedClass();
   const queryClient = useQueryClient();
   const { confirm, Dialog: ConfirmDialogComponent } = useConfirmDialog();
 
@@ -495,9 +497,10 @@ export default function TeacherDashboard() {
                         <div className="flex flex-col space-y-2">
                           <Button
                             variant="outline"
-                            onClick={() =>
-                              setLocation(`/class/${cls.id}/dashboard`)
-                            }
+                            onClick={() => {
+                              saveLastAccessedClass(cls.id);
+                              setLocation(`/class/${cls.id}/dashboard`);
+                            }}
                           >
                             View Class Dashboard
                           </Button>

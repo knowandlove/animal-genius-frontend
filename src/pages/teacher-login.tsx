@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
+import { useLastAccessedClass } from "@/hooks/useLastAccessedClass";
 import Header from "@/components/header";
 
 const loginSchema = z.object({
@@ -25,6 +26,7 @@ export default function TeacherLogin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { login } = useAuth();
+  const { getLastAccessedClassPath } = useLastAccessedClass();
   const [showRegistrationSuccess, setShowRegistrationSuccess] = useState(false);
 
   useEffect(() => {
@@ -62,7 +64,13 @@ export default function TeacherLogin() {
       
       // Small delay to ensure auth state is propagated
       setTimeout(() => {
-        setLocation("/dashboard");
+        // Check if there's a last accessed class to redirect to
+        const lastClassPath = getLastAccessedClassPath();
+        if (lastClassPath) {
+          setLocation(lastClassPath);
+        } else {
+          setLocation("/dashboard");
+        }
       }, 100);
     },
     onError: (error) => {
