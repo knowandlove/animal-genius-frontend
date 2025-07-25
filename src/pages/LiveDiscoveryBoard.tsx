@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useRealtime } from '@/hooks/useRealtime';
+// import { useRealtime } from '@/hooks/useRealtime'; // Disabled - using polling instead
 import { 
   ArrowLeft, 
   Maximize, 
@@ -34,6 +34,7 @@ function getAnimalImagePath(animalType: string): string {
   const filename = animalMap[animalType] || 'meerkat';
   return `/images/${filename}.png`;
 }
+
 
 interface LiveSubmission {
   id: string;
@@ -113,12 +114,28 @@ function LiveDiscoveryBoard() {
   const classId = params?.id;
   const [, setLocation] = useLocation();
   
+  // Debug logging
+  useEffect(() => {
+    console.log('LiveDiscoveryBoard mounted with classId:', classId);
+  }, [classId]);
+  
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showNames, setShowNames] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [liveSubmissions, setLiveSubmissions] = useState<LiveSubmission[]>([]);
   const [revealAnimations, setRevealAnimations] = useState<RevealAnimation[]>([]);
+  const [bgImageError, setBgImageError] = useState(false);
+
+  // Preload background image
+  useEffect(() => {
+    const img = new Image();
+    img.src = 'https://zqyvfnbwpagguutzdvpy.supabase.co/storage/v1/object/public/public-assets/ui/personalityisland.jpg';
+    img.onerror = () => {
+      console.warn('Failed to load personality island background image');
+      setBgImageError(true);
+    };
+  }, []);
 
   // Fetch class data
   const { data: classData } = useQuery({
@@ -134,6 +151,39 @@ function LiveDiscoveryBoard() {
     },
     enabled: !!classId
   });
+
+  // Process and animate new submission
+  const processNewSubmission = (newSubmission: LiveSubmission) => {
+    setLiveSubmissions(prev => {
+      // Prevent duplicates
+      if (prev.some(s => s.id === newSubmission.id)) {
+        return prev;
+      }
+      return [...prev, newSubmission];
+    });
+    
+    // Create reveal animation
+    console.log('Creating reveal animation for:', newSubmission);
+    const reveal: RevealAnimation = {
+      id: newSubmission.id,
+      studentName: newSubmission.studentName,
+      animalType: newSubmission.animalType,
+      x: 20 + Math.random() * 60,
+      y: 20 + Math.random() * 40
+    };
+    
+    setRevealAnimations(prev => [...prev, reveal]);
+    
+    // Remove animation after 3 seconds
+    setTimeout(() => {
+      setRevealAnimations(prev => prev.filter(r => r.id !== reveal.id));
+    }, 3000);
+    
+    // Play sound notification if enabled
+    if (soundEnabled) {
+      console.log('New discovery:', newSubmission);
+    }
+  };
 
   // Initial data fetch for existing submissions
   const { data: initialSubmissions = [], isLoading } = useQuery({
@@ -160,87 +210,86 @@ function LiveDiscoveryBoard() {
     enabled: !!classId
   });
 
-  // Real-time subscription for new quiz submissions - filtered by class
-  const { isConnected: isRealtimeConnected, error: realtimeError } = useRealtime(
-    {
-      table: 'quiz_submissions',
-      event: 'INSERT',
-      filter: `class_id=eq.${classId}`,
-      onError: (error) => {
-        console.error('Realtime error:', error);
-      }
-    },
-    async (event) => {
-      console.log('Realtime event received:', event);
-      if (event.eventType === 'INSERT' && event.new) {
-        // Fetch additional data about this submission
-        try {
-          const response = await fetch(`/api/quiz-submissions/${event.new.id}/details`, {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            }
-          });
-          
-          if (response.ok) {
-            const submissionDetails = await response.json();
-            console.log('Submission details:', submissionDetails);
-            
-            // No need to check class_id anymore - realtime filter handles it!
-            const newSubmission: LiveSubmission = {
-                id: event.new.id,
-                studentName: submissionDetails.studentName,
-                animalType: submissionDetails.animalType,
-                timestamp: event.new.completed_at || new Date().toISOString()
-              };
-              
-              setLiveSubmissions(prev => {
-                // Prevent duplicates
-                if (prev.some(s => s.id === newSubmission.id)) {
-                  return prev;
-                }
-                return [...prev, newSubmission];
-              });
-              
-              // Create reveal animation
-              console.log('Creating reveal animation for:', newSubmission);
-              const reveal: RevealAnimation = {
-                id: newSubmission.id,
-                studentName: newSubmission.studentName,
-                animalType: newSubmission.animalType,
-                x: 20 + Math.random() * 60, // Random position 20-80% of screen width
-                y: 20 + Math.random() * 40  // Random position 20-60% of screen height
-              };
-              
-              setRevealAnimations(prev => {
-                console.log('Adding reveal animation');
-                return [...prev, reveal];
-              });
-              
-              // Remove animation after 3 seconds
-              setTimeout(() => {
-                setRevealAnimations(prev => prev.filter(r => r.id !== reveal.id));
-              }, 3000);
-              
-              // Play sound notification if enabled
-              if (soundEnabled) {
-                // You can add a notification sound here
-                console.log('New discovery:', newSubmission);
-              }
+  // Disable Realtime for now - using polling instead
+  // const { isConnected: isRealtimeConnected, error: realtimeError } = useRealtime(
+  //   {
+  //     table: 'quiz_submissions',
+  //     event: 'INSERT',
+  //     onError: (error) => {
+  //       console.error('Realtime error:', error);
+  //     }
+  //   },
+  //   async (event) => {
+  //     console.log('Realtime event received:', event);
+  //     console.log('Event new data:', event.new);
+  //     if (event.eventType === 'INSERT' && event.new) {
+  //       // Handle the realtime data directly
+  //       handleRealtimeSubmission(event.new);
+  //     }
+  //   },
+  //   [classId, soundEnabled]
+  // );
+  
+  // For now, just use polling
+  const isRealtimeConnected = false;
+  const realtimeError = null;
+
+  // Always use polling for now since realtime events don't include all needed data
+  const [lastPollTime, setLastPollTime] = useState<Date>(new Date());
+  const [isPolling, setIsPolling] = useState(true);
+  
+  // Polling implementation
+  useEffect(() => {
+    if (!classId || !isPolling) return;
+    
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/classes/${classId}/analytics`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
           }
-        } catch (error) {
-          console.error('Failed to fetch submission details:', error);
+        });
+        
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        const newSubmissions = data.submissions
+          ?.filter((submission: any) => submission.completedAt)
+          .filter((submission: any) => new Date(submission.completedAt) > lastPollTime)
+          .map((submission: any) => ({
+            id: submission.id || `${submission.studentName}-${submission.completedAt}`,
+            studentName: submission.studentName,
+            animalType: submission.animalType,
+            timestamp: submission.completedAt
+          })) || [];
+        
+        if (newSubmissions.length > 0) {
+          console.log(`Polling: Found ${newSubmissions.length} new submissions`);
+          setLastPollTime(new Date());
+          
+          // Process each new submission
+          newSubmissions.forEach((newSubmission: LiveSubmission) => {
+            processNewSubmission(newSubmission);
+          });
         }
+      } catch (error) {
+        console.error('Polling error:', error);
       }
-    },
-    [classId, soundEnabled]
-  );
+    }, 3000); // Poll every 3 seconds
+    
+    return () => clearInterval(pollInterval);
+  }, [classId, lastPollTime, soundEnabled, isPolling]);
+  
+  
 
   // Initialize live submissions with existing data
   useEffect(() => {
     if (initialSubmissions.length > 0) {
+      console.log('Setting initial submissions:', initialSubmissions);
       setLiveSubmissions(initialSubmissions);
     }
   }, [initialSubmissions]);
+  
 
   // Filter submissions by session start time if set
   const filteredSubmissions = sessionStartTime 
@@ -279,7 +328,26 @@ function LiveDiscoveryBoard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex flex-col">
+    <div className="min-h-screen relative flex flex-col">
+      {/* Background with gradient fallback */}
+      <div 
+        className="absolute inset-0 z-0"
+        style={{
+          background: bgImageError 
+            ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' // Beautiful gradient fallback
+            : `
+                linear-gradient(to bottom right, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.5)),
+                url(https://zqyvfnbwpagguutzdvpy.supabase.co/storage/v1/object/public/public-assets/ui/personalityisland.jpg)
+              `,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundColor: '#f0f9ff' // Light blue fallback
+        }}
+      >
+        {/* Additional gradient overlay for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/20" />
+      </div>
       {/* Reveal Animations */}
       {revealAnimations.map((reveal) => {
         const region = ANIMAL_REGIONS.find(r => r.animals.includes(reveal.animalType));
@@ -329,11 +397,17 @@ function LiveDiscoveryBoard() {
                     }
                   }
                 `}</style>
-                <img 
-                  src={getAnimalImagePath(reveal.animalType)}
-                  alt={`${reveal.animalType} avatar`}
-                  className="w-24 h-24 object-contain mb-4 mx-auto"
-                />
+                <div className="w-24 h-24 mb-4 mx-auto flex items-center justify-center">
+                  <img 
+                    src={getAnimalImagePath(reveal.animalType)}
+                    alt={`${reveal.animalType} avatar`}
+                    className={`object-contain ${
+                      reveal.animalType === 'Meerkat' || reveal.animalType === 'Beaver'
+                        ? 'w-16 h-16'
+                        : 'w-20 h-20'
+                    }`}
+                  />
+                </div>
                 <div 
                   className="text-center font-bold text-lg"
                   style={{ color: color }}
@@ -355,36 +429,34 @@ function LiveDiscoveryBoard() {
         );
       })}
 
-      {/* Class Info Header */}
-      <div className="absolute top-4 left-4 z-10">
-        <div className="bg-white/95 rounded-lg p-4 shadow-lg">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-2xl font-bold text-gray-900">Live Discovery Board</h1>
-            <div className="flex items-center gap-2">
-              {isRealtimeConnected ? (
-                <div className="flex items-center text-green-600">
-                  <Wifi className="w-4 h-4 mr-1" />
-                  <span className="text-xs font-medium">LIVE</span>
+      {/* Class Info Card - Bottom Right */}
+      <div className="absolute bottom-20 right-4 z-10">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl p-3 shadow-lg border border-gray-200/50">
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-gray-900">{classData?.class?.name || 'Loading...'}</p>
+              <div className="flex items-center gap-4 mt-1">
+                <p className="text-xs text-gray-600">{classData?.class?.code || '...'}</p>
+                <p className="text-xs text-gray-600">{totalStudents} discovered</p>
+              </div>
+            </div>
+            <div className="flex items-center">
+              {isPolling ? (
+                <div className="flex items-center text-green-600" title="Polling for updates">
+                  <Wifi className="w-3 h-3" />
                 </div>
               ) : (
-                <div className="flex items-center text-red-600">
-                  <WifiOff className="w-4 h-4 mr-1" />
-                  <span className="text-xs font-medium">OFFLINE</span>
+                <div className="flex items-center text-red-600" title="Not connected">
+                  <WifiOff className="w-3 h-3" />
                 </div>
               )}
             </div>
           </div>
-          <p className="text-lg text-gray-700">{classData?.class?.name || 'Loading...'}</p>
-          <p className="text-sm text-gray-600">Class Code: {classData?.class?.code || 'Loading...'}</p>
-          <p className="text-sm text-gray-600 mt-2">{totalStudents} students discovered</p>
-          {realtimeError && (
-            <p className="text-xs text-red-600 mt-1">Realtime connection error</p>
-          )}
         </div>
       </div>
 
       {/* Animal Columns */}
-      <div className="flex-1 overflow-hidden p-8 pt-24">
+      <div className="flex-1 overflow-hidden p-8 relative z-10">
         <div className="h-full max-w-7xl mx-auto">
           <div className="grid grid-cols-4 lg:grid-cols-8 gap-4 h-full">
             {regionSubmissions.map((region) => (
@@ -394,20 +466,22 @@ function LiveDiscoveryBoard() {
               >
                 {/* Column Header */}
                 <div className="text-center mb-4">
-                  <img 
-                    src={getAnimalImagePath(region.name)}
-                    alt={`${region.name} avatar`}
-                    className="w-16 h-16 object-contain mx-auto mb-2"
-                  />
-                  <h3 
-                    className="font-bold text-sm"
-                    style={{ color: region.color }}
-                  >
-                    {region.name}
-                  </h3>
+                  <div className="w-full mx-auto mb-2 bg-gray-100 rounded-lg overflow-hidden p-2">
+                    <img 
+                      src={getAnimalImagePath(region.name)}
+                      alt={`${region.name} avatar`}
+                      className="object-contain mx-auto w-20 h-20"
+                    />
+                    <h3 
+                      className="font-bold text-sm mt-1"
+                      style={{ color: region.color }}
+                    >
+                      {region.name}
+                    </h3>
+                  </div>
                   <Badge 
                     variant="secondary" 
-                    className="text-white font-bold mt-1"
+                    className="text-white font-bold"
                     style={{ backgroundColor: region.color }}
                   >
                     {region.students.length}

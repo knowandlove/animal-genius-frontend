@@ -69,31 +69,40 @@ export default function ClassIsland() {
     setLocation("/");
   };
 
-  // Determine view type
-  const isTeacherView = location.includes('/teacher/') && classId;
+  // Determine view type based on URL and authentication
+  const isTeacherView = (location.includes('/teacher/') || location.includes('/dashboard')) && classId;
   const isPublicView = location.includes('/class/') && classCode;
-  const isStudentView = !isTeacherView && !isPublicView;
+  const isStudentView = !isTeacherView && !isPublicView && location.includes('/student/');
   
   // Use different endpoints based on view type
-  let endpoint = '/api/room/my-class-island'; // default student view
-  if (isTeacherView) {
+  let endpoint = '';
+  if (isTeacherView && classId) {
     endpoint = `/api/classes/${classId}/island`;
-  } else if (isPublicView) {
+  } else if (isPublicView && classCode) {
     endpoint = `/api/class/${classCode}/island`;
+  } else if (isStudentView) {
+    endpoint = '/api/room/my-class-island';
+  } else {
+    // If we can't determine the view type, don't fetch
+    console.warn('Cannot determine class island view type from URL:', location);
   }
 
   // Fetch class island data - use appropriate endpoint
   const { data, isLoading, error } = useQuery<ClassIslandData>({
     queryKey: [endpoint],
     queryFn: async () => {
+      if (!endpoint) {
+        throw new Error('No endpoint determined for class island view');
+      }
       console.log('Fetching class island from endpoint:', endpoint);
       const response = await apiRequest('GET', endpoint);
       console.log('Class island response:', response);
       return response;
     },
+    enabled: !!endpoint, // Only run query if we have an endpoint
     retry: (failureCount, error: any) => {
       // Only retry if it's not an auth error
-      if (error?.status === 401) {
+      if (error?.status === 401 || error?.status === 400) {
         return false;
       }
       return failureCount < 2;

@@ -120,13 +120,13 @@ export function useRealtime(
             setError(null);
           }
         })
-        .subscribe((status) => {
+        .subscribe((status, error) => {
           if (status === 'SUBSCRIBED') {
             setIsConnected(true);
             setError(null);
           } else if (status === 'CHANNEL_ERROR') {
             setIsConnected(false);
-            const errorMsg = 'Failed to subscribe to realtime channel';
+            const errorMsg = `Failed to subscribe to realtime channel: ${error?.message || 'Unknown error'}`;
             setError(errorMsg);
             onError?.(errorMsg);
           } else if (status === 'TIMED_OUT') {

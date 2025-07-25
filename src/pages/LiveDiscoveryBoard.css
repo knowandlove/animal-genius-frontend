@@ -57,3 +57,21 @@
     opacity: 0;
   }
 }
+
+/* Animal image container styling for consistent sizing */
+.animal-image-container {
+  width: 64px;  /* 16 * 4 = 64px, matching w-16 h-16 */
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f3f4f6;  /* gray-100 */
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.animal-image {
+  object-fit: contain;
+  max-width: 100%;
+  max-height: 100%;
+}
