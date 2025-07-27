@@ -37,6 +37,7 @@ import { SaveStatusIndicator } from "@/components/room/SaveStatusIndicator";
 import RoomViewers from "@/components/room/RoomViewers";
 import { useRoomViewers } from "@/hooks/useRoomViewers";
 import { v4 as uuidv4 } from 'uuid';
+import CharacterCreationModal from '@/components/avatar/CharacterCreationModal';
 
 interface StoreItem {
   id: string;
@@ -98,6 +99,7 @@ export default function StudentRoom() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [accessDeniedReason, setAccessDeniedReason] = useState<'private' | 'invite_only' | 'different_class' | 'unknown' | null>(null);
   const [authenticatedViewerName, setAuthenticatedViewerName] = useState<string | null>(null);
+  const [showCharacterCreation, setShowCharacterCreation] = useState(false);
   
   // Viewer tracking
   const [viewerId] = useState(() => {
@@ -252,8 +254,39 @@ export default function StudentRoom() {
       if (!hasBeenWelcomed) {
         setShowWelcome(true);
       }
+      
+      // Check if avatar colors have been customized (only for owner)
+      if (access?.isOwner && !room.avatarData?.colors?.hasCustomized) {
+        // Show character creation after welcome animation if needed
+        if (!hasBeenWelcomed) {
+          // Wait for welcome animation to complete
+          setTimeout(() => {
+            setShowCharacterCreation(true);
+          }, 3000); // Welcome animation duration
+        } else {
+          setShowCharacterCreation(true);
+        }
+      }
     }
   }, [pageData, passportCode, initializeFromServerData]);
+
+  // Avatar color save mutation
+  const saveAvatarColorsMutation = useMutation({
+    mutationFn: (colors: { primaryColor: string; secondaryColor: string }) => 
+      apiRequest('POST', `/api/room/${passportCode}/avatar-colors`, colors, {
+        headers: getPassportAuthHeaders()
+      }),
+    onSuccess: () => {
+      // Update local state
+      queryClient.invalidateQueries({ queryKey: [`/api/room-page-data/${passportCode}`] });
+      setShowCharacterCreation(false);
+    },
+    onError: (error: any) => {
+      console.error('Failed to save avatar colors:', error);
+      // Still close the modal - they can try again later
+      setShowCharacterCreation(false);
+    },
+  });
 
   // Direct purchase mutation (no approval needed)
   const purchaseMutation = useMutation({
@@ -437,6 +470,16 @@ export default function StudentRoom() {
 
   return (
     <>
+      {/* Character Creation Modal */}
+      {showCharacterCreation && room && (
+        <CharacterCreationModal
+          animalType={room.animalType}
+          onComplete={(colors) => {
+            saveAvatarColorsMutation.mutate(colors);
+          }}
+          onClose={() => setShowCharacterCreation(false)}
+        />
+      )}
 
       {/* Welcome Animation */}
       <AnimatePresence>

@@ -13,6 +13,8 @@ import {
   getTransformOrigin,
   DEFAULT_ANCHORS
 } from '@/utils/normalized-positioning';
+import { SVGAvatar } from '../avatar/SVGAvatar';
+import { useRoomStore } from '@/stores/roomStore';
 
 interface NormalizedAvatarProps {
   animalType: string;
@@ -182,6 +184,27 @@ export default function NormalizedAvatar({
   }, [animalType, width, height, onItemDrag]);
   
   // Get avatar image path
+  // Check if we should use SVG avatar (when colors are customized)
+  const avatarColors = useRoomStore((state) => state.avatar?.colors);
+  const hasCustomColors = avatarColors?.hasCustomized && avatarColors?.primaryColor && avatarColors?.secondaryColor;
+  
+  // If we have custom colors, use SVGAvatar instead
+  if (hasCustomColors) {
+    return (
+      <SVGAvatar
+        animalType={animalType}
+        primaryColor={avatarColors.primaryColor}
+        secondaryColor={avatarColors.secondaryColor}
+        width={width}
+        height={height}
+        items={items}
+        className={className}
+        onClick={onClick}
+        animated={animated}
+      />
+    );
+  }
+  
   const getAvatarImage = () => {
     const normalizedAnimal = animalType.toLowerCase().replace(' ', '-');
     const animalFileName = normalizedAnimal === 'border-collie' ? 'collie' : normalizedAnimal;

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { LucideIcon } from 'lucide-react';
 
 interface EmptyStateProps {
-  icon?: LucideIcon | React.ReactNode;
+  icon?: LucideIcon;
   title: string;
   description: string;
   action?: {
@@ -26,11 +26,11 @@ export function EmptyState({
       <CardContent className="flex flex-col items-center justify-center py-12 text-center">
         {Icon && (
           <div className="mb-4">
-            {typeof Icon === 'function' ? (
+            {React.isValidElement(Icon) ? (
+              Icon
+            ) : typeof Icon === 'function' ? (
               <Icon className="h-12 w-12 text-muted-foreground" />
-            ) : (
-              <div className="text-5xl">{Icon}</div>
-            )}
+            ) : null}
           </div>
         )}
         <h3 className="text-lg font-semibold mb-2">{title}</h3>

@@ -340,7 +340,7 @@ function LiveDiscoveryBoard() {
                 url(https://zqyvfnbwpagguutzdvpy.supabase.co/storage/v1/object/public/public-assets/ui/personalityisland.jpg)
               `,
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundPosition: 'center 55%', // Move image to 55%
           backgroundRepeat: 'no-repeat',
           backgroundColor: '#f0f9ff' // Light blue fallback
         }}

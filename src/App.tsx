@@ -43,9 +43,13 @@ const ClassDashboard = lazy(() => import("@/pages/class-dashboard"));
 const ClassValuesVoting = lazy(() => import("@/pages/ClassValuesVoting"));
 const ClassValuesResults = lazy(() => import("@/pages/ClassValuesResults"));
 const JoinClass = lazy(() => import("@/pages/JoinClass"));
+const CommunityHub = lazy(() => import("@/pages/community/CommunityHub"));
+const DiscussionDetail = lazy(() => import("@/pages/community/DiscussionDetail"));
 // Test pages removed during cleanup
 const AvatarEditor = lazy(() => import("@/pages/avatar-editor"));
 const AvatarItemPositioner = lazy(() => import("@/pages/admin/avatar-item-positioner"));
+const TestSVGAvatar = lazy(() => import("@/pages/test-svg-avatar"));
+const TestRiveColors = lazy(() => import("@/pages/test-rive-colors"));
 const AvatarItemPositionerV2 = lazy(() => import("@/pages/admin/avatar-item-positioner-v2"));
 // const AddStoreItem = lazy(() => import("@/pages/admin/add-store-item")); // Removed - use StoreManagement instead
 const StoreManagement = lazy(() => import("@/pages/admin/store-management-direct"));
@@ -62,6 +66,13 @@ import { queryClient } from "@/lib/queryClient";
 // Legacy auth utilities removed - now using Supabase Auth for teachers and passport codes for students
 
 
+
+const RedirectToLogin = () => {
+  useEffect(() => {
+    window.location.href = '/login';
+  }, []);
+  return null;
+};
 
 function Router() {
   const [token, setToken] = useState<string | null>(null);
@@ -162,6 +173,8 @@ function Router() {
         
         {/* Test/Development routes - removed during cleanup */}
         <Route path="/avatar-editor" component={AvatarEditor} />
+        <Route path="/test-svg-avatar" component={TestSVGAvatar} />
+        <Route path="/test-rive-colors" component={TestRiveColors} />
         
         {/* Authentication routes - always available */}
         <Route path="/register" component={TeacherRegistration} />
@@ -193,6 +206,8 @@ function Router() {
             <Route path="/group-maker" component={GroupMaker} />
             <Route path="/admin" component={AdminPanel} />
             <Route path="/teacher/class/:classId/island" component={ClassIsland} />
+            <Route path="/community" component={CommunityHub} />
+            <Route path="/community/discussion/:id" component={DiscussionDetail} />
             <Route path="/colors" component={ColorPreview} />
             <Route path="/admin/item-positioner" component={AvatarItemPositioner} />
             <Route path="/admin/item-positioner-v2" component={AvatarItemPositionerV2} />
@@ -227,6 +242,8 @@ function Router() {
             <Route path="/teacher/personality-results" component={() => { window.location.href = '/login'; return null; }} />
             <Route path="/submission/:submissionId/report" component={() => { window.location.href = '/login'; return null; }} />
             <Route path="/pre-assessment" component={() => { window.location.href = '/login'; return null; }} />
+            <Route path="/community" component={RedirectToLogin} />
+            <Route path="/community/discussion/:id" component={RedirectToLogin} />
             <Route path="/admin" component={() => { window.location.href = '/login'; return null; }} />
           </>
         )}

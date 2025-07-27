@@ -88,6 +88,11 @@ export interface RoomStore {
     };
     position: { x: number; y: number };
     animation: AvatarAnimation;
+    colors?: {
+      primaryColor: string;
+      secondaryColor: string;
+      hasCustomized: boolean;
+    };
   };
   
   // Room state
@@ -174,6 +179,7 @@ export interface RoomStore {
   setBalance: (balance: number) => void;
   setAvatarEquipment: (slot: string, itemId: ItemId | null) => void;
   setAvatarAnimation: (animation: AvatarAnimation) => void;
+  setAvatarColors: (colors: { primaryColor: string; secondaryColor: string; hasCustomized: boolean }) => void;
   moveAvatar: (x: number, y: number) => void;
   placeItem: (itemId: ItemId, x: number, y: number) => void;
   moveItem: (placedItemId: string, x: number, y: number) => void;
@@ -311,6 +317,7 @@ export const useRoomStore = create<RoomStore>()(
           equipped: equipped,
           position: { x: 50, y: 85 }, // Centered horizontally, near bottom
           animation: 'idle',
+          colors: data.avatarData?.colors || undefined,
         },
         room: {
           theme: data.roomData?.theme || 'wood',
@@ -373,6 +380,15 @@ export const useRoomStore = create<RoomStore>()(
       set((state) => ({
         avatar: { ...state.avatar, animation },
       }));
+    },
+    
+    setAvatarColors: (colors) => {
+      set((state) => ({
+        avatar: { ...state.avatar, colors },
+      }));
+      
+      // Save the colors to the backend
+      debouncedSave();
     },
     
     moveAvatar: (x, y) => {
@@ -754,6 +770,7 @@ export const useRoomStore = create<RoomStore>()(
           // Save current avatar state
           await apiRequest('POST', `/api/room/${state.passportCode}/avatar`, {
             equipped: state.draftAvatar.equipped,
+            colors: state.avatar.colors,
           }, {
             headers: getPassportAuthHeaders()
           });

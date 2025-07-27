@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Menu, User, Settings, LogOut, Home } from "lucide-react";
+import { Menu, User, Settings, LogOut, Home, Users } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -131,6 +131,13 @@ export function TopBar({
                     <Link href="/account" className="flex items-center">
                       <Settings className="mr-2 h-4 w-4" />
                       Account Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuItem asChild>
+                    <Link href="/community" className="flex items-center">
+                      <Users className="mr-2 h-4 w-4" />
+                      Community Hub
                     </Link>
                   </DropdownMenuItem>
                   

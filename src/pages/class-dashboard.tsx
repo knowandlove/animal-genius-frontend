@@ -36,6 +36,7 @@ import {
   CheckCircle,
   Copy,
   ExternalLink,
+  Wifi,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { useClassContext } from "@/hooks/useClassContext";
@@ -232,6 +233,14 @@ export default function ClassDashboard() {
       action: () => setLocation(`/teacher/class/${classId}/island`)
     },
     {
+      id: 'live-discovery',
+      label: 'Live Discovery',
+      description: 'Real-time view',
+      icon: Wifi,
+      color: 'red',
+      action: () => setLocation(`/classes/${classId}/live`)
+    },
+    {
       id: 'analytics',
       label: 'Analytics',
       description: 'Charts & data',
@@ -272,7 +281,9 @@ export default function ClassDashboard() {
       purple: 'hover:bg-purple-50 hover:border-purple-300 text-purple-600',
       green: 'hover:bg-green-50 hover:border-green-300 text-green-600',
       indigo: 'hover:bg-indigo-50 hover:border-indigo-300 text-indigo-600',
-      yellow: 'hover:bg-yellow-50 hover:border-yellow-300 text-yellow-600'
+      yellow: 'hover:bg-yellow-50 hover:border-yellow-300 text-yellow-600',
+      red: 'hover:bg-red-50 hover:border-red-300 text-red-600',
+      orange: 'hover:bg-orange-50 hover:border-orange-300 text-orange-600'
     };
     return colorMap[color as keyof typeof colorMap] || colorMap.blue;
   };
@@ -504,8 +515,12 @@ export default function ClassDashboard() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center space-x-2">
-                              <Button variant="outline" size="sm">
-                                View
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setLocation(`/teacher/student/${student.id}?classId=${classId}&from=dashboard`)}
+                              >
+                                View Report
                               </Button>
                               <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
                                 Delete

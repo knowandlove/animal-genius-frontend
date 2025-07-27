@@ -15,7 +15,7 @@ export type AnimalConfig = {
 export const ANIMAL_CONFIGS: Record<string, AnimalConfig> = {
   'meerkat': {
     displayName: 'Meerkat',
-    baseScale: 0.9,
+    baseScale: 1.1,  // Increased from 0.9 for better consistency
     itemScale: 0.8,
     anchors: {
       hat: { x: 50, y: 20 },
@@ -26,7 +26,7 @@ export const ANIMAL_CONFIGS: Record<string, AnimalConfig> = {
   
   'otter': {
     displayName: 'Otter',
-    baseScale: 1.8,  // Increased from 1.5
+    baseScale: 1.0,  // Reduced from 1.8 for consistency
     itemScale: 0.75,
     anchors: {
       hat: { x: 50, y: 18 },
@@ -48,7 +48,7 @@ export const ANIMAL_CONFIGS: Record<string, AnimalConfig> = {
   
   'beaver': {
     displayName: 'Beaver',
-    baseScale: 0.95,
+    baseScale: 1.15,  // Increased from 0.95 for better visibility
     itemScale: 0.9,
     anchors: {
       hat: { x: 50, y: 18 },
@@ -81,7 +81,7 @@ export const ANIMAL_CONFIGS: Record<string, AnimalConfig> = {
   
   'panda': {
     displayName: 'Panda',
-    baseScale: 1.15,
+    baseScale: 1.05,  // Reduced from 1.15 for consistency
     itemScale: 0.95,
     anchors: {
       hat: { x: 50, y: 18 },
@@ -92,12 +92,24 @@ export const ANIMAL_CONFIGS: Record<string, AnimalConfig> = {
   
   'elephant': {
     displayName: 'Elephant',
-    baseScale: 1.8,  // Increased from 1.5
+    baseScale: 1.0,  // Reduced from 1.8 for consistency
     itemScale: 0.85,
     anchors: {
       hat: { x: 50, y: 15 },
       glasses: { x: 50, y: 30 },
       accessory: { x: 50, y: 60 }
+    }
+  },
+  
+  // Alias for Border Collie
+  'collie': {
+    displayName: 'Border Collie',
+    baseScale: 1,
+    itemScale: 0.75,
+    anchors: {
+      hat: { x: 50, y: 20 },
+      glasses: { x: 50, y: 35 },
+      accessory: { x: 50, y: 65 }
     }
   }
 };
