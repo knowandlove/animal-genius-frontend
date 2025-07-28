@@ -45,6 +45,7 @@ export interface QuizSubmitResponse {
   firstName: string;
   message: string;
   studentId?: string;
+  mbtiType?: string;
 }
 
 /**

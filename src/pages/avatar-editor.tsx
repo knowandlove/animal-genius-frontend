@@ -94,7 +94,7 @@ function ItemControls({
         <Button
           onClick={() => {
             const equipped = equippedItems[selectedAnimal]?.[selectedCategory] === selectedItem;
-            setEquippedItems(prev => ({
+            setEquippedItems((prev: {[animal: string]: {hat?: string; glasses?: string; accessory?: string}}) => ({
               ...prev,
               [selectedAnimal]: {
                 ...prev[selectedAnimal],

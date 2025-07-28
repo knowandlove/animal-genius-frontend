@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 // import LayeredAvatarFixed from '@/components/avatar-v2/LayeredAvatarFixed';
-import { getItemFolder } from '@shared/currency-types';
+import { getItemFolder } from '@shared/store-types';
 import { ANIMAL_CONFIGS, getItemScaleForAnimal } from '@/config/animal-sizing';
 import { Save, Copy, RotateCw, Download, Upload, Move, FileJson } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -234,7 +234,7 @@ export default function AvatarItemPositioner() {
     const cleanedPositions = Object.entries(positions).reduce((acc, [itemId, animalPositions]) => {
       if (itemId && itemId !== 'undefined') {
         // Find the item to get its type code
-        const item = AVATAR_ITEMS.find(i => i.id === itemId);
+        const item = AVATAR_ITEMS.find((i: StoreItem) => i.id === itemId);
         const itemTypeCode = item?.itemType || itemId;
         
         const cleanedAnimalPositions = Object.entries(animalPositions).reduce((animalAcc, [animalType, position]) => {
@@ -329,7 +329,7 @@ export default function AvatarItemPositioner() {
     let configured = 0;
     let total = AVATAR_ITEMS.length * ANIMALS.length;
     
-    AVATAR_ITEMS.forEach(item => {
+    AVATAR_ITEMS.forEach((item: StoreItem) => {
       ANIMALS.forEach(animal => {
         if (positions[item.id]?.[animal.id]) {
           configured++;
@@ -453,14 +453,14 @@ export default function AvatarItemPositioner() {
                 <Label>Select Item</Label>
                 <Select value={selectedItem} onValueChange={(value) => {
                   setSelectedItem(value);
-                  const item = AVATAR_ITEMS.find(i => i.id === value);
+                  const item = AVATAR_ITEMS.find((i: StoreItem) => i.id === value);
                   setSelectedItemData(item || null);
                 }}>
                   <SelectTrigger className="mt-2">
                     <SelectValue placeholder="Choose an item to position" />
                   </SelectTrigger>
                   <SelectContent>
-                    {AVATAR_ITEMS.map(item => (
+                    {AVATAR_ITEMS.map((item: StoreItem) => (
                       <SelectItem key={item.id} value={item.id}>
                         <div className="flex items-center gap-2">
                           <span>{item.name}</span>
@@ -766,7 +766,10 @@ export default function AvatarItemPositioner() {
                   <div className="bg-gradient-to-br from-blue-100 to-green-100 rounded-lg p-4 flex items-center justify-center">
                     <div style={{ width: '250px', height: '250px', position: 'relative' }}>
                       {selectedItem && selectedAnimal && (
-                        <LayeredAvatarFixed
+                        <div className="text-gray-500 text-center">
+                          Avatar preview not available
+                        </div>
+                        /* <LayeredAvatarFixed
                           animalType={selectedAnimal}
                           selectedItem={selectedItem}
                           selectedItemImageUrl={(selectedItemData as any)?.thumbnailUrl || (selectedItemData as any)?.imageUrl}
@@ -774,7 +777,7 @@ export default function AvatarItemPositioner() {
                           width={250}
                           height={250}
                           animated={false}
-                        />
+                        /> */
                       )}
                     </div>
                   </div>
@@ -943,7 +946,7 @@ export default function AvatarItemPositioner() {
                   </tr>
                 </thead>
                 <tbody>
-                  {AVATAR_ITEMS.map(item => (
+                  {AVATAR_ITEMS.map((item: StoreItem) => (
                     <tr key={item.id} className="border-t">
                       <td className="p-2 font-medium">{item.name}</td>
                       {ANIMALS.map(animal => {

@@ -49,6 +49,7 @@ interface UserProfile {
   roleTitle?: string;
   howHeardAbout?: string;
   personalityAnimal?: string;
+  isAdmin?: boolean;
 }
 
 export default function Account() {
@@ -227,7 +228,7 @@ export default function Account() {
       user={user ? { 
         firstName: user.firstName, 
         lastName: user.lastName,
-        personalityAnimal: user.personalityAnimal 
+        isAdmin: user.isAdmin
       } : undefined}
       onLogout={handleLogout}
     >

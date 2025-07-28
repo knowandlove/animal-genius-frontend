@@ -31,7 +31,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ReplyThread } from '@/components/community/ReplyThread';
 import { cn } from '@/lib/utils';
-import type { CreateReplyRequest, UpdateDiscussionRequest } from '@/types/community';
+import type { CreateReplyRequest, UpdateDiscussionRequest, Discussion, Tag } from '@/types/community';
 import { CATEGORY_COLORS, CATEGORY_LABELS } from '@/config/community';
 
 const editDiscussionSchema = z.object({
@@ -334,7 +334,7 @@ export default function DiscussionDetail() {
                 
                 {discussion.tags && discussion.tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {discussion.tags.map(tag => (
+                    {discussion.tags.map((tag: Tag) => (
                       <Badge key={tag.id} variant="outline">
                         {tag.name}
                       </Badge>
@@ -495,17 +495,12 @@ export default function DiscussionDetail() {
           </Card>
         )}
 
-        {console.log('[DiscussionDetail] Rendering replies section:', {
-          hasReplies: !!discussion.replies,
-          repliesLength: discussion.replies?.length,
-          repliesCheck: discussion.replies && discussion.replies.length > 0
-        })}
         {discussion.replies && discussion.replies.length > 0 ? (
           <ReplyThread 
             replies={discussion.replies} 
             discussionId={discussion.id}
             discussionAuthorId={discussion.teacherId}
-            parentReplyId={null}
+            parentReplyId={undefined}
           />
         ) : (
           <Card>

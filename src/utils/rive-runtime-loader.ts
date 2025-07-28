@@ -12,11 +12,11 @@ export async function preloadRiveRuntime() {
   }
   
   try {
-    // Import the WASM file directly
-    const riveWASMResource = await import('@rive-app/canvas/rive.wasm');
+    // Use a URL for the WASM file
+    const wasmUrl = new URL('@rive-app/canvas/rive.wasm', import.meta.url).href;
     
-    // Set the WASM URL to use the imported resource
-    RuntimeLoader.setWasmUrl(riveWASMResource.default);
+    // Set the WASM URL
+    RuntimeLoader.setWasmUrl(wasmUrl);
     
     runtimeLoaded = true;
     console.log('Rive WASM runtime preloaded successfully');

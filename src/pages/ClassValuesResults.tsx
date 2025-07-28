@@ -46,6 +46,10 @@ export default function ClassValuesResults() {
     enabled: !!classId,
   });
 
+  const handleBackToLearningLounge = () => {
+    setLocation(`/learning-lounge?classId=${classId}&module=week-of-connection&lesson=4`);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
@@ -95,10 +99,6 @@ export default function ClassValuesResults() {
   }
 
   // Values are already grouped by cluster in the backend response
-
-  const handleBackToLearningLounge = () => {
-    setLocation(`/learning-lounge?classId=${classId}&module=week-of-connection&lesson=4`);
-  };
 
   const handlePrintResults = () => {
     window.print();

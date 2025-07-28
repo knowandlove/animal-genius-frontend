@@ -97,6 +97,7 @@ export default function BulkPositionUpdate() {
       for (const [itemId, animalPositions] of Object.entries(positionsToUpdate)) {
         // Loop through all animals for this item
         for (const [animalType, position] of Object.entries(animalPositions as any)) {
+          const pos = position as { x: number; y: number; scale: number; rotation: number };
           try {
             const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/admin/item-positions`, {
               method: 'POST',
@@ -107,10 +108,10 @@ export default function BulkPositionUpdate() {
               body: JSON.stringify({
                 item_id: itemId,
                 animal_type: animalType,
-                position_x: position.x,
-                position_y: position.y,
-                scale: Math.round(position.scale * 100), // Convert to percentage
-                rotation: position.rotation
+                position_x: pos.x,
+                position_y: pos.y,
+                scale: Math.round(pos.scale * 100), // Convert to percentage
+                rotation: pos.rotation
               })
             });
 

@@ -17,7 +17,7 @@ interface SVGAvatarProps {
 }
 
 // Helper function to darken a color
-const darkenColor = (color: string, amount: number = 0.2): string => {
+const darkenColor = (color: string, amount: number = 0.3): string => {
   // Convert hex to RGB
   const hex = color.replace('#', '');
   const r = parseInt(hex.substr(0, 2), 16);
@@ -53,7 +53,9 @@ export const SVGAvatar: React.FC<SVGAvatarProps> = ({
     const loadSVG = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`/avatars/animals/${animalType.toLowerCase()}.svg`);
+        // Handle border-collie -> collie file name mapping
+        const fileName = animalType.toLowerCase() === 'border-collie' ? 'collie' : animalType.toLowerCase();
+        const response = await fetch(`/avatars/animals/${fileName}.svg`);
         if (!response.ok) {
           throw new Error(`Failed to load SVG for ${animalType}`);
         }
@@ -88,30 +90,56 @@ export const SVGAvatar: React.FC<SVGAvatarProps> = ({
     svg.setAttribute('height', height.toString());
     
     // Apply primary color to all elements in primary-color group
-    const primaryElements = svg.querySelectorAll('#primary-color path, #primary-color circle, #primary-color ellipse, #primary-color polygon');
+    const primaryElements = svg.querySelectorAll('#primary-color path, #primary-color circle, #primary-color ellipse, #primary-color polygon, #primary-color rect');
     primaryElements.forEach(element => {
       element.setAttribute('fill', primaryColor);
+      // Also set style to ensure it overrides any CSS
+      (element as HTMLElement).style.fill = primaryColor;
     });
 
-    // Calculate darker shade of primary color
+    // Apply secondary color to all elements in secondary-color group
+    const secondaryElements = svg.querySelectorAll('#secondary-color path, #secondary-color circle, #secondary-color ellipse, #secondary-color polygon, #secondary-color rect');
+    secondaryElements.forEach(element => {
+      element.setAttribute('fill', secondaryColor);
+      (element as HTMLElement).style.fill = secondaryColor;
+    });
+
+    // Calculate darker shade of primary color for shading
     const primaryDark = darkenColor(primaryColor, 0.3); // 30% darker
     
+    // Apply primary-dark to any elements in primary-dark group (for animals that have explicit shading)
+    const primaryDarkElements = svg.querySelectorAll('#primary-dark path, #primary-dark circle, #primary-dark ellipse, #primary-dark polygon, #primary-dark rect');
+    primaryDarkElements.forEach(element => {
+      element.setAttribute('fill', primaryDark);
+      (element as HTMLElement).style.fill = primaryDark;
+    });
+    
     // For existing SVGs using class-based coloring, we need to map classes to color groups
-    // Updated mapping based on meerkat SVG structure
-    const classToColorMap: { [key: string]: 'primary' | 'secondary' | 'primary-dark' | 'fixed' } = {
-      'cls-4': 'primary', // Main body color (beige)
-      'cls-5': 'primary-dark', // Darker body parts (inner ears)
-      'cls-1': 'primary', // Medium body color
-      'cls-2': 'primary', // Tail base - now uses primary color
-      'cls-3': 'secondary', // Belly/light areas
-      'cls-6': 'fixed', // Dark fixed parts
-      'cls-7': 'fixed', // White (eyes)
-      'cls-8': 'primary-dark', // Tail end - now uses dark primary
-      'cls-9': 'primary-dark', // Eye patches - now uses dark primary
-      'cls-10': 'fixed', // Nose pink
-      'cls-11': 'fixed', // Nose shadow
-      'cls-12': 'fixed', // Black
-    };
+    // Different animals may have different class mappings
+    let classToColorMap: { [key: string]: 'primary' | 'secondary' | 'primary-dark' | 'fixed' } = {};
+    
+    // Animal-specific mappings
+    if (animalType.toLowerCase() === 'beaver' || animalType.toLowerCase() === 'meerkat') {
+      // Beaver and Meerkat now use ID suffix naming, so we don't need class-based coloring
+      classToColorMap = {};
+    } else {
+      // Default mapping for animals still using class-based approach
+      // We'll update this as more animals are converted to ID suffix naming
+      classToColorMap = {
+        'cls-4': 'primary', // Main body color (beige)
+        'cls-5': 'primary-dark', // Darker body parts (inner ears)
+        'cls-1': 'primary', // Medium body color
+        'cls-2': 'primary', // Tail base - now uses primary color
+        'cls-3': 'secondary', // Belly/light areas
+        'cls-6': 'fixed', // Dark fixed parts
+        'cls-7': 'fixed', // White (eyes)
+        'cls-8': 'primary-dark', // Tail end - now uses dark primary
+        'cls-9': 'primary-dark', // Eye patches - now uses dark primary
+        'cls-10': 'fixed', // Nose pink
+        'cls-11': 'fixed', // Nose shadow
+        'cls-12': 'fixed', // Black
+      };
+    }
 
     // First, try to update the CSS styles in the SVG
     const styleElement = svg.querySelector('style');
@@ -152,27 +180,47 @@ export const SVGAvatar: React.FC<SVGAvatarProps> = ({
         console.log(`Found ${elements.length} elements with class ${className} (${colorType})`);
       }
       elements.forEach(element => {
+        const svgElement = element as SVGElement;
         if (colorType === 'primary') {
-          element.setAttribute('fill', primaryColor);
+          svgElement.setAttribute('fill', primaryColor);
           // Also set style attribute to override CSS
-          element.style.fill = primaryColor;
+          svgElement.style.fill = primaryColor;
         } else if (colorType === 'secondary') {
-          element.setAttribute('fill', secondaryColor);
+          svgElement.setAttribute('fill', secondaryColor);
           // Also set style attribute to override CSS
-          element.style.fill = secondaryColor;
+          svgElement.style.fill = secondaryColor;
         } else if (colorType === 'primary-dark') {
-          element.setAttribute('fill', primaryDark);
+          svgElement.setAttribute('fill', primaryDark);
           // Also set style attribute to override CSS
-          element.style.fill = primaryDark;
+          svgElement.style.fill = primaryDark;
         }
         // Fixed colors remain unchanged
       });
     });
 
-    // Apply secondary color to all elements in secondary-color group
-    const secondaryElements = svg.querySelectorAll('#secondary-color path, #secondary-color circle, #secondary-color ellipse, #secondary-color polygon');
-    secondaryElements.forEach(element => {
+    // NEW: Apply colors to elements using ID suffix naming convention
+    // This supports the new Illustrator workflow where elements have IDs with suffixes
+    const primaryIdElements = svg.querySelectorAll('[id$="_primary"]');
+    const secondaryIdElements = svg.querySelectorAll('[id$="_secondary"]');
+    const primaryDarkIdElements = svg.querySelectorAll('[id$="_primaryDark"], [id$="_primarydark"]');
+    
+    console.log(`Found ${primaryIdElements.length} elements with _primary suffix`);
+    console.log(`Found ${secondaryIdElements.length} elements with _secondary suffix`);
+    console.log(`Found ${primaryDarkIdElements.length} elements with _primaryDark suffix`);
+    
+    primaryIdElements.forEach(element => {
+      element.setAttribute('fill', primaryColor);
+      (element as HTMLElement).style.fill = primaryColor;
+    });
+    
+    secondaryIdElements.forEach(element => {
       element.setAttribute('fill', secondaryColor);
+      (element as HTMLElement).style.fill = secondaryColor;
+    });
+    
+    primaryDarkIdElements.forEach(element => {
+      element.setAttribute('fill', primaryDark);
+      (element as HTMLElement).style.fill = primaryDark;
     });
 
     // Clear the container and append the modified SVG
@@ -182,9 +230,10 @@ export const SVGAvatar: React.FC<SVGAvatarProps> = ({
 
   // Fallback to PNG if SVG loading fails
   if (!isLoading && !svgContent) {
+    const fileName = animalType.toLowerCase() === 'border-collie' ? 'collie' : animalType.toLowerCase();
     return (
       <img
-        src={`/avatars/animals/${animalType.toLowerCase()}.png`}
+        src={`/avatars/animals/${fileName}.png`}
         alt={`${animalType} avatar`}
         width={width}
         height={height}

@@ -11,6 +11,7 @@ export interface AnimalColorPalette {
 export const ANIMAL_COLOR_PALETTES: Record<string, AnimalColorPalette> = {
   meerkat: {
     primary: [
+      { name: "Original Meerkat", value: "#E8C3A3" },  // Default - original SVG color
       { name: "Sandy", value: "#C19A7C" },
       { name: "Warm Brown", value: "#D3AE91" },
       { name: "Tawny", value: "#CD853F" },
@@ -18,16 +19,18 @@ export const ANIMAL_COLOR_PALETTES: Record<string, AnimalColorPalette> = {
       { name: "Dusty Rose", value: "#BC8F8F" }
     ],
     secondary: [
-      { name: "Cream", value: "#F0D6C2" },
-      { name: "Ivory", value: "#FFFFF0" },
-      { name: "Pearl", value: "#FAF0E6" },
-      { name: "Soft Peach", value: "#E8C3A3" },
-      { name: "Light Beige", value: "#F5F5DC" }
+      { name: "Original Cream", value: "#F0D6C2" },    // Default - original SVG color
+      { name: "Warm Ivory", value: "#F5E6D3" },
+      { name: "Soft Pearl", value: "#EEE0D5" },
+      { name: "Desert Sand", value: "#E6DCC2" },
+      { name: "Light Cream", value: "#FFF8DC" },
+      { name: "Vanilla", value: "#F3E5AB" }
     ]
   },
   
   otter: {
     primary: [
+      { name: "Original Otter", value: "#8B6F47" },    // Default - original SVG color
       { name: "River Brown", value: "#654321" },
       { name: "Deep Chocolate", value: "#3B2414" },
       { name: "Chestnut", value: "#954535" },
@@ -35,6 +38,7 @@ export const ANIMAL_COLOR_PALETTES: Record<string, AnimalColorPalette> = {
       { name: "Warm Gray", value: "#696969" }
     ],
     secondary: [
+      { name: "Original Light", value: "#F5DEB3" },    // Default - original SVG color
       { name: "Soft Gray", value: "#D3D3D3" },
       { name: "Silver", value: "#C0C0C0" },
       { name: "Pearl White", value: "#FAF0E6" },
@@ -45,23 +49,26 @@ export const ANIMAL_COLOR_PALETTES: Record<string, AnimalColorPalette> = {
   
   beaver: {
     primary: [
-      { name: "Rich Brown", value: "#5D4037" },
-      { name: "Mahogany", value: "#6F4E37" },
-      { name: "Dark Chocolate", value: "#3B2414" },
-      { name: "Umber", value: "#635147" },
-      { name: "Coffee", value: "#4B3621" }
+      { name: "Original Beaver", value: "#C06638" },   // Default - original SVG color
+      { name: "Warm Chestnut", value: "#954535" },
+      { name: "Golden Oak", value: "#B8860B" },
+      { name: "Dark Walnut", value: "#5D4037" },
+      { name: "Gray Brown", value: "#7B6F63" },
+      { name: "Honey", value: "#DEB887" }
     ],
     secondary: [
-      { name: "Light Brown", value: "#A0826D" },
-      { name: "Tan", value: "#D2B48C" },
-      { name: "Khaki", value: "#C3B091" },
-      { name: "Beige", value: "#F5F5DC" },
-      { name: "Sand", value: "#C2B280" }
+      { name: "Original Tan", value: "#D39979" },      // Default - original SVG color
+      { name: "Cream", value: "#FFF8DC" },
+      { name: "Light Tan", value: "#F5DEB3" },
+      { name: "Soft Beige", value: "#F5F5DC" },
+      { name: "Warm Sand", value: "#F4A460" },
+      { name: "Pale Gold", value: "#EEE8AA" }
     ]
   },
   
   elephant: {
     primary: [
+      { name: "Original Elephant", value: "#A8A8A8" }, // Default - original SVG color
       { name: "Classic Gray", value: "#808080" },
       { name: "Charcoal", value: "#36454F" },
       { name: "Slate", value: "#708090" },
@@ -69,6 +76,7 @@ export const ANIMAL_COLOR_PALETTES: Record<string, AnimalColorPalette> = {
       { name: "Ash Gray", value: "#B2BEB5" }
     ],
     secondary: [
+      { name: "Original Light", value: "#E8E8E8" },    // Default - original SVG color
       { name: "Light Gray", value: "#D3D3D3" },
       { name: "Silver", value: "#C0C0C0" },
       { name: "Platinum", value: "#E5E4E2" },
@@ -79,6 +87,7 @@ export const ANIMAL_COLOR_PALETTES: Record<string, AnimalColorPalette> = {
   
   parrot: {
     primary: [
+      { name: "Original Red", value: "#FF4444" },      // Default - original SVG color
       { name: "Emerald", value: "#50C878" },
       { name: "Scarlet", value: "#FF2400" },
       { name: "Royal Blue", value: "#4169E1" },
@@ -86,6 +95,7 @@ export const ANIMAL_COLOR_PALETTES: Record<string, AnimalColorPalette> = {
       { name: "Sunset Orange", value: "#FF6347" }
     ],
     secondary: [
+      { name: "Original Yellow", value: "#FFD700" },   // Default - original SVG color
       { name: "Lime Green", value: "#32CD32" },
       { name: "Sky Blue", value: "#87CEEB" },
       { name: "Coral", value: "#FF7F50" },
@@ -96,13 +106,15 @@ export const ANIMAL_COLOR_PALETTES: Record<string, AnimalColorPalette> = {
   
   panda: {
     primary: [
-      { name: "Classic Black", value: "#000000" },
+      { name: "Original Black", value: "#2C2C2C" },    // Default - original SVG color
+      { name: "Pure Black", value: "#000000" },
       { name: "Charcoal", value: "#36454F" },
       { name: "Midnight", value: "#191970" },
       { name: "Ebony", value: "#3C3C3C" },
       { name: "Jet Black", value: "#0A0A0A" }
     ],
     secondary: [
+      { name: "Original White", value: "#FAFAFA" },    // Default - original SVG color
       { name: "Pure White", value: "#FFFFFF" },
       { name: "Snow", value: "#FFFAFA" },
       { name: "Ivory", value: "#FFFFF0" },
@@ -113,6 +125,7 @@ export const ANIMAL_COLOR_PALETTES: Record<string, AnimalColorPalette> = {
   
   owl: {
     primary: [
+      { name: "Original Owl", value: "#8B7355" },      // Default - original SVG color
       { name: "Barn Brown", value: "#8B6F47" },
       { name: "Tawny", value: "#CD853F" },
       { name: "Rustic Gray", value: "#8A8680" },
@@ -120,6 +133,7 @@ export const ANIMAL_COLOR_PALETTES: Record<string, AnimalColorPalette> = {
       { name: "Sandy Brown", value: "#F4A460" }
     ],
     secondary: [
+      { name: "Original Buff", value: "#F5E6D3" },     // Default - original SVG color
       { name: "Cream", value: "#FFFDD0" },
       { name: "Buff", value: "#F0DC82" },
       { name: "Light Gray", value: "#D3D3D3" },
@@ -130,6 +144,7 @@ export const ANIMAL_COLOR_PALETTES: Record<string, AnimalColorPalette> = {
   
   collie: {
     primary: [
+      { name: "Original Sable", value: "#CD853F" },    // Default - original SVG color
       { name: "Sable", value: "#8B6914" },
       { name: "Golden Brown", value: "#B8860B" },
       { name: "Blue Merle", value: "#4682B4" },
@@ -137,7 +152,7 @@ export const ANIMAL_COLOR_PALETTES: Record<string, AnimalColorPalette> = {
       { name: "Mahogany", value: "#C04000" }
     ],
     secondary: [
-      { name: "White", value: "#FFFFFF" },
+      { name: "Original White", value: "#FFFFFF" },    // Default - original SVG color
       { name: "Cream", value: "#FFFDD0" },
       { name: "Light Tan", value: "#FAEBD7" },
       { name: "Silver", value: "#C0C0C0" },
@@ -152,9 +167,9 @@ export function getDefaultColors(animalType: string): { primaryColor: string; se
   const palette = ANIMAL_COLOR_PALETTES[normalizedType];
   
   if (!palette) {
-    // Fallback to meerkat colors if animal type not found
+    // Fallback to original meerkat colors if animal type not found
     return {
-      primaryColor: '#C19A7C',
+      primaryColor: '#E8C3A3',
       secondaryColor: '#F0D6C2'
     };
   }

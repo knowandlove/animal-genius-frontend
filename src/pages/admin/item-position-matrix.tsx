@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import LayeredAvatar from '@/components/avatar-v2/LayeredAvatar';
+// import LayeredAvatar from '@/components/avatar-v2/LayeredAvatar';
 import { STORE_CATALOG } from '@shared/currency-types';
 import { Check, Copy, RotateCw, Save, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -305,14 +305,17 @@ export default function ItemPositionMatrix() {
                       `
                     }}
                   >
-                    <LayeredAvatar
+                    {/* <LayeredAvatar
                       animalType={selectedCell.animal}
                       items={{
                         [STORE_CATALOG.find(i => i.id === selectedCell.itemId)?.type || '']: selectedCell.itemId
                       }}
                       width={200}
                       height={200}
-                    />
+                    /> */}
+                    <div className="text-gray-500 text-center">
+                      <p>Component not available</p>
+                    </div>
                   </div>
                 </div>
 

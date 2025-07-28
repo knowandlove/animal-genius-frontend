@@ -13,22 +13,8 @@ import { cn } from "@/lib/utils";
 import StudentPassportDialog from "@/components/StudentPassportDialog";
 import { getAnimalByName } from "@/lib/animals";
 import { AuthenticatedLayout } from "@/components/layouts/AuthenticatedLayout";
-// Removed LayeredAvatar import - using head icons instead
-
-// Helper function to get animal head icon URL
-const getAnimalHeadIcon = (animalType: string): string => {
-  // Use the existing animal mapping system for consistency
-  const animal = getAnimalByName(animalType);
-  if (animal) {
-    // Extract filename from the imagePath and construct cloud storage URL
-    const filename = animal.imagePath.split('/').pop();
-    return `https://zqyvfnbwpagguutzdvpy.supabase.co/storage/v1/object/public/public-assets/animals/head_icons/${filename}`;
-  }
-  
-  // Fallback to original logic for unmapped animals
-  const normalizedType = animalType.toLowerCase().replace(/\s+/g, '_');
-  return `https://zqyvfnbwpagguutzdvpy.supabase.co/storage/v1/object/public/public-assets/animals/head_icons/${normalizedType}.png`;
-};
+import { AvatarThumbnail } from "@/components/avatar/AvatarThumbnail";
+import { preloadThumbnails } from "@/utils/avatar-thumbnail";
 
 interface ClassIslandStudent {
   id: string;
@@ -114,6 +100,13 @@ export default function ClassIsland() {
     student.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     student.animalType.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
+
+  // Preload thumbnails when students data changes
+  useEffect(() => {
+    if (filteredStudents.length > 0) {
+      preloadThumbnails(filteredStudents, { size: 96 });
+    }
+  }, [filteredStudents]);
 
   // Handle student avatar click
   const handleStudentClick = (student: ClassIslandStudent) => {
@@ -270,15 +263,13 @@ export default function ClassIsland() {
                       onClick={() => handleStudentClick(student)}
                     >
                       {/* Avatar */}
-                      <div className="aspect-square rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 mb-3 flex items-center justify-center overflow-hidden p-2">
-                        <img
-                          src={getAnimalHeadIcon(student.animalType)}
-                          alt={student.animalType}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            // Fallback to a default image if the head icon doesn't load
-                            (e.target as HTMLImageElement).src = '/images/question_icon.png';
-                          }}
+                      <div className="aspect-square rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 mb-3 flex items-center justify-center overflow-hidden">
+                        <AvatarThumbnail
+                          passportCode={student.passportCode}
+                          animalType={student.animalType}
+                          avatarData={student.avatarData}
+                          size={80}
+                          showBorder={false}
                         />
                       </div>
                       
@@ -333,15 +324,13 @@ export default function ClassIsland() {
                     >
                       <div className="flex items-center gap-4">
                         {/* Avatar */}
-                        <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center overflow-hidden flex-shrink-0 p-1">
-                          <img
-                            src={getAnimalHeadIcon(student.animalType)}
-                            alt={student.animalType}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              // Fallback to a default image if the head icon doesn't load
-                              (e.target as HTMLImageElement).src = '/images/question_icon.png';
-                            }}
+                        <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                          <AvatarThumbnail
+                            passportCode={student.passportCode}
+                            animalType={student.animalType}
+                            avatarData={student.avatarData}
+                            size={64}
+                            showBorder={false}
                           />
                         </div>
                         
@@ -483,15 +472,13 @@ export default function ClassIsland() {
                           onClick={() => handleStudentClick(student)}
                         >
                           {/* Avatar */}
-                          <div className="aspect-square rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 mb-3 flex items-center justify-center overflow-hidden p-2">
-                            <img
-                              src={getAnimalHeadIcon(student.animalType)}
-                              alt={student.animalType}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                // Fallback to a default image if the head icon doesn't load
-                                (e.target as HTMLImageElement).src = '/images/question_icon.png';
-                              }}
+                          <div className="aspect-square rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 mb-3 flex items-center justify-center overflow-hidden">
+                            <AvatarThumbnail
+                              passportCode={student.passportCode}
+                              animalType={student.animalType}
+                              avatarData={student.avatarData}
+                              size={80}
+                              showBorder={false}
                             />
                           </div>
                           
@@ -546,15 +533,13 @@ export default function ClassIsland() {
                         >
                           <div className="flex items-center gap-4">
                             {/* Avatar */}
-                            <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center overflow-hidden flex-shrink-0 p-1">
-                              <img
-                                src={getAnimalHeadIcon(student.animalType)}
-                                alt={student.animalType}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  // Fallback to a default image if the head icon doesn't load
-                                  (e.target as HTMLImageElement).src = '/images/question_icon.png';
-                                }}
+                            <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                              <AvatarThumbnail
+                                passportCode={student.passportCode}
+                                animalType={student.animalType}
+                                avatarData={student.avatarData}
+                                size={64}
+                                showBorder={false}
                               />
                             </div>
                             

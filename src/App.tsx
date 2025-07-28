@@ -48,6 +48,7 @@ const DiscussionDetail = lazy(() => import("@/pages/community/DiscussionDetail")
 // Test pages removed during cleanup
 const AvatarEditor = lazy(() => import("@/pages/avatar-editor"));
 const AvatarItemPositioner = lazy(() => import("@/pages/admin/avatar-item-positioner"));
+const TestSVGAvatar = lazy(() => import("@/pages/test-svg-avatar"));
 const AvatarItemPositionerV2 = lazy(() => import("@/pages/admin/avatar-item-positioner-v2"));
 // const AddStoreItem = lazy(() => import("@/pages/admin/add-store-item")); // Removed - use StoreManagement instead
 const StoreManagement = lazy(() => import("@/pages/admin/store-management-direct"));
@@ -66,9 +67,7 @@ import { queryClient } from "@/lib/queryClient";
 
 
 const RedirectToLogin = () => {
-  useEffect(() => {
-    window.location.href = '/login';
-  }, []);
+  window.location.href = '/login';
   return null;
 };
 
@@ -171,6 +170,7 @@ function Router() {
         
         {/* Test/Development routes - removed during cleanup */}
         <Route path="/avatar-editor" component={AvatarEditor} />
+        <Route path="/test-svg-avatar" component={TestSVGAvatar} />
         
         {/* Authentication routes - always available */}
         <Route path="/register" component={TeacherRegistration} />
@@ -221,26 +221,26 @@ function Router() {
           <>
             {/* Redirect protected routes to login when not authenticated */}
             <Route path="/" component={Landing} />
-            <Route path="/dashboard" component={() => { window.location.href = '/login'; return null; }} />
-            <Route path="/account" component={() => { window.location.href = '/login'; return null; }} />
-            <Route path="/create-class" component={() => { window.location.href = '/login'; return null; }} />
-            <Route path="/learning-lounge" component={() => { window.location.href = '/login'; return null; }} />
-            <Route path="/classes/:classId/analytics" component={() => { window.location.href = '/login'; return null; }} />
-            <Route path="/class/:classId/analytics" component={() => { window.location.href = '/login'; return null; }} />
-            <Route path="/classes/:classId/dashboard" component={() => { window.location.href = '/login'; return null; }} />
-            <Route path="/class/:classId/dashboard" component={() => { window.location.href = '/login'; return null; }} />
-            <Route path="/class/:classId" component={() => { window.location.href = '/login'; return null; }} />
-            <Route path="/class/:classId/settings" component={() => { window.location.href = '/login'; return null; }} />
-            <Route path="/class/:classId/economy" component={() => { window.location.href = '/login'; return null; }} />
-            <Route path="/classes/:classId/economy" component={() => { window.location.href = '/login'; return null; }} />
-            <Route path="/class-report/:classId" component={() => { window.location.href = '/login'; return null; }} />
-            <Route path="/teacher/student/:submissionId" component={() => { window.location.href = '/login'; return null; }} />
-            <Route path="/teacher/personality-results" component={() => { window.location.href = '/login'; return null; }} />
-            <Route path="/submission/:submissionId/report" component={() => { window.location.href = '/login'; return null; }} />
-            <Route path="/pre-assessment" component={() => { window.location.href = '/login'; return null; }} />
+            <Route path="/dashboard" component={RedirectToLogin} />
+            <Route path="/account" component={RedirectToLogin} />
+            <Route path="/create-class" component={RedirectToLogin} />
+            <Route path="/learning-lounge" component={RedirectToLogin} />
+            <Route path="/classes/:classId/analytics" component={RedirectToLogin} />
+            <Route path="/class/:classId/analytics" component={RedirectToLogin} />
+            <Route path="/classes/:classId/dashboard" component={RedirectToLogin} />
+            <Route path="/class/:classId/dashboard" component={RedirectToLogin} />
+            <Route path="/class/:classId" component={RedirectToLogin} />
+            <Route path="/class/:classId/settings" component={RedirectToLogin} />
+            <Route path="/class/:classId/economy" component={RedirectToLogin} />
+            <Route path="/classes/:classId/economy" component={RedirectToLogin} />
+            <Route path="/class-report/:classId" component={RedirectToLogin} />
+            <Route path="/teacher/student/:submissionId" component={RedirectToLogin} />
+            <Route path="/teacher/personality-results" component={RedirectToLogin} />
+            <Route path="/submission/:submissionId/report" component={RedirectToLogin} />
+            <Route path="/pre-assessment" component={RedirectToLogin} />
             <Route path="/community" component={RedirectToLogin} />
             <Route path="/community/discussion/:id" component={RedirectToLogin} />
-            <Route path="/admin" component={() => { window.location.href = '/login'; return null; }} />
+            <Route path="/admin" component={RedirectToLogin} />
           </>
         )}
         <Route component={NotFound} />

@@ -12,6 +12,7 @@ interface AuthState {
   isAuthenticated: boolean;
   student: StudentData | null;
   passportCode: string | null;
+  error?: string;
 }
 
 interface StudentProfile extends StudentData {
@@ -136,13 +137,15 @@ export function useStudentAuth() {
         setAuthState(result);
         return { 
           success: false, 
-          error: result.error || 'Login failed' 
+          error: 'Login failed' 
         };
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
       setAuthState({ 
         isAuthenticated: false, 
+        student: null,
+        passportCode: null,
         error: errorMessage 
       });
       return { 
@@ -157,7 +160,11 @@ export function useStudentAuth() {
   // Logout
   const logout = useCallback(() => {
     logoutStudent();
-    setAuthState({ isAuthenticated: false });
+    setAuthState({ 
+      isAuthenticated: false,
+      student: null,
+      passportCode: null
+    });
   }, []);
 
   // Check if passport code is valid format

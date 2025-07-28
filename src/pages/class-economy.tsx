@@ -238,14 +238,14 @@ export default function ClassEconomy() {
   const filteredStudents = useMemo(() => {
     if (!economyData?.students) return [];
     
-    let filtered = economyData.students.filter(student => {
+    let filtered = economyData.students.filter((student: Student) => {
       const matchesSearch = student.studentName.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesAnimal = filterAnimal === "all" || student.animalType === filterAnimal;
       return matchesSearch && matchesAnimal;
     });
 
     // Sort students
-    filtered.sort((a, b) => {
+    filtered.sort((a: Student, b: Student) => {
       let compareValue = 0;
       switch (sortBy) {
         case "name":
@@ -267,7 +267,7 @@ export default function ClassEconomy() {
   // Get unique animal types for filter
   const animalTypes = useMemo(() => {
     if (!economyData?.students) return [];
-    const types = [...new Set(economyData.students.map(s => s.animalType))];
+    const types = [...new Set(economyData.students.map((s: Student) => s.animalType))];
     return types.sort();
   }, [economyData?.students]);
 
@@ -275,10 +275,10 @@ export default function ClassEconomy() {
   const stats = useMemo(() => {
     if (!economyData?.students) return { total: 0, average: 0, highest: 0, lowest: 0 };
     
-    const balances = economyData.students.map(s => s.currencyBalance || 0);
+    const balances = economyData.students.map((s: Student) => s.currencyBalance || 0);
     return {
-      total: balances.reduce((sum, b) => sum + b, 0),
-      average: balances.length > 0 ? Math.round(balances.reduce((sum, b) => sum + b, 0) / balances.length) : 0,
+      total: balances.reduce((sum: number, b: number) => sum + b, 0),
+      average: balances.length > 0 ? Math.round(balances.reduce((sum: number, b: number) => sum + b, 0) / balances.length) : 0,
       highest: Math.max(...balances, 0),
       lowest: Math.min(...balances, 0)
     };
@@ -319,7 +319,7 @@ export default function ClassEconomy() {
     if (selectedStudents.size === filteredStudents.length) {
       setSelectedStudents(new Set());
     } else {
-      setSelectedStudents(new Set(filteredStudents.map(s => s.id)));
+      setSelectedStudents(new Set(filteredStudents.map((s: Student) => s.id)));
     }
   };
 
@@ -625,7 +625,7 @@ export default function ClassEconomy() {
                           </td>
                         </tr>
                       ) : (
-                        filteredStudents.map((student) => (
+                        filteredStudents.map((student: Student) => (
                           <tr key={student.id} className="border-b hover:bg-gray-50">
                             <td className="p-3">
                               <Checkbox
@@ -808,7 +808,7 @@ export default function ClassEconomy() {
               Transaction History
               {selectedStudentId && economyData && (
                 <span className="text-muted-foreground font-normal">
-                  - {economyData.students.find(s => s.id === selectedStudentId)?.studentName}
+                  - {economyData.students.find((s: Student) => s.id === selectedStudentId)?.studentName}
                 </span>
               )}
             </DialogTitle>

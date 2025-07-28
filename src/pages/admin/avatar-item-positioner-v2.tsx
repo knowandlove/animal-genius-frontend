@@ -263,7 +263,7 @@ export default function AvatarItemPositionerV2() {
     
     // Convert normalized positions to export format
     Object.entries(positions).forEach(([itemId, animalPositions]) => {
-      const item = AVATAR_ITEMS.find(i => i.id === itemId);
+      const item = AVATAR_ITEMS.find((i: StoreItem) => i.id === itemId);
       if (item) {
         exportFormat[item.name] = {};
         Object.entries(animalPositions).forEach(([animalType, pos]) => {
@@ -293,19 +293,20 @@ export default function AvatarItemPositionerV2() {
       
       // Build array of all positions to update
       for (const [itemName, animalPositions] of Object.entries(data)) {
-        const item = AVATAR_ITEMS.find(i => i.name === itemName);
+        const item = AVATAR_ITEMS.find((i: StoreItem) => i.name === itemName);
         if (!item) continue;
         
         for (const [animalType, pos] of Object.entries(animalPositions as any)) {
+          const position = pos as { x: number; y: number; scale: number; rotation?: number; anchorX?: number; anchorY?: number };
           positionsToUpdate.push({
             item_id: item.id,
             animal_type: animalType,
-            position_x: pos.x,
-            position_y: pos.y,
-            scale: pos.scale,
-            rotation: pos.rotation || 0,
-            anchor_x: pos.anchorX || 0.5,
-            anchor_y: pos.anchorY || 0.5
+            position_x: position.x,
+            position_y: position.y,
+            scale: position.scale,
+            rotation: position.rotation || 0,
+            anchor_x: position.anchorX || 0.5,
+            anchor_y: position.anchorY || 0.5
           });
         }
       }
@@ -343,7 +344,7 @@ export default function AvatarItemPositionerV2() {
       setBatchUpdateStatus('error');
       toast({
         title: "Batch Update Failed",
-        description: error.message || "Failed to update positions",
+        description: (error as Error).message || "Failed to update positions",
         variant: "destructive",
       });
     }
@@ -353,7 +354,7 @@ export default function AvatarItemPositionerV2() {
     let configured = 0;
     let total = AVATAR_ITEMS.length * ANIMALS.length;
     
-    AVATAR_ITEMS.forEach(item => {
+    AVATAR_ITEMS.forEach((item: StoreItem) => {
       ANIMALS.forEach(animal => {
         if (positions[item.id]?.[animal.id]) {
           configured++;
@@ -422,14 +423,14 @@ export default function AvatarItemPositionerV2() {
                 <Label>Select Item</Label>
                 <Select value={selectedItem} onValueChange={(value) => {
                   setSelectedItem(value);
-                  const item = AVATAR_ITEMS.find(i => i.id === value);
+                  const item = AVATAR_ITEMS.find((i: StoreItem) => i.id === value);
                   setSelectedItemData(item || null);
                 }}>
                   <SelectTrigger className="mt-2">
                     <SelectValue placeholder="Choose an item to position" />
                   </SelectTrigger>
                   <SelectContent>
-                    {AVATAR_ITEMS.map(item => (
+                    {AVATAR_ITEMS.map((item: StoreItem) => (
                       <SelectItem key={item.id} value={item.id}>
                         <div className="flex items-center gap-2">
                           <span>{item.name}</span>

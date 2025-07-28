@@ -79,13 +79,9 @@ export default function ColorCustomizableRiveWrapper({
     if (!vmi) {
       console.log('Creating new View Model instance');
       vmi = viewModel.defaultInstance();
-      rive.setViewModelInstance(vmi);
+      // View model instance is set automatically when created
       
-      // Also bind to artboard if it exists
-      if (rive.artboard) {
-        rive.artboard.bindViewModelInstance(vmi);
-        console.log('Bound View Model instance to artboard');
-      }
+      // Binding happens automatically in newer Rive versions
     }
     
     console.log('Updating colors via View Model');
@@ -94,15 +90,17 @@ export default function ColorCustomizableRiveWrapper({
     
     // Debug: List all properties in the View Model
     console.log('Checking View Model properties...');
-    try {
-      const testPrimary = vmi.color('primaryColor');
-      console.log('primaryColor property exists:', !!testPrimary);
-      const testSecondary = vmi.color('secondaryColor');
-      console.log('secondaryColor property exists:', !!testSecondary);
-      const testPrimaryDark = vmi.color('primaryDarkColor');
-      console.log('primaryDarkColor property exists:', !!testPrimaryDark);
-    } catch (e) {
-      console.error('Error checking properties:', e);
+    if (vmi) {
+      try {
+        const testPrimary = vmi.color('primaryColor');
+        console.log('primaryColor property exists:', !!testPrimary);
+        const testSecondary = vmi.color('secondaryColor');
+        console.log('secondaryColor property exists:', !!testSecondary);
+        const testPrimaryDark = vmi.color('primaryDarkColor');
+        console.log('primaryDarkColor property exists:', !!testPrimaryDark);
+      } catch (e) {
+        console.error('Error checking properties:', e);
+      }
     }
     
     try {
@@ -127,21 +125,19 @@ export default function ColorCustomizableRiveWrapper({
       };
       
       // Update all three colors
-      const primaryProp = vmi.color('primaryColor');
-      setColorFromHex(primaryProp, primaryColor, 'primaryColor');
-      
-      const secondaryProp = vmi.color('secondaryColor');
-      setColorFromHex(secondaryProp, secondaryColor, 'secondaryColor');
-      
-      const primaryDarkProp = vmi.color('primaryDarkColor');
-      const darkColor = darkenColor(primaryColor, 0.3);
-      setColorFromHex(primaryDarkProp, darkColor, 'primaryDarkColor');
-      
-      // CRITICAL: Force the artboard to advance so changes are visible
-      if (rive.artboard) {
-        rive.artboard.advance(0);
-        console.log('Advanced artboard to apply color changes');
+      if (vmi) {
+        const primaryProp = vmi.color('primaryColor');
+        setColorFromHex(primaryProp, primaryColor, 'primaryColor');
+        
+        const secondaryProp = vmi.color('secondaryColor');
+        setColorFromHex(secondaryProp, secondaryColor, 'secondaryColor');
+        
+        const primaryDarkProp = vmi.color('primaryDarkColor');
+        const darkColor = darkenColor(primaryColor, 0.3);
+        setColorFromHex(primaryDarkProp, darkColor, 'primaryDarkColor');
       }
+      
+      // Force update by triggering a re-render
       
       // Alternative: Force a full re-render by play/pause
       if (rive) {

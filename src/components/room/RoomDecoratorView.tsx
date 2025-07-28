@@ -221,11 +221,10 @@ export default function RoomDecoratorView() {
         const isPlaced = draftRoom.placedItems.some(p => p.itemId === item.id);
         
         gridItems.push(
-          <motion.button
+          <button
             key={item.id}
-            whileTap={{ scale: 0.95 }}
             className={cn(
-              "aspect-square p-2 rounded-lg transition-all flex items-center justify-center relative group",
+              "aspect-square p-2 rounded-lg transition-all flex items-center justify-center relative group transform active:scale-95",
               "bg-white hover:bg-gray-50",
               // Border style based on rarity and placed state
               isPlaced ? "border-4" : "border-2",
@@ -287,7 +286,7 @@ export default function RoomDecoratorView() {
                 ✓
               </div>
             )}
-          </motion.button>
+          </button>
         );
       } else {
         // Empty slot

@@ -50,7 +50,7 @@ export function useDiscussion(id: string | undefined) {
     },
     enabled: !!id,
     staleTime: 0, // Always consider data stale to force refetch
-    cacheTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
+    gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
   });
 }
 

@@ -155,7 +155,7 @@ export default function StudentReport() {
   if (isLoading) {
     return (
       <div className="min-h-screen">
-        <Header isAuthenticated={true} user={user} onLogout={handleLogout} />
+        <Header isAuthenticated={true} user={user || undefined} onLogout={handleLogout} />
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -169,7 +169,7 @@ export default function StudentReport() {
   if (error || !submission) {
     return (
       <div className="min-h-screen">
-        <Header isAuthenticated={true} user={user} onLogout={handleLogout} />
+        <Header isAuthenticated={true} user={user || undefined} onLogout={handleLogout} />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Card className="max-w-md mx-auto">
             <CardContent className="p-8 text-center">
@@ -231,7 +231,7 @@ export default function StudentReport() {
 
   return (
     <div className="min-h-screen">
-      <Header isAuthenticated={true} user={user} onLogout={handleLogout} />
+      <Header isAuthenticated={true} user={user || undefined} onLogout={handleLogout} />
       
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Controls */}
@@ -267,7 +267,7 @@ export default function StudentReport() {
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Student Information</h2>
                 <div className="space-y-2">
                   <p><strong>Name:</strong> {submission.studentName}</p>
-                  <p><strong>Grade:</strong> {submission.class?.gradeLevel || "N/A"}</p>
+                  <p><strong>Grade:</strong> {submission.gradeLevel || "N/A"}</p>
                   <p><strong>Class:</strong> {submission.class?.name || "N/A"}</p>
                   <p><strong>Date:</strong> {new Date(submission.completedAt).toLocaleDateString()}</p>
                 </div>

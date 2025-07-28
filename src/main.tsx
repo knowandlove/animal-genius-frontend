@@ -14,14 +14,13 @@ Sentry.init({
       // Mask all text content for privacy
       maskAllText: true,
       maskAllInputs: true,
-      // Only record 10% of sessions to save quota
-      sessionSampleRate: 0.1,
-      // Record 100% of sessions with errors
-      errorSampleRate: 1.0,
     }),
   ],
   // Performance Monitoring
   tracesSampleRate: 0.1, // 10% of transactions
+  // Replay configuration
+  replaysSessionSampleRate: 0.1, // 10% of sessions
+  replaysOnErrorSampleRate: 1.0, // 100% of sessions with errors
   // Release tracking
   release: import.meta.env.VITE_APP_VERSION || "development",
   environment: import.meta.env.VITE_APP_ENV || "development",
@@ -29,7 +28,6 @@ Sentry.init({
   // Additional recommended settings
   normalizeDepth: 5, // Limit depth of context data
   attachStacktrace: true, // Always attach stack traces
-  autoSessionTracking: true, // Track user sessions
   
   // Ignore specific errors
   ignoreErrors: [
@@ -45,7 +43,7 @@ Sentry.init({
   ],
   
   // Filter transactions
-  beforeTransaction(event) {
+  beforeSendTransaction(event) {
     // Don't send transactions for health checks
     if (event.transaction === '/health' || event.transaction === '/api/health') {
       return null;
@@ -85,8 +83,10 @@ document.documentElement.style.background = 'linear-gradient(135deg, #d3f2ed 0%,
 document.body.style.background = 'linear-gradient(135deg, #d3f2ed 0%, #e8f7f3 40%, #f0faf7 100%)';
 document.body.style.backgroundAttachment = 'fixed';
 
+const FallbackComponent = () => <ErrorBoundary><div>Error occurred</div></ErrorBoundary>;
+
 createRoot(document.getElementById("root")!).render(
-  <Sentry.ErrorBoundary fallback={ErrorBoundary} showDialog>
+  <Sentry.ErrorBoundary fallback={FallbackComponent} showDialog>
     <App />
   </Sentry.ErrorBoundary>
 );
