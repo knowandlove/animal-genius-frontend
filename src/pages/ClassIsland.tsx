@@ -58,6 +58,15 @@ export default function ClassIsland() {
   const isPublicView = location.includes('/class/') && classCode;
   const isStudentView = !isTeacherView && !isPublicView && location.includes('/student/');
   
+  // Debug logging
+  console.log('ClassIsland Debug:', {
+    location,
+    classId,
+    isTeacherView,
+    includesTeacher: location.includes('/teacher/'),
+    includesDashboard: location.includes('/dashboard')
+  });
+  
   // Use different endpoints based on view type
   let endpoint = '';
   if (isTeacherView && classId) {
@@ -269,7 +278,7 @@ export default function ClassIsland() {
                       {/* Avatar */}
                       <div className="aspect-square rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 mb-3 flex items-center justify-center overflow-hidden">
                         <img
-                          src={`/images/${student.animalType.toLowerCase() === 'border-collie' ? 'collie' : student.animalType.toLowerCase()}.png`}
+                          src={`/images/${student.animalType.toLowerCase().replace(' ', '_') === 'border_collie' ? 'collie' : student.animalType.toLowerCase()}.png`}
                           alt={`${student.animalType} avatar`}
                           className="w-full h-full object-cover"
                           onError={(e) => {
@@ -344,7 +353,7 @@ export default function ClassIsland() {
                         {/* Avatar */}
                         <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                           <img
-                            src={`/images/${student.animalType.toLowerCase() === 'border-collie' ? 'collie' : student.animalType.toLowerCase()}.png`}
+                            src={`/images/${student.animalType.toLowerCase().replace(' ', '_') === 'border_collie' ? 'collie' : student.animalType.toLowerCase()}.png`}
                             alt={`${student.animalType} avatar`}
                             className="w-full h-full object-cover"
                             onError={(e) => {
@@ -506,7 +515,7 @@ export default function ClassIsland() {
                           {/* Avatar */}
                           <div className="aspect-square rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 mb-3 flex items-center justify-center overflow-hidden">
                             <img
-                              src={`/images/${student.animalType.toLowerCase() === 'border-collie' ? 'collie' : student.animalType.toLowerCase()}.png`}
+                              src={`/images/${student.animalType.toLowerCase().replace(' ', '_') === 'border_collie' ? 'collie' : student.animalType.toLowerCase()}.png`}
                               alt={`${student.animalType} avatar`}
                               className="w-full h-full object-cover"
                               onError={(e) => {
@@ -581,7 +590,7 @@ export default function ClassIsland() {
                             {/* Avatar */}
                             <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                               <img
-                                src={`/images/${student.animalType.toLowerCase() === 'border-collie' ? 'collie' : student.animalType.toLowerCase()}.png`}
+                                src={`/images/${student.animalType.toLowerCase().replace(' ', '_') === 'border_collie' ? 'collie' : student.animalType.toLowerCase()}.png`}
                                 alt={`${student.animalType} avatar`}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
