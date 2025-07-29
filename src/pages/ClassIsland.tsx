@@ -274,12 +274,26 @@ export default function ClassIsland() {
                     >
                       {/* Avatar */}
                       <div className="aspect-square rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 mb-3 flex items-center justify-center overflow-hidden">
-                        <AvatarThumbnail
-                          passportCode={student.passportCode}
-                          animalType={student.animalType}
-                          avatarData={student.avatarData}
-                          size={80}
-                          showBorder={false}
+                        <img
+                          src={`/images/${student.animalType.toLowerCase() === 'border-collie' ? 'collie' : student.animalType.toLowerCase()}.png`}
+                          alt={`${student.animalType} avatar`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Fallback to emoji if image fails
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const emoji = {
+                              'meerkat': '🦫',
+                              'panda': '🐼',
+                              'owl': '🦉',
+                              'beaver': '🦝',
+                              'elephant': '🐘',
+                              'otter': '🦦',
+                              'parrot': '🦜',
+                              'border-collie': '🐕',
+                            }[student.animalType.toLowerCase()] || '🐾';
+                            target.insertAdjacentHTML('afterend', `<div class="text-4xl">${emoji}</div>`);
+                          }}
                         />
                       </div>
                       
@@ -335,12 +349,26 @@ export default function ClassIsland() {
                       <div className="flex items-center gap-4">
                         {/* Avatar */}
                         <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                          <AvatarThumbnail
-                            passportCode={student.passportCode}
-                            animalType={student.animalType}
-                            avatarData={student.avatarData}
-                            size={64}
-                            showBorder={false}
+                          <img
+                            src={`/images/${student.animalType.toLowerCase() === 'border-collie' ? 'collie' : student.animalType.toLowerCase()}.png`}
+                            alt={`${student.animalType} avatar`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              // Fallback to emoji if image fails
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const emoji = {
+                                'meerkat': '🦫',
+                                'panda': '🐼',
+                                'owl': '🦉',
+                                'beaver': '🦝',
+                                'elephant': '🐘',
+                                'otter': '🦦',
+                                'parrot': '🦜',
+                                'border-collie': '🐕',
+                              }[student.animalType.toLowerCase()] || '🐾';
+                              target.insertAdjacentHTML('afterend', `<div class="text-3xl">${emoji}</div>`);
+                            }}
                           />
                         </div>
                         
