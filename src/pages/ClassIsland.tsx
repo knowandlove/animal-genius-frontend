@@ -100,11 +100,7 @@ export default function ClassIsland() {
   ) || [];
 
   // Preload thumbnails when students data changes
-  useEffect(() => {
-    if (filteredStudents.length > 0) {
-      preloadThumbnails(filteredStudents, { size: 96 });
-    }
-  }, [filteredStudents]);
+  // No longer need to preload thumbnails since we're using direct PNG images
 
   // Handle student avatar click
   const handleStudentClick = (student: ClassIslandStudent) => {
