@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { CheckCircle, Clock, BookOpen, Users, Target, ListChecks, ArrowLeft, PlayCircle, Printer, FileText, Check as CheckIcon, Sun, Battery, Lock, ArrowRight, Calendar, Trophy, Vote, RotateCcw } from "lucide-react";
+import { CheckCircle, Clock, BookOpen, Users, Target, ListChecks, ArrowLeft, PlayCircle, Printer, FileText, Check as CheckIcon, Sun, Battery, Lock, ArrowRight, Calendar, Trophy, Vote, RotateCcw, Monitor } from "lucide-react";
 import { lessons, type Lesson, type Activity } from "@shared/lessons";
 import { modules, type Module, getModuleById } from "@/shared/modules";
 import { apiRequest } from "@/lib/queryClient";
@@ -599,6 +599,16 @@ function LessonDetailView({ lesson, lessonProgress, isComplete, onMarkComplete, 
           </Button>
           
           <div className="flex gap-2">
+            {lesson.id === 1 && classId && (
+              <Button
+                onClick={() => window.open(`/classes/${classId}/live`, '_blank')}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Monitor className="h-4 w-4" />
+                Quiz Results Live View
+              </Button>
+            )}
             {lesson.materialsNeeded.some(m => m.toLowerCase().includes('worksheet')) && (
               <Button
                 onClick={handlePrintWorksheet}
@@ -794,8 +804,36 @@ function LessonSectionsView({ lesson, lessonProgress, onCompleteActivity, onRese
                   )}
                 </CardTitle>
                 <div>
-                  {/* Special handling for Activity 2 of Lesson 4 (Class Values Voting) - always show buttons for testing */}
-                  {lesson.id === 4 && number === 2 ? (
+                  {/* Special handling for Activity 1 of Lesson 1 (Quiz Live View) */}
+                  {lesson.id === 1 && number === 1 && classId ? (
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => window.open(`/classes/${classId}/live`, '_blank')}
+                        size="sm"
+                        variant="outline"
+                        className="text-xs"
+                      >
+                        <Monitor className="w-3 h-3 mr-1" />
+                        Quiz Results Live View
+                      </Button>
+                      {isComplete ? (
+                        <div className="flex items-center text-green-600">
+                          <CheckIcon className="w-5 h-5 mr-1" />
+                          <span className="text-sm font-medium">Complete</span>
+                        </div>
+                      ) : (
+                        <Button
+                          onClick={() => onCompleteActivity(number)}
+                          size="sm"
+                          variant="outline"
+                          className="text-xs"
+                        >
+                          Mark Complete
+                        </Button>
+                      )}
+                    </div>
+                  ) : /* Special handling for Activity 2 of Lesson 4 (Class Values Voting) - always show buttons for testing */
+                  lesson.id === 4 && number === 2 ? (
                     <div className="flex gap-2">
                       <Button
                         onClick={onShowValuesVoting}

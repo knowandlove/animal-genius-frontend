@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { apiRequest } from "@/lib/queryClient";
-import { Home, Lock, Mail, Users, Search, Grid, List } from "lucide-react";
+import { Home, Lock, Mail, Users, Search, Grid, List, Monitor } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -206,6 +206,16 @@ export default function ClassIsland() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
+                {isTeacherView && classId && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setLocation(`/classes/${classId}/live`)}
+                    className="flex items-center gap-2"
+                  >
+                    <Monitor className="w-4 h-4" />
+                    Quiz Results Live View
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="icon"

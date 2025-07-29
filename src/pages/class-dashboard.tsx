@@ -233,14 +233,6 @@ export default function ClassDashboard() {
       action: () => setLocation(`/teacher/class/${classId}/island`)
     },
     {
-      id: 'live-discovery',
-      label: 'Live Discovery',
-      description: 'Real-time view',
-      icon: Wifi,
-      color: 'red',
-      action: () => setLocation(`/classes/${classId}/live`)
-    },
-    {
       id: 'analytics',
       label: 'Analytics',
       description: 'Charts & data',
