@@ -15,6 +15,8 @@ import { getIconComponent, getIconColor } from "@/utils/icon-utils";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { AuthenticatedLayout } from "@/components/layouts/AuthenticatedLayout";
 import { ClassValuesSessionModal } from "@/components/ClassValuesSessionModal";
+import { LessonCompletionDialog, LessonResetDialog } from "@/components/LessonCompletionDialog";
+import { Progress } from "@/components/ui/progress";
 
 export default function LearningLounge() {
   const [, setLocation] = useLocation();
@@ -26,6 +28,7 @@ export default function LearningLounge() {
   const [classId, setClassId] = useState<string | null>(null);
   const [className, setClassName] = useState<string | null>(null);
   const [lessonProgressData, setLessonProgressData] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
 
   const handleLogout = () => {
     localStorage.removeItem("authToken");
@@ -41,6 +44,16 @@ export default function LearningLounge() {
       return;
     }
     setToken(authToken);
+
+    // Get user from localStorage
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error("Failed to parse user data");
+      }
+    }
 
     // Get classId, module, and lesson from URL parameters
     const urlParams = new URLSearchParams(window.location.search);
@@ -64,6 +77,12 @@ export default function LearningLounge() {
   // Fetch class name if classId is provided
   const { data: classData } = useQuery<{ id: string; name: string; passportCode: string; teacherId: string; iconEmoji?: string; iconColor?: string; icon?: string; backgroundColor?: string }>({
     queryKey: [`/api/classes/${classId}`],
+    enabled: !!token && !!classId,
+  });
+
+  // Fetch student count for the class
+  const { data: studentsData } = useQuery<{ students: any[], totalStudents: number }>({
+    queryKey: [`/api/classes/${classId}/students`],
     enabled: !!token && !!classId,
   });
 
@@ -103,18 +122,27 @@ export default function LearningLounge() {
 
   const markCompleteMutation = useMutation({
     mutationFn: async (lessonId: number) => {
-      const endpoint = classId 
-        ? `/api/classes/${classId}/lessons/${lessonId}/complete`
-        : `/api/lessons/${lessonId}/complete`;
+      if (!classId) {
+        throw new Error("No class selected");
+      }
+      const endpoint = `/api/classes/${classId}/lessons/${lessonId}/complete`;
       return apiRequest("POST", endpoint);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
-        queryKey: classId ? [`/api/classes/${classId}/lessons/progress`] : ["/api/lessons/progress"] 
+        queryKey: [`/api/classes/${classId}/lessons/progress`]
       });
       toast({
         title: "Lesson Complete!",
-        description: "Great job! You've completed this lesson.",
+        description: `All activities have been marked complete and ${studentsData?.totalStudents || 0} students have been awarded 10 coins each.`,
+      });
+    },
+    onError: (error: any) => {
+      console.error("Failed to mark lesson complete:", error);
+      toast({
+        title: "Failed to complete lesson",
+        description: error.message || "An error occurred while completing the lesson.",
+        variant: "destructive",
       });
     },
   });
@@ -136,10 +164,18 @@ export default function LearningLounge() {
       const endpoint = `/api/classes/${classId}/lessons/${lessonId}/activities/${activityNumber}/complete`;
       return apiRequest("POST", endpoint);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ 
         queryKey: [`/api/classes/${classId}/lessons/progress`]
       });
+      
+      // Check if all activities are now complete (lesson auto-completed)
+      if (data?.completedActivities === 4) {
+        toast({
+          title: "🎉 Lesson Complete!",
+          description: `Congratulations! All activities have been completed and ${studentsData?.totalStudents || 0} students have been awarded 10 coins each.`,
+        });
+      }
     },
   });
 
@@ -171,6 +207,54 @@ export default function LearningLounge() {
     }
   });
 
+  // Reset lesson mutation
+  const resetLessonMutation = useMutation({
+    mutationFn: async (lessonId: number) => {
+      const endpoint = `/api/classes/${classId}/lessons/${lessonId}/reset`;
+      return apiRequest("POST", endpoint);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/classes/${classId}/lessons/progress`]
+      });
+      toast({
+        title: "Lesson Reset",
+        description: "The lesson has been reset to incomplete status.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Reset Failed",
+        description: "Could not reset the lesson. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Reset activity mutation
+  const resetActivityMutation = useMutation({
+    mutationFn: async ({ lessonId, activityNumber }: { lessonId: number; activityNumber: number }) => {
+      const endpoint = `/api/classes/${classId}/lessons/${lessonId}/activities/${activityNumber}/reset`;
+      return apiRequest("POST", endpoint);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/classes/${classId}/lessons/progress`]
+      });
+      toast({
+        title: "Activity Reset",
+        description: "The activity has been marked as incomplete.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Reset Failed",
+        description: "Could not reset the activity. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
   const isLessonComplete = (lessonId: number) => {
     if (!progressData?.lessons) return false;
     const lesson = progressData.lessons.find((l: any) => l.lessonId === lessonId);
@@ -192,7 +276,7 @@ export default function LearningLounge() {
         showSidebar={true}
         classId={classId || undefined}
         className={className || undefined}
-        user={undefined}
+        user={user}
         onLogout={handleLogout}
       >
         <div className="flex justify-center items-center min-h-[400px]">
@@ -208,7 +292,7 @@ export default function LearningLounge() {
         showSidebar={true}
         classId={classId || undefined}
         className={className || undefined}
-        user={undefined}
+        user={user}
         onLogout={handleLogout}
       >
         <div className="flex justify-center items-center min-h-[400px]">
@@ -230,6 +314,8 @@ export default function LearningLounge() {
       onMarkComplete={() => handleMarkComplete(lesson.id)}
       onStartLesson={() => startLessonMutation.mutate(lesson.id)}
       onCompleteActivity={(activityNumber) => completeActivityMutation.mutate({ lessonId: lesson.id, activityNumber })}
+      onResetLesson={() => resetLessonMutation.mutate(lesson.id)}
+      onResetActivity={(activityNumber) => resetActivityMutation.mutate({ lessonId: lesson.id, activityNumber })}
       onResetValuesVoting={() => resetValuesVotingMutation.mutate()}
       onBack={() => {
         setSelectedLesson(null);
@@ -239,9 +325,12 @@ export default function LearningLounge() {
         window.history.replaceState({}, '', newUrl.toString());
       }}
       isMarkingComplete={markCompleteMutation.isPending}
+      isResettingLesson={resetLessonMutation.isPending}
+      isResettingActivity={resetActivityMutation.isPending}
       isResettingVoting={resetValuesVotingMutation.isPending}
       classId={classId}
       className={className}
+      studentCount={studentsData?.totalStudents || 0}
     />;
   }
   
@@ -255,7 +344,7 @@ export default function LearningLounge() {
         showSidebar={true}
         classId={classId || undefined}
         className={className || undefined}
-        user={undefined}
+        user={user}
         onLogout={handleLogout}
       >
         <Card className="mb-8">
@@ -320,6 +409,7 @@ export default function LearningLounge() {
               key={lesson.id}
               lesson={lesson}
               isComplete={isLessonComplete(lesson.id)}
+              lessonProgress={getLessonProgress(lesson.id)}
               onSelect={() => {
                 setSelectedLesson(lesson.id);
                 const newUrl = new URL(window.location.href);
@@ -407,14 +497,25 @@ export default function LearningLounge() {
 interface LessonCardProps {
   lesson: Lesson;
   isComplete: boolean;
+  lessonProgress: any;
   onSelect: () => void;
   onMarkComplete: () => void;
   isMarkingComplete: boolean;
 }
 
-function LessonCard({ lesson, isComplete, onSelect, onMarkComplete, isMarkingComplete }: LessonCardProps) {
+function LessonCard({ lesson, isComplete, lessonProgress, onSelect, onMarkComplete, isMarkingComplete }: LessonCardProps) {
+  const isInProgress = lessonProgress?.status === 'in_progress';
+  
+  // Calculate activity progress
+  const completedActivities = lessonProgress?.activities?.filter((a: any) => a.completed).length || 0;
+  const totalActivities = 4; // All lessons have 4 activities
+  const progressPercentage = (completedActivities / totalActivities) * 100;
+  
   return (
-    <Card className={`relative cursor-pointer transition-all hover:shadow-lg ${isComplete ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800' : ''}`}>
+    <Card 
+      className={`relative cursor-pointer transition-all hover:shadow-lg ${isComplete ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800' : ''}`}
+      onClick={onSelect}
+    >
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="space-y-3">
@@ -451,6 +552,17 @@ function LessonCard({ lesson, isComplete, onSelect, onMarkComplete, isMarkingCom
                 </div>
               )}
             </div>
+            
+            {/* Activity Progress Bar */}
+            {lessonProgress && lessonProgress.status === 'in_progress' && (
+              <div className="mt-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-muted-foreground">Activity Progress</span>
+                  <span className="text-xs font-medium">{completedActivities}/{totalActivities} completed</span>
+                </div>
+                <Progress value={progressPercentage} className="h-2" />
+              </div>
+            )}
           </div>
           
           <div className="flex gap-2">
@@ -464,19 +576,30 @@ function LessonCard({ lesson, isComplete, onSelect, onMarkComplete, isMarkingCom
                 variant="outline"
                 size="sm"
               >
-                {isMarkingComplete ? <LoadingSpinner size="sm" /> : "Mark Complete"}
+                {isMarkingComplete ? <LoadingSpinner size="sm" /> : "Complete All"}
               </Button>
             )}
-            <Button onClick={onSelect} size="sm">
+            <Button 
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect();
+              }} 
+              size="sm"
+            >
               <PlayCircle className="h-4 w-4 mr-1" />
-              Start Lesson
+              {isComplete ? 'View Lesson' : (isInProgress ? 'Resume Lesson' : 'Start Lesson')}
             </Button>
           </div>
         </div>
       </CardHeader>
 
       <CardContent>
-        <Accordion type="single" collapsible className="w-full">
+        <Accordion 
+          type="single" 
+          collapsible 
+          className="w-full"
+          onClick={(e) => e.stopPropagation()}
+        >
           <AccordionItem value="preview">
             <AccordionTrigger className="text-left">
               <div className="flex items-center gap-2">
@@ -538,18 +661,43 @@ interface LessonDetailViewProps {
   onMarkComplete: () => void;
   onStartLesson: () => void;
   onCompleteActivity: (activityNumber: number) => void;
+  onResetLesson: () => void;
+  onResetActivity: (activityNumber: number) => void;
   onResetValuesVoting: () => void;
   onBack: () => void;
   isMarkingComplete: boolean;
+  isResettingLesson: boolean;
+  isResettingActivity: boolean;
   isResettingVoting: boolean;
   classId: string | null;
   className?: string | null;
+  studentCount: number;
 }
 
-function LessonDetailView({ lesson, lessonProgress, isComplete, onMarkComplete, onStartLesson, onCompleteActivity, onResetValuesVoting, onBack, isMarkingComplete, isResettingVoting, classId, className }: LessonDetailViewProps) {
+function LessonDetailView({ 
+  lesson, 
+  lessonProgress, 
+  isComplete, 
+  onMarkComplete, 
+  onStartLesson, 
+  onCompleteActivity, 
+  onResetLesson,
+  onResetActivity,
+  onResetValuesVoting, 
+  onBack, 
+  isMarkingComplete, 
+  isResettingLesson,
+  isResettingActivity,
+  isResettingVoting, 
+  classId, 
+  className,
+  studentCount 
+}: LessonDetailViewProps) {
   const [, setLocation] = useLocation();
   const [startingLesson, setStartingLesson] = useState(false);
   const [showValuesVotingModal, setShowValuesVotingModal] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
   
   // Start lesson if not started
   useEffect(() => {
@@ -621,12 +769,23 @@ function LessonDetailView({ lesson, lessonProgress, isComplete, onMarkComplete, 
             )}
             {!isComplete && (
               <Button
-                onClick={onMarkComplete}
+                onClick={() => setShowCompletionDialog(true)}
                 disabled={isMarkingComplete}
                 className="flex items-center gap-2"
               >
                 {isMarkingComplete ? <LoadingSpinner size="sm" /> : <CheckCircle className="h-4 w-4" />}
-                Mark Complete
+                Complete All
+              </Button>
+            )}
+            {isComplete && (
+              <Button
+                onClick={() => setShowResetDialog(true)}
+                disabled={isResettingLesson}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                {isResettingLesson ? <LoadingSpinner size="sm" /> : <RotateCcw className="h-4 w-4" />}
+                Reset Lesson
               </Button>
             )}
           </div>
@@ -673,8 +832,10 @@ function LessonDetailView({ lesson, lessonProgress, isComplete, onMarkComplete, 
               lesson={lesson} 
               lessonProgress={lessonProgress}
               onCompleteActivity={onCompleteActivity}
+              onResetActivity={onResetActivity}
               onResetValuesVoting={onResetValuesVoting}
               isActivityComplete={isActivityComplete}
+              isResettingActivity={isResettingActivity}
               isResettingVoting={isResettingVoting}
               classId={classId}
               onShowValuesVoting={() => setShowValuesVotingModal(true)}
@@ -698,17 +859,44 @@ function LessonDetailView({ lesson, lessonProgress, isComplete, onMarkComplete, 
             }}
           />
         )}
+
+        {/* Lesson Completion Dialog */}
+        <LessonCompletionDialog
+          open={showCompletionDialog}
+          onOpenChange={setShowCompletionDialog}
+          onConfirm={() => {
+            setShowCompletionDialog(false);
+            onMarkComplete();
+          }}
+          studentCount={studentCount}
+          isLoading={isMarkingComplete}
+          lessonNumber={lesson.id}
+        />
+
+        {/* Lesson Reset Dialog */}
+        <LessonResetDialog
+          open={showResetDialog}
+          onOpenChange={setShowResetDialog}
+          onConfirm={() => {
+            setShowResetDialog(false);
+            onResetLesson();
+          }}
+          isLoading={isResettingLesson}
+          lessonNumber={lesson.id}
+        />
       </div>
     </AuthenticatedLayout>
   );
 }
 
-function LessonSectionsView({ lesson, lessonProgress, onCompleteActivity, onResetValuesVoting, isActivityComplete, isResettingVoting, classId, onShowValuesVoting }: { 
+function LessonSectionsView({ lesson, lessonProgress, onCompleteActivity, onResetActivity, onResetValuesVoting, isActivityComplete, isResettingActivity, isResettingVoting, classId, onShowValuesVoting }: { 
   lesson: Lesson; 
   lessonProgress?: any;
   onCompleteActivity: (activityNumber: number) => void;
+  onResetActivity: (activityNumber: number) => void;
   onResetValuesVoting: () => void;
   isActivityComplete: (activityNumber: number) => boolean;
+  isResettingActivity: boolean;
   isResettingVoting: boolean;
   classId: string | null;
   onShowValuesVoting: () => void;
@@ -843,15 +1031,30 @@ function LessonSectionsView({ lesson, lessonProgress, onCompleteActivity, onRese
                         <Vote className="w-3 h-3 mr-1" />
                         Start Class Values Voting
                       </Button>
-                      {isComplete && (
+                      {isComplete ? (
+                        <>
+                          <Button
+                            onClick={() => window.open(`/class-values-results/${classId}`, '_blank')}
+                            size="sm"
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            <Trophy className="w-3 h-3 mr-1" />
+                            View Results
+                          </Button>
+                          <div className="flex items-center text-green-600">
+                            <CheckIcon className="w-5 h-5 mr-1" />
+                            <span className="text-sm font-medium">Complete</span>
+                          </div>
+                        </>
+                      ) : (
                         <Button
-                          onClick={() => window.open(`/class-values-results/${classId}`, '_blank')}
+                          onClick={() => onCompleteActivity(number)}
                           size="sm"
                           variant="outline"
                           className="text-xs"
                         >
-                          <Trophy className="w-3 h-3 mr-1" />
-                          View Results
+                          Mark Complete
                         </Button>
                       )}
                       <Button
@@ -872,9 +1075,24 @@ function LessonSectionsView({ lesson, lessonProgress, onCompleteActivity, onRese
                       </Button>
                     </div>
                   ) : isComplete ? (
-                    <div className="flex items-center text-green-600">
-                      <CheckIcon className="w-5 h-5 mr-1" />
-                      <span className="text-sm font-medium">Complete</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center text-green-600">
+                        <CheckIcon className="w-5 h-5 mr-1" />
+                        <span className="text-sm font-medium">Complete</span>
+                      </div>
+                      <Button
+                        onClick={() => onResetActivity(number)}
+                        size="sm"
+                        variant="ghost"
+                        className="text-xs h-7 px-2"
+                        disabled={isResettingActivity}
+                      >
+                        {isResettingActivity ? (
+                          <LoadingSpinner size="sm" />
+                        ) : (
+                          <RotateCcw className="w-3 h-3" />
+                        )}
+                      </Button>
                     </div>
                   ) : (
                     <Button

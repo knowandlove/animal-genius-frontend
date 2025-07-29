@@ -1,5 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { api } from "@/config/api";
+import { showSessionExpiryToast } from "./session-expiry-toast";
 
 async function refreshAuthToken(): Promise<string | null> {
   const refreshToken = localStorage.getItem("refreshToken");
@@ -73,13 +74,21 @@ async function throwIfResNotOk(res: Response, originalUrl?: string, originalOpti
         if (process.env.NODE_ENV === 'development') {
           console.log('Token refresh failed, clearing authentication and redirecting to login');
         }
+        
+        // Show toast notification immediately
+        showSessionExpiryToast();
+        
+        // Store a message to show on the login page
+        localStorage.setItem("authExpiredMessage", "Your session has expired. Please log in again.");
+        
         localStorage.removeItem("authToken");
         localStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
-        // Small delay to ensure localStorage is cleared before redirect
+        
+        // Small delay to ensure localStorage is cleared and toast is shown before redirect
         setTimeout(() => {
           window.location.href = '/login';
-        }, 100);
+        }, 500);
       }
     } catch (e) {
       try {

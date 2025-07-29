@@ -128,7 +128,7 @@ function LessonCard({ lesson, isComplete, onMarkComplete, isMarkingComplete }: L
               variant="outline"
               size="sm"
             >
-              {isMarkingComplete ? <LoadingSpinner size="sm" /> : "Mark Complete"}
+              {isMarkingComplete ? <LoadingSpinner size="sm" /> : "Complete All"}
             </Button>
           )}
         </div>
