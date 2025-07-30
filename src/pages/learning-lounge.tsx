@@ -16,6 +16,7 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 import { AuthenticatedLayout } from "@/components/layouts/AuthenticatedLayout";
 import { ClassValuesSessionModal } from "@/components/ClassValuesSessionModal";
 import { LessonCompletionDialog, LessonResetDialog } from "@/components/LessonCompletionDialog";
+import { LessonFeedback } from "@/components/LessonFeedback";
 import { Progress } from "@/components/ui/progress";
 
 export default function LearningLounge() {
@@ -576,7 +577,7 @@ function LessonCard({ lesson, isComplete, lessonProgress, onSelect, onMarkComple
                 variant="outline"
                 size="sm"
               >
-                {isMarkingComplete ? <LoadingSpinner size="sm" /> : "Complete All"}
+                {isMarkingComplete ? <LoadingSpinner size="sm" /> : "Complete"}
               </Button>
             )}
             <Button 
@@ -774,7 +775,7 @@ function LessonDetailView({
                 className="flex items-center gap-2"
               >
                 {isMarkingComplete ? <LoadingSpinner size="sm" /> : <CheckCircle className="h-4 w-4" />}
-                Complete All
+                Complete
               </Button>
             )}
             {isComplete && (
@@ -846,6 +847,12 @@ function LessonDetailView({
             <LessonSidebar lesson={lesson} />
           </div>
         </div>
+
+        {/* Lesson Feedback - Always visible */}
+        <LessonFeedback 
+          lessonId={lesson.id} 
+          lessonTitle={lesson.title} 
+        />
 
         {/* Class Values Voting Modal */}
         {classId && (

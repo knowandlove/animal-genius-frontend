@@ -34,14 +34,14 @@ export function LessonCompletionDialog({
             Complete Lesson & Award Coins?
           </DialogTitle>
           <DialogDescription className="pt-3 space-y-3">
-            <p>
+            <span className="block">
               Completing this lesson will award <strong>10 coins</strong> to all{" "}
               <strong>{studentCount}</strong> students in your class.
-            </p>
-            <p className="text-sm text-muted-foreground flex items-start gap-2">
+            </span>
+            <span className="block text-sm text-muted-foreground flex items-start gap-2">
               <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
               This action can be undone, but coins will remain with students.
-            </p>
+            </span>
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -82,13 +82,13 @@ export function LessonResetDialog({
         <DialogHeader>
           <DialogTitle>Reset Lesson {lessonNumber}?</DialogTitle>
           <DialogDescription className="pt-3 space-y-3">
-            <p>
+            <span className="block">
               This will reset all activity progress for this lesson and mark it as incomplete.
-            </p>
-            <p className="text-sm text-muted-foreground flex items-start gap-2">
+            </span>
+            <span className="block text-sm text-muted-foreground flex items-start gap-2">
               <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
               Students will keep any coins they&apos;ve earned from this lesson.
-            </p>
+            </span>
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
