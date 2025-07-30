@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CheckCircle, Clock, BookOpen, Users, Target, ListChecks, ArrowLeft, PlayCircle, Printer, FileText, Check as CheckIcon, Sun, Battery, Lock, ArrowRight, Calendar, Trophy, Vote, RotateCcw, Monitor } from "lucide-react";
+import { VimeoPlayer } from "@/components/VimeoPlayer";
 import { lessons, type Lesson, type Activity } from "@shared/lessons";
 import { modules, type Module, getModuleById } from "@/shared/modules";
 import { apiRequest } from "@/lib/queryClient";
@@ -16,6 +17,7 @@ import { LoadingSpinner } from "@/components/loading-spinner";
 import { AuthenticatedLayout } from "@/components/layouts/AuthenticatedLayout";
 import { ClassValuesSessionModal } from "@/components/ClassValuesSessionModal";
 import { LessonCompletionDialog, LessonResetDialog } from "@/components/LessonCompletionDialog";
+import { LessonFeedback } from "@/components/LessonFeedback";
 import { Progress } from "@/components/ui/progress";
 
 export default function LearningLounge() {
@@ -576,7 +578,7 @@ function LessonCard({ lesson, isComplete, lessonProgress, onSelect, onMarkComple
                 variant="outline"
                 size="sm"
               >
-                {isMarkingComplete ? <LoadingSpinner size="sm" /> : "Complete All"}
+                {isMarkingComplete ? <LoadingSpinner size="sm" /> : "Complete"}
               </Button>
             )}
             <Button 
@@ -774,7 +776,7 @@ function LessonDetailView({
                 className="flex items-center gap-2"
               >
                 {isMarkingComplete ? <LoadingSpinner size="sm" /> : <CheckCircle className="h-4 w-4" />}
-                Complete All
+                Complete
               </Button>
             )}
             {isComplete && (
@@ -846,6 +848,12 @@ function LessonDetailView({
             <LessonSidebar lesson={lesson} />
           </div>
         </div>
+
+        {/* Lesson Feedback - Always visible */}
+        <LessonFeedback 
+          lessonId={lesson.id} 
+          lessonTitle={lesson.title} 
+        />
 
         {/* Class Values Voting Modal */}
         {classId && (
@@ -927,24 +935,12 @@ function LessonSectionsView({ lesson, lessonProgress, onCompleteActivity, onRese
 
   return (
     <div className="space-y-6">
-      {/* Video placeholder for all lessons */}
-      <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <PlayCircle className="h-5 w-5" />
-            Lesson Overview Video
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="relative aspect-video bg-gray-200 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-            <div className="text-center space-y-4">
-              <PlayCircle className="h-16 w-16 text-gray-400 dark:text-gray-600 mx-auto" />
-              <p className="text-gray-600 dark:text-gray-400 font-medium">Video Coming Soon</p>
-              <p className="text-sm text-gray-500 dark:text-gray-500">{lesson.title}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Lesson Overview Videos */}
+      <VimeoPlayer
+        teacherVideoId={lesson.videos?.teacher}
+        studentVideoId={lesson.videos?.student}
+        lessonTitle={lesson.title}
+      />
       
       {activities.map(({ key, data, color, number }) => {
         // Using a subtle off-white background for all cards
