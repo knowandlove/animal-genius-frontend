@@ -1125,14 +1125,11 @@ function LessonSectionsView({ lesson, lessonProgress, onCompleteActivity, onRese
                           {/* Special handling for student video in Lesson 1, Activity 1, Step 1 */}
                           {lesson.id === 1 && key === 'activity1' && stepIndex === 0 && lesson.videos?.student ? (
                             <div className="space-y-2">
-                              <span className="text-sm">Play Student-facing video</span>
+                              <span className="text-sm">Click the button below to open the video in a new window that you can drag to your projector screen</span>
                               <ProjectorVideoButton 
                                 videoId={lesson.videos.student}
                                 title="Animal Genius Student Introduction"
                               />
-                              <p className="text-xs text-gray-600 dark:text-gray-400 italic">
-                                Click the button above to open the video in a new window that you can drag to your projector screen
-                              </p>
                             </div>
                           ) : (
                             <span className="text-sm">{step.instruction}</span>
