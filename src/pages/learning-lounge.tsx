@@ -1124,12 +1124,14 @@ function LessonSectionsView({ lesson, lessonProgress, onCompleteActivity, onRese
                         <div className="flex-1 space-y-2">
                           {/* Special handling for student video in Lesson 1, Activity 1, Step 1 */}
                           {lesson.id === 1 && key === 'activity1' && stepIndex === 0 && lesson.videos?.student ? (
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                               <span className="text-sm">Click the button below to open the video in a new window that you can drag to your projector screen</span>
-                              <ProjectorVideoButton 
-                                videoId={lesson.videos.student}
-                                title="Animal Genius Student Introduction"
-                              />
+                              <div className="ml-4">
+                                <ProjectorVideoButton 
+                                  videoId={lesson.videos.student}
+                                  title="Animal Genius Student Introduction"
+                                />
+                              </div>
                             </div>
                           ) : (
                             <span className="text-sm">{step.instruction}</span>

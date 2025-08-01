@@ -101,14 +101,13 @@ export function ProjectorVideoButton({
   return (
     <Button
       onClick={openProjectorWindow}
-      variant="default"
-      size="sm"
-      className={`bg-[#85B2C8] hover:bg-[#6d94a6] text-white ${className}`}
+      variant="outline"
+      size="default"
+      className={`inline-flex items-center gap-2 font-normal ${className}`}
     >
-      <Monitor className="w-4 h-4 mr-2" />
-      <Play className="w-3 h-3 mr-1" />
+      <Play className="w-4 h-4" />
       Play Student Video
-      <ExternalLink className="w-3 h-3 ml-1" />
+      <ExternalLink className="w-4 h-4 opacity-60" />
     </Button>
   );
 }
