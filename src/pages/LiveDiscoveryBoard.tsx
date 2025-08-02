@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 // import { useRealtime } from '@/hooks/useRealtime'; // Disabled - using polling instead
+import { api } from '@/config/api';
 import { 
   ArrowLeft, 
   Maximize, 
@@ -141,7 +142,7 @@ function LiveDiscoveryBoard() {
   const { data: classData } = useQuery({
     queryKey: ['class-analytics', classId],
     queryFn: async () => {
-      const response = await fetch(`/api/classes/${classId}/analytics`, {
+      const response = await fetch(api(`/api/classes/${classId}/analytics`), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -189,7 +190,7 @@ function LiveDiscoveryBoard() {
   const { data: initialSubmissions = [], isLoading } = useQuery({
     queryKey: ['live-submissions', classId],
     queryFn: async () => {
-      const response = await fetch(`/api/classes/${classId}/analytics`, {
+      const response = await fetch(api(`/api/classes/${classId}/analytics`), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -244,7 +245,7 @@ function LiveDiscoveryBoard() {
     
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/classes/${classId}/analytics`, {
+        const response = await fetch(api(`/api/classes/${classId}/analytics`), {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('authToken')}`
           }
