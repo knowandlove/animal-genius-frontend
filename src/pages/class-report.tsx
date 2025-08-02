@@ -49,7 +49,9 @@ export default function ClassReport() {
     pairingsLoading,
     pairingsError,
     hasPairings: !!pairings,
-    pairingsData: pairings
+    pairingsData: pairings,
+    isPairingsProcessing,
+    totalStudents: analytics?.stats?.totalSubmissions
   });
 
   useEffect(() => {
