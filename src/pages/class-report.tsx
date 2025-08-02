@@ -14,6 +14,14 @@ export default function ClassReport() {
   const classId = params?.classId;
   const [, setLocation] = useLocation();
   const { user, isLoading: authLoading } = useAuth();
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('ClassReport component mounted');
+    console.log('ClassReport - Route params:', params);
+    console.log('ClassReport - Class ID:', classId);
+    console.log('Current location:', window.location.pathname);
+  }, [params, classId]);
 
   // Fetch real analytics data - MOVED BEFORE conditional logic
   const { data: analytics, isLoading: analyticsLoading, error: analyticsError } = useQuery({

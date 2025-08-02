@@ -53,6 +53,8 @@ const MainRoomView: React.FC<MainRoomViewProps> = ({ room, storeCatalog, passpor
             height={avatarSize}
             animated={false}
             storeCatalog={storeCatalog}
+            primaryColor={room.avatarData?.colors?.primaryColor}
+            secondaryColor={room.avatarData?.colors?.secondaryColor}
           />
         </div>
         </div>

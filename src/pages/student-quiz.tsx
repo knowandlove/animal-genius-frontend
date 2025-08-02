@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { questions } from '@shared/quiz-questions';
 import { calculateResults, type QuizAnswer, type QuizResults } from '@shared/scoring';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { submitQuiz } from '@/lib/edge-functions/client';
+import { submitQuiz, checkQuizEligibility } from '@/lib/edge-functions/client';
 import { storePassportCode, storeStudentData } from '@/lib/passport-auth';
 import { Link } from 'wouter';
 // Removed icon imports to optimize build performance
@@ -47,6 +47,7 @@ export default function StudentQuiz() {
   const [answeredQuestions, setAnsweredQuestions] = useState<number[]>([]);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [submissionData, setSubmissionData] = useState<any>(null);
+  const [checkingEligibility, setCheckingEligibility] = useState(false);
   const { toast } = useToast();
 
   // Persist quiz state to localStorage to prevent data loss on accidental refresh
@@ -368,7 +369,7 @@ export default function StudentQuiz() {
     }
   };
 
-  const handleStartQuiz = () => {
+  const handleStartQuiz = async () => {
     if (!firstName.trim() || !lastInitial.trim()) {
       toast({
         title: "Missing information",
@@ -377,7 +378,46 @@ export default function StudentQuiz() {
       });
       return;
     }
-    setShowStudentInfo(false);
+
+    // Check quiz eligibility before starting
+    setCheckingEligibility(true);
+    try {
+      const eligibility = await checkQuizEligibility(classCode!, firstName.trim(), lastInitial.trim());
+      
+      if (!eligibility.eligible) {
+        let errorMessage = eligibility.message;
+        if (eligibility.suggestion) {
+          errorMessage += ` ${eligibility.suggestion}`;
+        }
+        
+        toast({
+          title: "Cannot Start Quiz",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        setCheckingEligibility(false);
+        return;
+      }
+      
+      // Show class info if eligible
+      if (eligibility.classInfo) {
+        toast({
+          title: "Welcome!",
+          description: `Joining ${eligibility.classInfo.name} (${eligibility.classInfo.currentStudents}/${eligibility.classInfo.maxStudents} students)`,
+        });
+      }
+      
+      setCheckingEligibility(false);
+      setShowStudentInfo(false);
+    } catch (error) {
+      setCheckingEligibility(false);
+      toast({
+        title: "Error",
+        description: "Failed to check quiz eligibility. Please try again.",
+        variant: "destructive",
+      });
+      console.error('Eligibility check error:', error);
+    }
   };
 
   // Handle timeline navigation
@@ -513,8 +553,12 @@ export default function StudentQuiz() {
                 />
               </div>
             </div>
-            <Button onClick={handleStartQuiz} className="w-full">
-              Start Quiz
+            <Button 
+              onClick={handleStartQuiz} 
+              className="w-full"
+              disabled={checkingEligibility}
+            >
+              {checkingEligibility ? 'Checking eligibility...' : 'Start Quiz'}
             </Button>
           </CardContent>
         </Card>

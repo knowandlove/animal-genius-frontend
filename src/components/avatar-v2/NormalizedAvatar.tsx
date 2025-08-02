@@ -35,6 +35,10 @@ interface NormalizedAvatarProps {
   className?: string;
   animated?: boolean;
   storeCatalog?: any[];
+  
+  // Custom colors
+  primaryColor?: string;
+  secondaryColor?: string;
 }
 
 export default function NormalizedAvatar({
@@ -50,6 +54,8 @@ export default function NormalizedAvatar({
   className,
   animated = true,
   storeCatalog,
+  primaryColor,
+  secondaryColor,
 }: NormalizedAvatarProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const avatarImgRef = useRef<HTMLImageElement>(null);
@@ -186,15 +192,20 @@ export default function NormalizedAvatar({
   // Get avatar image path
   // Check if we should use SVG avatar (when colors are customized)
   const avatarColors = useRoomStore((state) => state.avatar?.colors);
-  const hasCustomColors = avatarColors?.hasCustomized && avatarColors?.primaryColor && avatarColors?.secondaryColor;
+  
+  // Use props if provided, otherwise fall back to store
+  const effectivePrimaryColor = primaryColor || avatarColors?.primaryColor;
+  const effectiveSecondaryColor = secondaryColor || avatarColors?.secondaryColor;
+  const hasCustomColors = (effectivePrimaryColor && effectiveSecondaryColor) || 
+                         (avatarColors?.hasCustomized && avatarColors?.primaryColor && avatarColors?.secondaryColor);
   
   // If we have custom colors, use SVGAvatar instead
   if (hasCustomColors) {
     return (
       <SVGAvatar
         animalType={animalType}
-        primaryColor={avatarColors.primaryColor}
-        secondaryColor={avatarColors.secondaryColor}
+        primaryColor={effectivePrimaryColor}
+        secondaryColor={effectiveSecondaryColor}
         width={width}
         height={height}
         items={items}

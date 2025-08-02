@@ -15,15 +15,32 @@ export async function callEdgeFunction<T = any>(
   body?: any,
   options?: EdgeFunctionOptions
 ): Promise<T> {
-  const { data, error } = await supabase.functions.invoke(functionName, {
+  console.log(`Calling edge function ${functionName} with body:`, body);
+  
+  const response = await supabase.functions.invoke(functionName, {
     body,
     headers: options?.headers,
   });
 
-  if (error) {
-    console.error(`Edge function error (${functionName}):`, error);
-    throw new Error(error.message || `Failed to call ${functionName}`);
+  console.log(`Edge function ${functionName} response:`, response);
+
+  if (response.error) {
+    console.error(`Edge function error (${functionName}):`, response.error);
+    // Try to parse error details from the response
+    if (response.error.message === 'Edge Function returned a non-2xx status code') {
+      // Try to get actual error from data
+      if (response.data && typeof response.data === 'object') {
+        const errorMessage = response.data.error || response.data.message || response.data.debug;
+        if (errorMessage) {
+          console.error(`Actual error from Edge Function:`, errorMessage);
+          throw new Error(errorMessage);
+        }
+      }
+    }
+    throw new Error(response.error.message || `Failed to call ${functionName}`);
   }
+
+  const data = response.data;
 
   // Check if the response contains an error (Edge Functions can return errors in data)
   if (data && typeof data === 'object' && 'error' in data) {
@@ -95,16 +112,31 @@ export async function studentLogin(passportCode: string): Promise<StudentLoginRe
  */
 export interface QuizEligibilityRequest {
   classCode: string;
+  firstName: string;
+  lastInitial: string;
 }
 
 export interface QuizEligibilityResponse {
   eligible: boolean;
   className?: string;
   message: string;
+  reason?: string;
+  suggestion?: string;
+  classInfo?: {
+    name: string;
+    currentStudents: number;
+    maxStudents: number | string;
+  };
 }
 
-export async function checkQuizEligibility(classCode: string): Promise<QuizEligibilityResponse> {
+export async function checkQuizEligibility(
+  classCode: string, 
+  firstName?: string, 
+  lastInitial?: string
+): Promise<QuizEligibilityResponse> {
   return callEdgeFunction<QuizEligibilityResponse>('quiz-check-eligibility', {
     classCode,
+    firstName: firstName || '',
+    lastInitial: lastInitial || '',
   });
 }
