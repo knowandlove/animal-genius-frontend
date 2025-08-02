@@ -32,7 +32,14 @@ export default function ClassReport() {
   // Fetch real pairings data - MOVED BEFORE conditional logic
   const { data: pairings, isLoading: pairingsLoading, error: pairingsError } = useQuery({
     queryKey: [`/api/classes/${classId}/pairings`],
-    enabled: !!classId && !!localStorage.getItem("authToken") && !authLoading && !!user
+    enabled: !!classId && !!localStorage.getItem("authToken") && !authLoading && !!user,
+    refetchInterval: (data) => {
+      // If pairings are still processing, refetch every 3 seconds
+      if (data?.status === 'processing') {
+        return 3000;
+      }
+      return false; // Stop refetching once we have data
+    }
   });
   
   console.log('ClassReport - Query states:', {
@@ -120,7 +127,9 @@ export default function ClassReport() {
 
   // Calculate real data from API responses
   const typedAnalytics = analytics as AnalyticsResponse;
-  const typedPairings = pairings as PairingsResponse;
+  // Check if pairings are still processing
+  const isPairingsProcessing = pairings?.status === 'processing';
+  const typedPairings = (!isPairingsProcessing ? pairings : null) as PairingsResponse;
   
   // Debug logging
   console.log('🔍 Class Report Debug:');
@@ -367,15 +376,24 @@ export default function ClassReport() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {classData.soloWorkers.map((student: any, index: number) => (
-                      <div key={index} className="flex items-start gap-2 p-2 bg-purple-50 rounded">
-                        <UserCheck className="h-4 w-4 text-purple-600 mt-0.5" />
-                        <div>
-                          <div className="font-medium text-sm">{student.name}</div>
-                          <div className="text-xs text-muted-foreground">{student.note}</div>
-                        </div>
+                    {isPairingsProcessing ? (
+                      <div className="text-center py-4 text-muted-foreground">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mx-auto mb-2"></div>
+                        <p className="text-sm">Analyzing student preferences...</p>
                       </div>
-                    ))}
+                    ) : classData.soloWorkers.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No solo workers identified yet</p>
+                    ) : (
+                      classData.soloWorkers.map((student: any, index: number) => (
+                        <div key={index} className="flex items-start gap-2 p-2 bg-purple-50 rounded">
+                          <UserCheck className="h-4 w-4 text-purple-600 mt-0.5" />
+                          <div>
+                            <div className="font-medium text-sm">{student.name}</div>
+                            <div className="text-xs text-muted-foreground">{student.note}</div>
+                          </div>
+                        </div>
+                      ))
+                    )}}
                   </div>
                 </CardContent>
               </Card>
@@ -390,14 +408,23 @@ export default function ClassReport() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {classData.dynamicDuos.map((duo: any, index: number) => (
-                      <div key={index} className="p-3 bg-blue-50 rounded border-l-4 border-blue-400">
-                        <div className="font-medium text-sm mb-1">
-                          {duo.student1} + {duo.student2}
-                        </div>
-                        <div className="text-xs text-blue-700">{duo.note}</div>
+                    {isPairingsProcessing ? (
+                      <div className="text-center py-4 text-muted-foreground">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                        <p className="text-sm">Finding dynamic duos...</p>
                       </div>
-                    ))}
+                    ) : classData.dynamicDuos.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No dynamic duos identified yet</p>
+                    ) : (
+                      classData.dynamicDuos.map((duo: any, index: number) => (
+                        <div key={index} className="p-3 bg-blue-50 rounded border-l-4 border-blue-400">
+                          <div className="font-medium text-sm mb-1">
+                            {duo.student1} + {duo.student2}
+                          </div>
+                          <div className="text-xs text-blue-700">{duo.note}</div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -410,14 +437,23 @@ export default function ClassReport() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {classData.puzzlePairings.map((pair: any, index: number) => (
-                      <div key={index} className="p-3 bg-orange-50 rounded border-l-4 border-orange-400">
-                        <div className="font-medium text-sm mb-1">
-                          {pair.student1} + {pair.student2}
-                        </div>
-                        <div className="text-xs text-orange-700">{pair.tip}</div>
+                    {isPairingsProcessing ? (
+                      <div className="text-center py-4 text-muted-foreground">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600 mx-auto mb-2"></div>
+                        <p className="text-sm">Analyzing pairing challenges...</p>
                       </div>
-                    ))}
+                    ) : classData.puzzlePairings.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No challenging pairings identified yet</p>
+                    ) : (
+                      classData.puzzlePairings.map((pair: any, index: number) => (
+                        <div key={index} className="p-3 bg-orange-50 rounded border-l-4 border-orange-400">
+                          <div className="font-medium text-sm mb-1">
+                            {pair.student1} + {pair.student2}
+                          </div>
+                          <div className="text-xs text-orange-700">{pair.tip}</div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </CardContent>
               </Card>
