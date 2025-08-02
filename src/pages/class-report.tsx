@@ -41,7 +41,8 @@ export default function ClassReport() {
     hasAnalytics: !!analytics,
     pairingsLoading,
     pairingsError,
-    hasPairings: !!pairings
+    hasPairings: !!pairings,
+    pairingsData: pairings
   });
 
   useEffect(() => {
@@ -69,8 +70,8 @@ export default function ClassReport() {
     setLocation(`/teacher/student/${submissionId}?classId=${classId}&from=report`);
   };
 
-  // Show loading state
-  if (analyticsLoading || pairingsLoading) {
+  // Show loading state only for analytics (pairings can load in background)
+  if (analyticsLoading) {
     return (
       <AuthenticatedLayout 
         showSidebar={true}
