@@ -393,7 +393,7 @@ export default function ClassReport() {
                           </div>
                         </div>
                       ))
-                    )}}
+                    )}
                   </div>
                 </CardContent>
               </Card>
