@@ -42,17 +42,6 @@ export default function ClassReport() {
     }
   });
   
-  console.log('ClassReport - Query states:', {
-    analyticsLoading,
-    analyticsError,
-    hasAnalytics: !!analytics,
-    pairingsLoading,
-    pairingsError,
-    hasPairings: !!pairings,
-    pairingsData: pairings,
-    isPairingsProcessing,
-    totalStudents: analytics?.stats?.totalSubmissions
-  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -143,6 +132,8 @@ export default function ClassReport() {
   console.log('   analyticsError:', analyticsError);
   console.log('   pairingsError:', pairingsError);
   console.log('   hasToken:', !!localStorage.getItem("authToken"));
+  console.log('   isPairingsProcessing:', isPairingsProcessing);
+  console.log('   totalStudents:', typedAnalytics?.stats?.totalSubmissions);
   
   const classData = typedAnalytics?.class ? {
     name: typedAnalytics.class.name,
