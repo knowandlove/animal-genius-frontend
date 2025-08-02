@@ -38,6 +38,7 @@ import RoomViewers from "@/components/room/RoomViewers";
 import { useRoomViewers } from "@/hooks/useRoomViewers";
 import { v4 as uuidv4 } from 'uuid';
 import CharacterCreationModal from '@/components/avatar/CharacterCreationModal';
+import FirstTimeAvatarCustomization from '@/components/avatar/FirstTimeAvatarCustomization';
 
 interface StoreItem {
   id: string;
@@ -100,6 +101,7 @@ export default function StudentRoom() {
   const [accessDeniedReason, setAccessDeniedReason] = useState<'private' | 'invite_only' | 'different_class' | 'unknown' | null>(null);
   const [authenticatedViewerName, setAuthenticatedViewerName] = useState<string | null>(null);
   const [showCharacterCreation, setShowCharacterCreation] = useState(false);
+  const [showFirstTimeCustomization, setShowFirstTimeCustomization] = useState(false);
   
   // Viewer tracking
   const [viewerId] = useState(() => {
@@ -257,15 +259,8 @@ export default function StudentRoom() {
       
       // Check if avatar colors have been customized (only for owner)
       if (access?.isOwner && !room.avatarData?.colors?.hasCustomized) {
-        // Show character creation after welcome animation if needed
-        if (!hasBeenWelcomed) {
-          // Wait for welcome animation to complete
-          setTimeout(() => {
-            setShowCharacterCreation(true);
-          }, 3000); // Welcome animation duration
-        } else {
-          setShowCharacterCreation(true);
-        }
+        // Show full-screen customization for first-time visitors
+        setShowFirstTimeCustomization(true);
       }
     }
   }, [pageData, passportCode, initializeFromServerData]);
@@ -280,11 +275,13 @@ export default function StudentRoom() {
       // Update local state
       queryClient.invalidateQueries({ queryKey: [`/api/room-page-data/${passportCode}`] });
       setShowCharacterCreation(false);
+      setShowFirstTimeCustomization(false);
     },
     onError: (error: any) => {
       console.error('Failed to save avatar colors:', error);
       // Still close the modal - they can try again later
       setShowCharacterCreation(false);
+      setShowFirstTimeCustomization(false);
     },
   });
 
@@ -467,6 +464,19 @@ export default function StudentRoom() {
 
   const { room, wallet, storeStatus, storeCatalog = [], access } = pageData;
   const canEdit = access?.canEdit ?? false; // Default to false for security
+
+  // Show full-screen avatar customization for first-time visitors
+  if (showFirstTimeCustomization && room) {
+    return (
+      <FirstTimeAvatarCustomization
+        animalType={room.animalType}
+        studentName={room.studentName}
+        onComplete={(colors) => {
+          saveAvatarColorsMutation.mutate(colors);
+        }}
+      />
+    );
+  }
 
   return (
     <>

@@ -11,58 +11,58 @@ export interface AnimalColorPalette {
 export const ANIMAL_COLOR_PALETTES: Record<string, AnimalColorPalette> = {
   meerkat: {
     primary: [
-      { name: "Original Meerkat", value: "#E8C3A3" },  // Default - original SVG color
-      { name: "Sandy", value: "#C19A7C" },
-      { name: "Warm Brown", value: "#D3AE91" },
-      { name: "Tawny", value: "#CD853F" },
-      { name: "Russet", value: "#A0522D" },
-      { name: "Dusty Rose", value: "#BC8F8F" }
+      { name: "Original Meerkat", value: "#D4B09A" },  // Default - slightly muted
+      { name: "Terracotta Dust", value: "#D0A492" },   // Warm reddish-tan
+      { name: "Sage Desert", value: "#C4B39C" },       // Green-tinted tan
+      { name: "Dusty Mauve", value: "#C7A2A0" },       // Purple-pink tan
+      { name: "Storm Sand", value: "#C0AEBB" },        // Blue-tinted tan
+      { name: "Golden Sand", value: "#D2B18F" }        // Yellow-tinted tan
     ],
     secondary: [
-      { name: "Original Cream", value: "#F0D6C2" },    // Default - original SVG color
-      { name: "Warm Ivory", value: "#F5E6D3" },
-      { name: "Soft Pearl", value: "#EEE0D5" },
-      { name: "Desert Sand", value: "#E6DCC2" },
-      { name: "Light Cream", value: "#FFF8DC" },
-      { name: "Vanilla", value: "#F3E5AB" }
+      { name: "Original Cream", value: "#E8D5C8" },    // Default - more muted
+      { name: "Blush Sand", value: "#E5D0C9" },        // Pink-tinted cream
+      { name: "Sage Mist", value: "#E2D5C7" },        // Green-tinted cream
+      { name: "Lavender Dust", value: "#E3D0CD" },    // Purple-tinted cream
+      { name: "Sky Dust", value: "#DFD3D5" },         // Blue-tinted cream
+      { name: "Honey Cream", value: "#E6D4C5" }       // Yellow-tinted cream
     ]
   },
   
   otter: {
     primary: [
-      { name: "Original Otter", value: "#8B6F47" },    // Default - original SVG color
-      { name: "River Brown", value: "#654321" },
-      { name: "Deep Chocolate", value: "#3B2414" },
-      { name: "Chestnut", value: "#954535" },
-      { name: "Rustic Brown", value: "#8B4513" },
-      { name: "Warm Gray", value: "#696969" }
+      { name: "Original Otter", value: "#8B7D6B" },    // Default - more muted brown
+      { name: "River Stone", value: "#7F7366" },       // Soft gray-brown
+      { name: "Driftwood", value: "#9A8B7A" },        // Light muted brown
+      { name: "Wet Sand", value: "#8B8378" },         // Gray-brown blend
+      { name: "Moss Rock", value: "#7D7068" },        // Dark muted brown
+      { name: "Clay Brown", value: "#A39081" }        // Light clay color
     ],
     secondary: [
-      { name: "Original Light", value: "#F5DEB3" },    // Default - original SVG color
-      { name: "Soft Gray", value: "#D3D3D3" },
-      { name: "Silver", value: "#C0C0C0" },
-      { name: "Pearl White", value: "#FAF0E6" },
-      { name: "Light Tan", value: "#D2B48C" },
-      { name: "Misty Gray", value: "#BEBEBE" }
+      { name: "Original Light", value: "#E8DDD3" },    // Default - softer cream
+      { name: "Fog Mist", value: "#DDD5CD" },        // Muted light beige
+      { name: "River Foam", value: "#E5DED5" },      // Very soft gray-cream
+      { name: "Pebble Gray", value: "#D9D0C7" },     // Light gray-beige
+      { name: "Sand Drift", value: "#E0D5C8" },      // Warm muted beige
+      { name: "Morning Haze", value: "#DBD3CA" }     // Cool light beige
     ]
   },
   
   beaver: {
     primary: [
       { name: "Original Beaver", value: "#C06638" },   // Default - original SVG color
-      { name: "Warm Chestnut", value: "#954535" },
-      { name: "Golden Oak", value: "#B8860B" },
-      { name: "Dark Walnut", value: "#5D4037" },
-      { name: "Gray Brown", value: "#7B6F63" },
-      { name: "Honey", value: "#DEB887" }
+      { name: "River Stone", value: "#8B7669" },      // Gray-brown like wet river rocks
+      { name: "Autumn Bark", value: "#A67C52" },      // Muted orange-brown
+      { name: "Deep Earth", value: "#6B4E3D" },       // Dark earthy brown
+      { name: "Morning Mist", value: "#9B8B7A" },     // Light taupe-brown
+      { name: "Cedar Wood", value: "#7D5A4F" }        // Reddish brown
     ],
     secondary: [
       { name: "Original Tan", value: "#D39979" },      // Default - original SVG color
-      { name: "Cream", value: "#FFF8DC" },
-      { name: "Light Tan", value: "#F5DEB3" },
-      { name: "Soft Beige", value: "#F5F5DC" },
-      { name: "Warm Sand", value: "#F4A460" },
-      { name: "Pale Gold", value: "#EEE8AA" }
+      { name: "Birch Cream", value: "#E8DDD3" },      // Cool-toned light cream
+      { name: "Sandy Shore", value: "#DCC9B6" },      // Muted sandy beige
+      { name: "Soft Pebble", value: "#D4C4B0" },      // Grayish tan
+      { name: "Wheat Field", value: "#E3D4C1" },      // Warm light tan
+      { name: "Driftwood", value: "#C8B8A1" }         // Darker grayish tan
     ]
   },
   
@@ -70,75 +70,75 @@ export const ANIMAL_COLOR_PALETTES: Record<string, AnimalColorPalette> = {
     primary: [
       { name: "Original Elephant", value: "#A8A8A8" }, // Default - original SVG color
       { name: "Classic Gray", value: "#808080" },
-      { name: "Charcoal", value: "#36454F" },
+      { name: "Terra Cotta", value: "#8B5A3C" },       // Earthy reddish-brown
       { name: "Slate", value: "#708090" },
       { name: "Stone", value: "#918E85" },
       { name: "Ash Gray", value: "#B2BEB5" }
     ],
     secondary: [
-      { name: "Original Light", value: "#E8E8E8" },    // Default - original SVG color
-      { name: "Light Gray", value: "#D3D3D3" },
-      { name: "Silver", value: "#C0C0C0" },
-      { name: "Platinum", value: "#E5E4E2" },
-      { name: "Dove Gray", value: "#D6D6D6" },
-      { name: "Pearl", value: "#F8F8FF" }
+      { name: "Original Pink", value: "#E2C2BB" },     // Default - original SVG color (already pinkish!)
+      { name: "Soft Blush", value: "#E8D5D2" },        // Very subtle pink-gray
+      { name: "Dusty Rose", value: "#D4B5B0" },        // Muted dusty pink
+      { name: "Warm Taupe", value: "#C9ADA7" },        // Pinkish taupe
+      { name: "Mushroom Pink", value: "#BFA5A0" },     // Grayish pink
+      { name: "Misty Mauve", value: "#D8C8C4" }        // Very pale pinkish gray
     ]
   },
   
   parrot: {
     primary: [
-      { name: "Original Red", value: "#FF4444" },      // Default - original SVG color
-      { name: "Emerald", value: "#50C878" },
-      { name: "Scarlet", value: "#FF2400" },
-      { name: "Royal Blue", value: "#4169E1" },
-      { name: "Golden Yellow", value: "#FFD700" },
-      { name: "Sunset Orange", value: "#FF6347" }
+      { name: "Original Red", value: "#E66C4F" },      // Default - soft coral red
+      { name: "Sage Green", value: "#87A96B" },        // Muted sage green
+      { name: "Dusty Rose", value: "#C08B93" },        // Soft dusty pink
+      { name: "Ocean Blue", value: "#5B84B1" },        // Muted ocean blue
+      { name: "Goldenrod", value: "#DAA557" },         // Soft golden yellow
+      { name: "Terracotta", value: "#CC7A57" }         // Earthy orange
     ],
     secondary: [
-      { name: "Original Yellow", value: "#FFD700" },   // Default - original SVG color
-      { name: "Lime Green", value: "#32CD32" },
-      { name: "Sky Blue", value: "#87CEEB" },
-      { name: "Coral", value: "#FF7F50" },
-      { name: "Sunshine", value: "#FFFF00" },
-      { name: "Turquoise", value: "#40E0D0" }
+      { name: "Original Blue", value: "#69759D" },     // Default - muted purple-blue
+      { name: "Seafoam", value: "#7BA098" },           // Soft green-blue
+      { name: "Lavender", value: "#9B8AA8" },          // Soft purple
+      { name: "Peach", value: "#E4A984" },             // Soft peachy tone
+      { name: "Butter", value: "#E3C88A" },            // Soft yellow
+      { name: "Dusty Teal", value: "#6B9B9B" }         // Muted teal
     ]
   },
   
   panda: {
     primary: [
-      { name: "Original Black", value: "#2C2C2C" },    // Default - original SVG color
-      { name: "Pure Black", value: "#000000" },
-      { name: "Charcoal", value: "#36454F" },
-      { name: "Midnight", value: "#191970" },
-      { name: "Ebony", value: "#3C3C3C" },
-      { name: "Jet Black", value: "#0A0A0A" }
+      { name: "Original Black", value: "#444444" },    // Default - original SVG color
+      { name: "Forest Shadow", value: "#3B4039" },    // Green-tinted dark gray
+      { name: "Storm Cloud", value: "#4B5570" },      // Purple-blue gray
+      { name: "Ink Black", value: "#1F1F1F" },        // Very dark, almost black
+      { name: "Dove Gray", value: "#6B6B6B" },        // Light gray
+      { name: "Cocoa Dust", value: "#514843" }        // Brown-tinted gray
     ],
     secondary: [
-      { name: "Original White", value: "#FAFAFA" },    // Default - original SVG color
-      { name: "Pure White", value: "#FFFFFF" },
-      { name: "Snow", value: "#FFFAFA" },
-      { name: "Ivory", value: "#FFFFF0" },
-      { name: "Pearl", value: "#FAF0E6" },
-      { name: "Cream", value: "#FFFDD0" }
+      { name: "Original Cream", value: "#E5DAD5" },    // Default - original SVG color
+      { name: "Bamboo White", value: "#EFF0E8" },     // Greenish white
+      { name: "Moonlight", value: "#E9E5F0" },        // Cool lavender white
+      { name: "Sand Dollar", value: "#F5EBDD" },      // Warm sandy cream
+      { name: "Blossom Pink", value: "#F0DDD7" },     // Soft pink cream
+      { name: "Arctic Snow", value: "#F0F3F7" }       // Blue-white, very light
     ]
   },
   
   owl: {
     primary: [
-      { name: "Original Owl", value: "#8B7355" },      // Default - original SVG color
-      { name: "Barn Brown", value: "#8B6F47" },
-      { name: "Tawny", value: "#CD853F" },
-      { name: "Rustic Gray", value: "#8A8680" },
-      { name: "Forest Brown", value: "#5C4033" },
-      { name: "Sandy Brown", value: "#F4A460" }
+      { name: "Original Bark", value: "#7A4F2D" },     // Default - from SVG
+      { name: "Tawny Brown", value: "#8B6F47" },      // Classic owl brown
+      { name: "Barn Owl Gray", value: "#6B6056" },    // Soft gray-brown
+      { name: "Midnight Feather", value: "#3E3B38" }, // Dark charcoal
+      { name: "Autumn Oak", value: "#7D5E48" },       // Warm medium brown
+      { name: "Driftwood", value: "#736659" }         // Gray-brown
     ],
     secondary: [
-      { name: "Original Buff", value: "#F5E6D3" },     // Default - original SVG color
-      { name: "Cream", value: "#FFFDD0" },
-      { name: "Buff", value: "#F0DC82" },
-      { name: "Light Gray", value: "#D3D3D3" },
-      { name: "Ivory", value: "#FFFFF0" },
-      { name: "Wheat", value: "#F5DEB3" }
+      { name: "Original Sand", value: "#9E7552" },     // Default - from SVG
+      { name: "Cream Feather", value: "#D4C4B0" },   // Light cream
+      { name: "Buff", value: "#C8AD88" },            // Classic buff color
+      { name: "Wheat", value: "#B5A08A" },           // Soft wheat
+      { name: "Pale Oak", value: "#BCA589" },        // Light brown
+      { name: "Morning Mist", value: "#C7BDB0" }     // Light gray-beige
     ]
   },
   
@@ -157,6 +157,25 @@ export const ANIMAL_COLOR_PALETTES: Record<string, AnimalColorPalette> = {
       { name: "Light Tan", value: "#FAEBD7" },
       { name: "Silver", value: "#C0C0C0" },
       { name: "Buff", value: "#F0DC82" }
+    ]
+  },
+  
+  'border-collie': {
+    primary: [
+      { name: "Original Charcoal", value: "#59554C" },  // Default - from SVG
+      { name: "Midnight", value: "#2C2A28" },          // Very dark gray
+      { name: "Chocolate", value: "#4A3C36" },         // Soft dark brown
+      { name: "Blue Slate", value: "#546B7A" },       // Muted blue-gray
+      { name: "Warm Sable", value: "#6B5D54" },       // Warm brown-gray
+      { name: "Ash Gray", value: "#6E6B68" }          // Medium gray
+    ],
+    secondary: [
+      { name: "Original Mist", value: "#D7D7D7" },     // Default - from SVG
+      { name: "Cloud White", value: "#F0F0F0" },      // Soft white
+      { name: "Warm Cream", value: "#E8E4DC" },       // Warm off-white
+      { name: "Pearl Gray", value: "#E0DDD8" },       // Light warm gray
+      { name: "Oatmeal", value: "#DDD5C7" },          // Light beige
+      { name: "Silver Birch", value: "#D4D0CA" }      // Cool light gray
     ]
   }
 };
