@@ -48,7 +48,7 @@ const DiscussionDetail = lazy(() => import("@/pages/community/DiscussionDetail")
 // Test pages removed during cleanup
 const AvatarEditor = lazy(() => import("@/pages/avatar-editor"));
 const AvatarItemPositioner = lazy(() => import("@/pages/admin/avatar-item-positioner"));
-const TestParrot = lazy(() => import("@/pages/test-parrot"));
+// const TestParrot = lazy(() => import("@/pages/test-parrot"));
 const TestSVGAvatar = lazy(() => import("@/pages/test-svg-avatar"));
 const AvatarItemPositionerV2 = lazy(() => import("@/pages/admin/avatar-item-positioner-v2"));
 // const AddStoreItem = lazy(() => import("@/pages/admin/add-store-item")); // Removed - use StoreManagement instead
@@ -218,7 +218,7 @@ function Router() {
             <Route path="/admin/diagnostic" component={DiagnosticCheck} />
             <Route path="/admin/feedback" component={AdminFeedback} />
             <Route path="/test/customizer" component={CustomizerTest} />
-            <Route path="/test/parrot" component={TestParrot} />
+            {/* <Route path="/test/parrot" component={TestParrot} /> */}
             {/* Test admin routes removed during cleanup */}
           </>
         ) : (
