@@ -67,7 +67,7 @@ export default function AnimalResult({
                 </div>
               </div>
               <h2 className="text-4xl font-bold text-gray-800 mb-2">
-                You're {animal.name === 'Otter' ? 'an' : 'a'} {animal.name}!
+                You&apos;re {animal.name === 'Otter' ? 'an' : 'a'} {animal.name}!
               </h2>
               <p className="text-xl text-gray-600 mb-4" style={{ color: animal.color }}>
                 {animal.description}

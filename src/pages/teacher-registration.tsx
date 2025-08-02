@@ -82,7 +82,11 @@ export default function TeacherRegistration() {
           description: "Your account has been created successfully. You're now logged in and ready to create your first class.",
           duration: 5000, // Show for 5 seconds
         });
-        setLocation("/dashboard");
+        
+        // Small delay to ensure auth state propagates before navigation
+        setTimeout(() => {
+          setLocation("/dashboard");
+        }, 100);
       }
     },
     onError: (error: any) => {

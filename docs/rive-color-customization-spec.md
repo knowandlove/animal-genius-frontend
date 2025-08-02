@@ -1,4 +1,6 @@
 # Rive Color Customization Specification
+
+**Last Updated:** July 29, 2025
 ## Animal Genius - Meerkat Avatar
 
 ### Overview

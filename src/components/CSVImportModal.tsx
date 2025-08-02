@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, FileSpreadsheet, CheckCircle, X } from "lucide-react";
+import { Upload, FileSpreadsheet, CheckCircle } from "lucide-react";
 
 interface CSVImportModalProps {
   isOpen: boolean;
@@ -119,8 +119,8 @@ export function CSVImportModal({ isOpen, onClose, classId, onImportComplete }: C
               <h4 className="font-semibold mb-2">Required CSV Format:</h4>
               <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded font-mono text-sm">
                 firstName,lastInitial,gradeLevel,personalityType<br />
-                "Emma","T","5th Grade","ENFP"<br />
-                "Liam","R","6th Grade","ISTJ"
+                &quot;Emma&quot;,&quot;T&quot;,&quot;5th Grade&quot;,&quot;ENFP&quot;<br />
+                &quot;Liam&quot;,&quot;R&quot;,&quot;6th Grade&quot;,&quot;ISTJ&quot;
               </div>
               <div className="mt-3 text-sm text-muted-foreground">
                 <strong>Supported personality types:</strong><br />

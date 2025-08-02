@@ -124,7 +124,7 @@ export function PassportCodeEntry() {
           </form>
 
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>Don't have a passport code?</p>
+            <p>Don&apos;t have a passport code?</p>
             <p>Ask your teacher to help you take the Animal Genius Quiz!</p>
           </div>
         </CardContent>

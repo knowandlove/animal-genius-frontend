@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { QrCode, Link, Users, Timer, CheckCircle, BarChart } from 'lucide-react';
+import { QrCode, Link, Users, CheckCircle, BarChart } from 'lucide-react';
 import { LoadingSpinner } from '@/components/loading-spinner';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -61,7 +60,6 @@ export function ClassValuesSessionModal({
       try {
         return await apiRequest('GET', `/api/classes/${classId}/lessons/4/activity/2/status`);
       } catch (error) {
-        console.log('No existing session found');
         return null;
       }
     },
@@ -89,7 +87,7 @@ export function ClassValuesSessionModal({
         description: "Voting session has been extended by 15 more minutes.",
       });
     },
-    onError: (error) => {
+    onError: (_error) => {
       toast({
         title: "Error Extending Session",
         description: "Could not extend the voting session. Please try again.",
@@ -112,7 +110,7 @@ export function ClassValuesSessionModal({
         description: "All votes have been cleared and the session has been restarted.",
       });
     },
-    onError: (error) => {
+    onError: (_error) => {
       toast({
         title: "Error Resetting Session",
         description: "Could not reset the voting session. Please try again.",
@@ -133,7 +131,7 @@ export function ClassValuesSessionModal({
         description: "Students can now join and vote on class values.",
       });
     },
-    onError: (error) => {
+    onError: (_error) => {
       toast({
         title: "Error Starting Session",
         description: "Could not start the voting session. Please try again.",
@@ -162,7 +160,7 @@ export function ClassValuesSessionModal({
         setLocation(`/class-values-results/${classId}`);
       }, 1000);
     },
-    onError: (error) => {
+    onError: (_error) => {
       toast({
         title: "Error Finalizing Session",
         description: "Could not finalize the voting session. Please try again.",
@@ -228,7 +226,7 @@ export function ClassValuesSessionModal({
         <DialogHeader>
           <DialogTitle className="text-2xl">Class Values Voting Session</DialogTitle>
           <p className="text-gray-600">
-            Help your students choose the core values that will become your classroom's roots.
+            Help your students choose the core values that will become your classroom&apos;s roots.
           </p>
         </DialogHeader>
 
@@ -357,7 +355,6 @@ export function ClassValuesSessionModal({
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Timer className="h-5 w-5" />
                     Session Controls
                   </CardTitle>
                 </CardHeader>

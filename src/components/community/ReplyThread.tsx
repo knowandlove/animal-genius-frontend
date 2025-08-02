@@ -30,7 +30,8 @@ export function ReplyThread({
     repliesCount: replies.length,
     discussionId,
     parentReplyId,
-    level
+    level,
+    replies: replies.map(r => ({ id: r.id, parentReplyId: r.parentReplyId }))
   });
   const { user } = useAuth();
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
@@ -57,8 +58,17 @@ export function ReplyThread({
       repliesByParent.get(parentId)!.push(reply);
     }
     
+    const levelReplies = repliesByParent.get(parentReplyId) || [];
+    console.log('[ReplyThread] Reply processing:', {
+      parentReplyId,
+      mapKeys: Array.from(repliesByParent.keys()).map(k => k === null ? 'null' : k === undefined ? 'undefined' : k),
+      levelRepliesCount: levelReplies.length,
+      levelReplies: levelReplies.map(r => ({ id: r.id, parentReplyId: r.parentReplyId })),
+      allRepliesParentIds: replies.map(r => ({ id: r.id, parentReplyId: r.parentReplyId }))
+    });
+    
     return {
-      levelReplies: repliesByParent.get(parentReplyId) || [],
+      levelReplies,
       repliesByParent,
     };
   }, [replies, parentReplyId]);

@@ -44,7 +44,9 @@ export function useDiscussion(id: string | undefined) {
         id: result.id,
         title: result.title,
         replyCount: result.replies?.length || 0,
-        hasReplies: !!result.replies
+        hasReplies: !!result.replies,
+        repliesArray: result.replies,
+        fullResult: result
       });
       return result;
     },

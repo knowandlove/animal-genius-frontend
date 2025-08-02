@@ -578,9 +578,6 @@ export const validateQuestionBalance = () => {
     count: getQuestionsByDimension(dim).length
   }));
   
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Question distribution by dimension:', counts);
-  }
   return counts;
 };
 

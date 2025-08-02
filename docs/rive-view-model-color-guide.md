@@ -1,5 +1,7 @@
 # Rive View Model Color Customization Guide
 
+**Last Updated:** July 29, 2025
+
 ## Overview
 This guide walks through setting up dynamic color customization using Rive's View Model and Data Binding features (available since 2024).
 

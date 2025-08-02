@@ -1,5 +1,7 @@
 # Rive State Machine Color Customization Setup
 
+**Last Updated:** July 29, 2025
+
 Since direct runtime color manipulation isn't well-documented in Rive's React runtime, we'll use State Machines for color customization.
 
 ## State Machine Approach

@@ -33,11 +33,29 @@ import { ReplyThread } from '@/components/community/ReplyThread';
 import { cn } from '@/lib/utils';
 import type { CreateReplyRequest, UpdateDiscussionRequest, Discussion, Tag } from '@/types/community';
 import { CATEGORY_COLORS, CATEGORY_LABELS } from '@/config/community';
+import { getAssetUrl } from '@/utils/cloud-assets';
 
 const editDiscussionSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters').max(200, 'Title must be less than 200 characters'),
   body: z.string().min(20, 'Description must be at least 20 characters').max(5000, 'Description must be less than 5000 characters'),
 });
+
+// Helper function for animal image paths
+function getAnimalImagePath(animal: string): string {
+  const imageMap: Record<string, string> = {
+    'Meerkat': '/images/meerkat.png',
+    'Panda': '/images/panda.png',
+    'Owl': '/images/owl.png',
+    'Beaver': '/images/beaver.png',
+    'Elephant': '/images/elephant.png',
+    'Otter': '/images/otter.png',
+    'Parrot': '/images/parrot.png',
+    'Border Collie': '/images/collie.png'
+  };
+  
+  const imagePath = imageMap[animal] || '/images/kal-character.png';
+  return getAssetUrl(imagePath);
+}
 
 export default function DiscussionDetail() {
   const { user, isAuthenticated } = useAuth();
@@ -66,12 +84,15 @@ export default function DiscussionDetail() {
   // Debug logging
   useEffect(() => {
     if (discussion) {
+      console.log('[DiscussionDetail] Full discussion object:', discussion);
       console.log('[DiscussionDetail] Discussion data:', {
         id: discussion.id,
         title: discussion.title,
         hasReplies: !!discussion.replies,
         repliesLength: discussion.replies?.length || 0,
-        repliesData: discussion.replies
+        repliesData: discussion.replies,
+        replyCount: discussion.replyCount,
+        allKeys: Object.keys(discussion)
       });
     }
   }, [discussion]);
@@ -346,22 +367,34 @@ export default function DiscussionDetail() {
 
             {/* Author info */}
             <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-3">
                 {discussion.teacher && (
                   <>
-                    <span className="font-medium">
-                      {discussion.teacher.firstName} {discussion.teacher.lastName}
-                    </span>
                     {discussion.teacher.personalityAnimal && (
-                      <Badge variant="outline" className="text-xs">
-                        {discussion.teacher.personalityAnimal}
-                      </Badge>
+                      <img
+                        src={getAnimalImagePath(discussion.teacher.personalityAnimal)}
+                        alt={`${discussion.teacher.personalityAnimal} avatar`}
+                        className="w-10 h-10 object-contain"
+                        onError={(e) => {
+                          e.currentTarget.src = getAssetUrl('/images/kal-character.png');
+                        }}
+                      />
                     )}
-                    {discussion.teacher.schoolOrganization && (
-                      <span className="text-xs">
-                        • {discussion.teacher.schoolOrganization}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium">
+                        {discussion.teacher.firstName} {discussion.teacher.lastName}
                       </span>
-                    )}
+                      {discussion.teacher.personalityAnimal && (
+                        <Badge variant="outline" className="text-xs">
+                          {discussion.teacher.personalityAnimal}
+                        </Badge>
+                      )}
+                      {discussion.teacher.schoolOrganization && (
+                        <span className="text-xs">
+                          • {discussion.teacher.schoolOrganization}
+                        </span>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
@@ -495,21 +528,31 @@ export default function DiscussionDetail() {
           </Card>
         )}
 
-        {discussion.replies && discussion.replies.length > 0 ? (
-          <ReplyThread 
-            replies={discussion.replies} 
-            discussionId={discussion.id}
-            discussionAuthorId={discussion.teacherId}
-            parentReplyId={undefined}
-          />
-        ) : (
-          <Card>
+        {(() => {
+          console.log('[DiscussionDetail] Rendering replies section:', {
+            discussionId: discussion?.id,
+            hasDiscussion: !!discussion,
+            hasReplies: !!discussion?.replies,
+            repliesLength: discussion?.replies?.length || 0,
+            replies: discussion?.replies,
+            discussionKeys: discussion ? Object.keys(discussion) : []
+          });
+          return discussion?.replies && discussion.replies.length > 0 ? (
+            <ReplyThread 
+              replies={discussion.replies} 
+              discussionId={discussion.id}
+              discussionAuthorId={discussion.teacherId}
+              parentReplyId={null}
+            />
+          ) : (
+            <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
               <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-20" />
               <p>No replies yet. Be the first to share your thoughts!</p>
             </CardContent>
           </Card>
-        )}
+        );
+        })()}
       </div>
 
       {/* Delete Dialog */}

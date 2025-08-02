@@ -238,7 +238,7 @@ export default function ClassEconomy() {
   const filteredStudents = useMemo(() => {
     if (!economyData?.students) return [];
     
-    let filtered = economyData.students.filter((student: Student) => {
+    const filtered = economyData.students.filter((student: Student) => {
       const matchesSearch = student.studentName.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesAnimal = filterAnimal === "all" || student.animalType === filterAnimal;
       return matchesSearch && matchesAnimal;

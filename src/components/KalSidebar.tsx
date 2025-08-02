@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface KalSidebarProps {
@@ -7,7 +6,7 @@ interface KalSidebarProps {
   totalQuestions: number;
 }
 
-export function KalSidebar({ message, questionProgress, totalQuestions }: KalSidebarProps) {
+export function KalSidebar({ message, questionProgress }: KalSidebarProps) {
   return (
     <div className="hidden lg:flex flex-col h-full">
       <div className="flex-1"></div>

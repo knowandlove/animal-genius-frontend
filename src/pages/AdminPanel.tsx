@@ -11,13 +11,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Users, School, BarChart3, Shield, Trash2, Key, Edit, Eye, Activity, Clock, Database, Wifi, Palette, Package, Sparkles, Monitor, Home, Dog, AlertCircle } from "lucide-react";
+import { Users, School, BarChart3, Shield, Trash2, Key, Edit, Eye, Activity, Clock, Database, Wifi, Palette, Package, Sparkles, Monitor, Home, Dog, AlertCircle, MessageSquare } from "lucide-react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { SystemMonitoringTab } from "@/components/admin/SystemMonitoringTab";
 import { AdminDashboardSummary } from "@/components/admin/AdminDashboardSummary";
 import { EnhancedMonitoringTab } from "@/components/admin/EnhancedMonitoringTab";
+import { AdminFeedbackDashboard } from "@/components/admin/AdminFeedbackDashboard";
 
 interface Teacher {
   id: number;
@@ -274,12 +275,13 @@ export default function AdminPanel() {
       </div>
 
       <Tabs defaultValue="dashboard" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="monitoring">Health</TabsTrigger>
           <TabsTrigger value="teachers">Teachers</TabsTrigger>
           <TabsTrigger value="classes">Classes</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="feedback">Feedback</TabsTrigger>
           <TabsTrigger value="avatar-tools">Store Tools</TabsTrigger>
         </TabsList>
 
@@ -521,6 +523,27 @@ export default function AdminPanel() {
                   </CardContent>
                 </Card>
 
+                <Card className="border-2 border-orange-500 hover:border-orange-600 transition-colors">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      Lesson Feedback
+                      <Badge className="bg-orange-100 text-orange-800">Analytics</Badge>
+                    </CardTitle>
+                    <CardDescription>
+                      View and analyze teacher feedback on lessons
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button
+                      onClick={() => setLocation("/admin/feedback")}
+                      className="w-full bg-orange-600 hover:bg-orange-700"
+                    >
+                      Open Feedback Dashboard
+                    </Button>
+                  </CardContent>
+                </Card>
+
                 <Card className="border-2 border-blue-500 hover:border-blue-600 transition-colors">
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
@@ -627,6 +650,10 @@ export default function AdminPanel() {
               </Alert>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="feedback" className="space-y-4">
+          <AdminFeedbackDashboard />
         </TabsContent>
       </Tabs>
 

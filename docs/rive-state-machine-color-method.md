@@ -1,5 +1,7 @@
 # Rive State Machine Color Method (Reliable Fallback)
 
+**Last Updated:** July 29, 2025
+
 If you can't find the Data Binding panel, this State Machine approach is guaranteed to work and gives you predefined color themes.
 
 ## How It Works

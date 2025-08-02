@@ -25,6 +25,12 @@ export async function callEdgeFunction<T = any>(
     throw new Error(error.message || `Failed to call ${functionName}`);
   }
 
+  // Check if the response contains an error (Edge Functions can return errors in data)
+  if (data && typeof data === 'object' && 'error' in data) {
+    console.error(`Edge function returned error:`, data.error);
+    throw new Error(data.error || `Edge function ${functionName} returned an error`);
+  }
+
   return data as T;
 }
 

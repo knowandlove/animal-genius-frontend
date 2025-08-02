@@ -184,7 +184,7 @@ export default function ClassReport() {
             <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">No Class Data Available</h2>
             <p className="text-gray-600 mb-4">
-              Analytics loaded: {!!analytics ? 'Yes' : 'No'}<br/>
+              Analytics loaded: {analytics ? 'Yes' : 'No'}<br/>
               Analytics class: {(analytics as any)?.class ? 'Yes' : 'No'}<br/>
               Class ID: {classId}
             </p>

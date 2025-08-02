@@ -2,6 +2,7 @@
  * Utility functions for SVG color manipulation
  */
 
+import DOMPurify from 'dompurify';
 import { getAssetUrl } from './cloud-assets';
 
 export interface SVGColorGroups {
@@ -162,7 +163,11 @@ export function createInlineSVG(
   const container = document.createElement('div');
   container.style.width = `${width}px`;
   container.style.height = `${height}px`;
-  container.innerHTML = svgContent;
+  // Sanitize SVG content before inserting
+  const sanitized = DOMPurify.sanitize(svgContent, {
+    USE_PROFILES: { svg: true, svgFilters: true }
+  });
+  container.innerHTML = sanitized;
   
   const svg = container.querySelector('svg');
   if (svg) {

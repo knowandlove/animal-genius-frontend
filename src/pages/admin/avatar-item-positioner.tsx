@@ -327,7 +327,7 @@ export default function AvatarItemPositioner() {
 
   const getProgress = () => {
     let configured = 0;
-    let total = AVATAR_ITEMS.length * ANIMALS.length;
+    const total = AVATAR_ITEMS.length * ANIMALS.length;
     
     AVATAR_ITEMS.forEach((item: StoreItem) => {
       ANIMALS.forEach(animal => {

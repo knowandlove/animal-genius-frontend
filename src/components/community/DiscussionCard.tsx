@@ -5,6 +5,24 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { Discussion } from '@/types/community';
 import { CATEGORY_COLORS, CATEGORY_LABELS } from '@/config/community';
+import { getAssetUrl } from '@/utils/cloud-assets';
+
+// Helper function for animal image paths
+function getAnimalImagePath(animal: string): string {
+  const imageMap: Record<string, string> = {
+    'Meerkat': '/images/meerkat.png',
+    'Panda': '/images/panda.png',
+    'Owl': '/images/owl.png',
+    'Beaver': '/images/beaver.png',
+    'Elephant': '/images/elephant.png',
+    'Otter': '/images/otter.png',
+    'Parrot': '/images/parrot.png',
+    'Border Collie': '/images/collie.png'
+  };
+  
+  const imagePath = imageMap[animal] || '/images/kal-character.png';
+  return getAssetUrl(imagePath);
+}
 
 interface DiscussionCardProps {
   discussion: Discussion;
@@ -96,6 +114,16 @@ export function DiscussionCard({ discussion, isPinned, onClick }: DiscussionCard
           <div className="flex items-center gap-2">
             {discussion.teacher && (
               <>
+                {discussion.teacher.personalityAnimal && (
+                  <img
+                    src={getAnimalImagePath(discussion.teacher.personalityAnimal)}
+                    alt={`${discussion.teacher.personalityAnimal} avatar`}
+                    className="w-6 h-6 object-contain"
+                    onError={(e) => {
+                      e.currentTarget.src = getAssetUrl('/images/kal-character.png');
+                    }}
+                  />
+                )}
                 <span className="font-medium">
                   {discussion.teacher.firstName} {discussion.teacher.lastName?.charAt(0)}.
                 </span>

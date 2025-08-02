@@ -1,6 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { Route, Switch } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { LoadingSpinner } from "@/components/loading-spinner";
@@ -48,7 +48,8 @@ const DiscussionDetail = lazy(() => import("@/pages/community/DiscussionDetail")
 // Test pages removed during cleanup
 const AvatarEditor = lazy(() => import("@/pages/avatar-editor"));
 const AvatarItemPositioner = lazy(() => import("@/pages/admin/avatar-item-positioner"));
-// const TestSVGAvatar = lazy(() => import("@/pages/test-svg-avatar"));
+const TestParrot = lazy(() => import("@/pages/test-parrot"));
+const TestSVGAvatar = lazy(() => import("@/pages/test-svg-avatar"));
 const AvatarItemPositionerV2 = lazy(() => import("@/pages/admin/avatar-item-positioner-v2"));
 // const AddStoreItem = lazy(() => import("@/pages/admin/add-store-item")); // Removed - use StoreManagement instead
 const StoreManagement = lazy(() => import("@/pages/admin/store-management-direct"));
@@ -57,6 +58,7 @@ const AnimalSizer = lazy(() => import("@/pages/admin/animal-sizer"));
 const BulkPositionUpdate = lazy(() => import("@/pages/admin/bulk-position-update"));
 const MakeAdmin = lazy(() => import("@/pages/admin/make-admin"));
 const DiagnosticCheck = lazy(() => import("@/pages/admin/diagnostic-check"));
+const AdminFeedback = lazy(() => import("@/pages/admin/AdminFeedback"));
 const CustomizerTest = lazy(() => import("@/pages/CustomizerTest"));
 // Test admin pages removed during cleanup
 
@@ -170,7 +172,7 @@ function Router() {
         
         {/* Test/Development routes - removed during cleanup */}
         <Route path="/avatar-editor" component={AvatarEditor} />
-        {/* <Route path="/test-svg-avatar" component={TestSVGAvatar} /> */}
+        <Route path="/test-svg-avatar" component={TestSVGAvatar} />
         
         {/* Authentication routes - always available */}
         <Route path="/register" component={TeacherRegistration} />
@@ -214,7 +216,9 @@ function Router() {
             <Route path="/admin/bulk-update" component={BulkPositionUpdate} />
             <Route path="/admin/make-admin" component={MakeAdmin} />
             <Route path="/admin/diagnostic" component={DiagnosticCheck} />
+            <Route path="/admin/feedback" component={AdminFeedback} />
             <Route path="/test/customizer" component={CustomizerTest} />
+            <Route path="/test/parrot" component={TestParrot} />
             {/* Test admin routes removed during cleanup */}
           </>
         ) : (

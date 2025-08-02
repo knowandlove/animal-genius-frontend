@@ -177,11 +177,22 @@ export default function StudentQuiz() {
       if (!classCode) {
         throw new Error("Class code is required");
       }
+      if (answers.length < questions.length) {
+        throw new Error(`Please answer all ${questions.length} questions. You've answered ${answers.length}.`);
+      }
       
       // Convert answers array to object format for Edge Function
       const answersObj: Record<string, 'A' | 'B' | 'C' | 'D'> = {};
       answers.forEach((answer) => {
         answersObj[`q${answer.questionId}`] = answer.answer;
+      });
+      
+      console.log('Submitting quiz with data:', {
+        classCode,
+        firstName,
+        lastInitial,
+        answersCount: Object.keys(answersObj).length,
+        answers: answersObj
       });
       
       // Call Edge Function
@@ -302,6 +313,7 @@ export default function StudentQuiz() {
 
     if (currentQuestion === questions.length - 1) {
       // Calculate results
+      console.log('Quiz complete! Total answers:', updatedAnswers.length);
       const quizResults = calculateResults(updatedAnswers);
       setResults(quizResults);
       setQuizComplete(true);
@@ -409,10 +421,15 @@ export default function StudentQuiz() {
   useEffect(() => {
     if (quizComplete && results && !hasSubmitted && !submitResultsMutation.isPending) {
       console.log('Auto-saving quiz results...');
-      submitResultsMutation.mutate();
-      setHasSubmitted(true);
+      console.log('Total answers:', answers.length, 'Total questions:', questions.length);
+      if (answers.length === questions.length) {
+        submitResultsMutation.mutate();
+        setHasSubmitted(true);
+      } else {
+        console.warn('Not all questions answered, skipping auto-submit');
+      }
     }
-  }, [quizComplete, results, hasSubmitted, submitResultsMutation]);
+  }, [quizComplete, results, hasSubmitted, submitResultsMutation, answers.length, questions.length]);
 
   if (classLoading) {
     return (

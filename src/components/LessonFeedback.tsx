@@ -29,6 +29,7 @@ export function LessonFeedback({ lessonId, lessonTitle }: LessonFeedbackProps) {
   const [hoveredRating, setHoveredRating] = useState(0);
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showThankYou, setShowThankYou] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -43,6 +44,7 @@ export function LessonFeedback({ lessonId, lessonTitle }: LessonFeedbackProps) {
     if (existingFeedback) {
       setRating(existingFeedback.rating);
       setComment(existingFeedback.comment || "");
+      setShowThankYou(true);
     }
   }, [existingFeedback]);
 
@@ -54,11 +56,8 @@ export function LessonFeedback({ lessonId, lessonTitle }: LessonFeedbackProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/classes/lessons/${lessonId}/my-feedback`] });
-      toast({
-        title: "Feedback submitted",
-        description: "Thank you for your feedback!",
-      });
       setIsSubmitting(false);
+      setShowThankYou(true);
     },
     onError: (error: Error) => {
       toast({
@@ -120,16 +119,36 @@ export function LessonFeedback({ lessonId, lessonTitle }: LessonFeedbackProps) {
     );
   }
 
+  if (showThankYou) {
+    return (
+      <Card className="mt-8">
+        <CardContent className="py-12 text-center">
+          <div className="mb-4">
+            <Star className="h-12 w-12 mx-auto text-yellow-400 fill-yellow-400" />
+          </div>
+          <h3 className="text-xl font-semibold mb-2">Thank you for your feedback!</h3>
+          <p className="text-muted-foreground mb-4">
+            Your input helps us improve our lessons.
+          </p>
+          {existingFeedback && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowThankYou(false)}
+            >
+              Edit Feedback
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="mt-8">
       <CardHeader>
         <CardTitle className="text-lg">
           How was the {lessonTitle} Lesson?
-          {existingFeedback && (
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
-              (You can update your feedback)
-            </span>
-          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

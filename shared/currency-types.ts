@@ -6,7 +6,8 @@ export type TransactionType =
   | 'teacher_gift'      // Teacher manually gives coins
   | 'quiz_complete'     // Automatic reward for completing quiz
   | 'achievement'       // Milestone rewards
-  | 'purchase';         // Spending coins in store
+  | 'purchase'          // Spending coins in store
+  | 'lesson_complete';  // Automatic reward for lesson completion
 
 // Store item categories
 export type ItemType = 
@@ -91,6 +92,7 @@ export function isValidPassportCode(code: string): boolean {
 // Currency constants
 export const CURRENCY_CONSTANTS = {
   QUIZ_COMPLETION_REWARD: 50,  // Coins for completing a quiz
+  LESSON_COMPLETION_REWARD: 10, // Coins for completing a lesson
   MAX_TRANSACTION_AMOUNT: 1000, // Max coins per teacher gift
   MAX_ITEM_COST: 10000,        // Max cost for store items
   STARTING_BALANCE: 0,         // Starting currency balance
@@ -112,13 +114,13 @@ export const CURRENCY_CONSTANTS = {
 export const STORE_CATALOG: StoreItem[] = [];
 
 /** @deprecated This function always returns undefined. Use server data instead. */
-export function getItemById(itemId: string): StoreItem | undefined {
+export function getItemById(_itemId: string): StoreItem | undefined {
   console.warn('getItemById is deprecated. Store items should come from the server.');
   return undefined;
 }
 
 /** @deprecated This function always returns empty array. Use server data instead. */
-export function getItemsByType(type: ItemType): StoreItem[] {
+export function getItemsByType(_type: ItemType): StoreItem[] {
   console.warn('getItemsByType is deprecated. Store items should come from the server.');
   return [];
 }
@@ -131,6 +133,7 @@ export function canAffordItem(balance: number, itemCost: number): boolean {
 // Transaction reason templates
 export const TRANSACTION_REASONS = {
   QUIZ_COMPLETE: 'Quiz completion reward',
+  LESSON_COMPLETE: 'Lesson completion reward',
   TEACHER_GIFT: 'Teacher bonus',
   GOOD_BEHAVIOR: 'Excellent behavior',
   PARTICIPATION: 'Great participation',

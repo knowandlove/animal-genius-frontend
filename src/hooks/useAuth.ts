@@ -19,21 +19,34 @@ export function useAuth() {
 
   // Load user from localStorage on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-      } catch (error) {
-        console.error("Error parsing stored user:", error);
-        localStorage.removeItem("user");
+    const loadUserFromStorage = () => {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+        } catch (error) {
+          console.error("Error parsing stored user:", error);
+          localStorage.removeItem("user");
+        }
       }
-    }
+    };
+
+    // Initial load
+    loadUserFromStorage();
     setHasInitialized(true);
     setIsLoading(false);
+
+    // Listen for auth changes from other parts of the app
+    const handleAuthChange = () => {
+      loadUserFromStorage();
+    };
+    
+    window.addEventListener('authTokenChanged', handleAuthChange);
     
     return () => {
       mountedRef.current = false;
+      window.removeEventListener('authTokenChanged', handleAuthChange);
     };
   }, []);
 
