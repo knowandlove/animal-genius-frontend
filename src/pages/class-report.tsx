@@ -34,6 +34,15 @@ export default function ClassReport() {
     queryKey: [`/api/classes/${classId}/pairings`],
     enabled: !!classId && !!localStorage.getItem("authToken") && !authLoading && !!user
   });
+  
+  console.log('ClassReport - Query states:', {
+    analyticsLoading,
+    analyticsError,
+    hasAnalytics: !!analytics,
+    pairingsLoading,
+    pairingsError,
+    hasPairings: !!pairings
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -49,8 +58,11 @@ export default function ClassReport() {
   };
 
   if (authLoading || !user) {
+    console.log('ClassReport - Still loading or no user:', { authLoading, user });
     return <div>Loading...</div>;
   }
+  
+  console.log('ClassReport - Past auth check, rendering main content');
 
   // Helper function to navigate to student view
   const handleStudentClick = (submissionId: number) => {
