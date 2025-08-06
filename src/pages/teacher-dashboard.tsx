@@ -205,14 +205,15 @@ export default function TeacherDashboard() {
     });
   };
   
-  const copyClassIslandLink = (code: string) => {
-    const url = `${window.location.origin}/class/${code}`;
-    navigator.clipboard.writeText(url);
-    toast({
-      title: "Island link copied!",
-      description: "Class Island link has been copied to clipboard.",
-    });
-  };
+  // v2 Feature - Class Island disabled
+  // const copyClassIslandLink = (code: string) => {
+  //   const url = `${window.location.origin}/class/${code}`;
+  //   navigator.clipboard.writeText(url);
+  //   toast({
+  //     title: "Island link copied!",
+  //     description: "Class Island link has been copied to clipboard.",
+  //   });
+  // };
 
   const deleteClassMutation = useMutation({
     mutationFn: async (classId: string) => {
@@ -512,7 +513,8 @@ export default function TeacherDashboard() {
                           >
                             Learning Lounge
                           </Button>
-                          <Button
+                          {/* v2 Feature - Class Island buttons disabled */}
+                          {/* <Button
                             variant="outline"
                             onClick={() =>
                               setLocation(`/teacher/class/${cls.id}/island`)
@@ -528,7 +530,7 @@ export default function TeacherDashboard() {
                           >
                             <Clipboard className="h-4 w-4 mr-2" />
                             Copy Island Link
-                          </Button>
+                          </Button> */}
                         </div>
                       </CardContent>
                     </Card>

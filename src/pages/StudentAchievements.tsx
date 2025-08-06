@@ -9,6 +9,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { getStoredPassportCode } from '@/lib/passport-auth';
 import { ArrowLeft, Trophy, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { StudentHeader } from '@/components/StudentHeader';
 
 interface Achievement {
   id: string;
@@ -99,7 +100,10 @@ export default function StudentAchievements() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-mint/20 to-soft-lime/20">
-      {/* Header */}
+      {/* Student Header */}
+      <StudentHeader />
+      
+      {/* Page Navigation */}
       <div className="bg-white/80 backdrop-blur-sm shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">

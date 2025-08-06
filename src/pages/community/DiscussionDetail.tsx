@@ -104,15 +104,15 @@ export default function DiscussionDetail() {
 
   const isAuthor = user?.id === discussion?.teacherId;
   
-  // Populate edit form when discussion loads
+  // Populate edit form when edit modal opens
   useEffect(() => {
-    if (discussion) {
+    if (isEditOpen && discussion) {
       editForm.reset({
         title: discussion.title,
         body: discussion.body,
       });
     }
-  }, [discussion, editForm]);
+  }, [isEditOpen]); // Only reset when modal opens, not on every discussion change
   
   // Set existing interactions
   useEffect(() => {
@@ -542,7 +542,7 @@ export default function DiscussionDetail() {
               replies={discussion.replies} 
               discussionId={discussion.id}
               discussionAuthorId={discussion.teacherId}
-              parentReplyId={null}
+              parentReplyId={undefined}
             />
           ) : (
             <Card>

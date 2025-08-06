@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { preloadMultipleRiveFiles } from '@/utils/rive-runtime-loader';
@@ -11,7 +11,7 @@ interface StoreDataContextType {
   refetchPositions: () => void;
 }
 
-const StoreDataContext = createContext<StoreDataContextType | undefined>(undefined);
+export const StoreDataContext = createContext<StoreDataContextType | undefined>(undefined);
 
 // Provider component that fetches data once at app level
 export function StoreDataProvider({ children }: { children: ReactNode }) {
@@ -68,13 +68,22 @@ export function StoreDataProvider({ children }: { children: ReactNode }) {
     }
   }, [storeItems]);
 
-  const contextValue: StoreDataContextType = {
-    storeItems: storeItems as any[],
-    itemPositions: itemPositions as any[],
+  // Memoize arrays to prevent unnecessary re-renders and infinite loops
+  const memoizedStoreItems = useMemo(() => {
+    return storeItems as any[];
+  }, [storeItems]);
+
+  const memoizedItemPositions = useMemo(() => {
+    return itemPositions as any[];
+  }, [itemPositions]);
+
+  const contextValue: StoreDataContextType = useMemo(() => ({
+    storeItems: memoizedStoreItems,
+    itemPositions: memoizedItemPositions,
     isLoading: isLoadingStore || isLoadingPositions,
     error: storeError || positionsError,
     refetchPositions: () => refetchPositions(),
-  };
+  }), [memoizedStoreItems, memoizedItemPositions, isLoadingStore, isLoadingPositions, storeError, positionsError, refetchPositions]);
 
   return (
     <StoreDataContext.Provider value={contextValue}>

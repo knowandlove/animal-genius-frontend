@@ -33,7 +33,7 @@ export default function ClassReport() {
   const { data: pairings, isLoading: pairingsLoading, error: pairingsError } = useQuery({
     queryKey: [`/api/classes/${classId}/pairings`],
     enabled: !!classId && !!localStorage.getItem("authToken") && !authLoading && !!user,
-    refetchInterval: (data) => {
+    refetchInterval: (data: any) => {
       // If pairings are still processing, refetch every 3 seconds
       if (data?.status === 'processing') {
         return 3000;
@@ -119,7 +119,7 @@ export default function ClassReport() {
   // Calculate real data from API responses
   const typedAnalytics = analytics as AnalyticsResponse;
   // Check if pairings are still processing
-  const isPairingsProcessing = pairings?.status === 'processing';
+  const isPairingsProcessing = (pairings as any)?.status === 'processing';
   const typedPairings = (!isPairingsProcessing ? pairings : null) as PairingsResponse;
   
   // Debug logging

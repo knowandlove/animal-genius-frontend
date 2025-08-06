@@ -36,13 +36,16 @@ const TeacherPersonalityResults = lazy(() => import("@/pages/teacher-personality
 const LiveDiscoveryBoard = lazy(() => import("@/pages/LiveDiscoveryBoard"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 const StudentRoom = lazy(() => import("@/pages/StudentRoom"));
+const StudentGarden = lazy(() => import("@/pages/StudentGarden"));
 const ClassIsland = lazy(() => import("@/pages/ClassIsland"));
+const ClassGarden = lazy(() => import("@/pages/ClassGarden"));
 const ColorPreview = lazy(() => import("@/pages/color-preview"));
 const ClassEconomy = lazy(() => import("@/pages/class-economy"));
 const ClassDashboard = lazy(() => import("@/pages/class-dashboard"));
 const ClassValuesVoting = lazy(() => import("@/pages/ClassValuesVoting"));
 const ClassValuesResults = lazy(() => import("@/pages/ClassValuesResults"));
 const JoinClass = lazy(() => import("@/pages/JoinClass"));
+const StudentEntry = lazy(() => import("@/pages/StudentEntry"));
 const CommunityHub = lazy(() => import("@/pages/community/CommunityHub"));
 const DiscussionDetail = lazy(() => import("@/pages/community/DiscussionDetail"));
 // Test pages removed during cleanup
@@ -60,6 +63,7 @@ const MakeAdmin = lazy(() => import("@/pages/admin/make-admin"));
 const DiagnosticCheck = lazy(() => import("@/pages/admin/diagnostic-check"));
 const AdminFeedback = lazy(() => import("@/pages/admin/AdminFeedback"));
 const CustomizerTest = lazy(() => import("@/pages/CustomizerTest"));
+const PlantGrowthTest = lazy(() => import("@/components/PlantGrowthTest"));
 // Test admin pages removed during cleanup
 
 // Import the properly configured query client
@@ -140,6 +144,9 @@ function Router() {
         <Route path="/class-values-results/:classId" component={ClassValuesResults} />
         
         
+        {/* Simple student entry point */}
+        <Route path="/go" component={StudentEntry} />
+        
         {/* Student authentication and room routes */}
         <Route path="/student-login" component={StudentLogin} />
         <Route path="/student/login" component={StudentLogin} />
@@ -159,19 +166,25 @@ function Router() {
           </ProtectedStudentRoute>
         </Route>
         
-        {/* Legacy student room routes (backward compatibility) */}
-        <Route path="/island/:passportCode" component={StudentRoom} />
-        <Route path="/room/:passportCode" component={StudentRoom} />
-        <Route path="/student-room/:passportCode" component={StudentRoom} />
-        <Route path="/class-island" component={ClassIsland} />
-        <Route path="/class/:classCode/island" component={ClassIsland} />
-        <Route path="/class/:classCode" component={ClassIsland} />
+        {/* v2 Feature - Garden routes temporarily disabled */}
+        {/* <Route path="/garden/:passportCode" component={StudentGarden} /> */}
+        {/* <Route path="/class-garden" component={ClassGarden} /> */}
+        {/* <Route path="/class/:classCode/garden" component={ClassGarden} /> */}
+        
+        {/* Legacy student room routes (backward compatibility) - Also disabled for v2 */}
+        {/* <Route path="/island/:passportCode" component={StudentRoom} /> */}
+        {/* <Route path="/room/:passportCode" component={StudentRoom} /> */}
+        {/* <Route path="/student-room/:passportCode" component={StudentRoom} /> */}
+        {/* <Route path="/class-island" component={ClassIsland} /> */}
+        {/* <Route path="/class/:classCode/island" component={ClassIsland} /> */}
+        {/* <Route path="/class/:classCode" component={ClassGarden} /> */}
         
         {/* Student join page */}
         <Route path="/join" component={JoinClass} />
         
         {/* Test/Development routes - removed during cleanup */}
         <Route path="/avatar-editor" component={AvatarEditor} />
+        <Route path="/test-plant" component={PlantGrowthTest} />
         {/* <Route path="/test-svg-avatar" component={TestSVGAvatar} /> */}
         
         {/* Authentication routes - always available */}
@@ -204,6 +217,9 @@ function Router() {
             <Route path="/group-maker" component={GroupMaker} />
             <Route path="/admin" component={AdminPanel} />
             <Route path="/teacher/class/:classId/island" component={ClassIsland} />
+            {/* v2 Feature - Garden routes temporarily disabled */}
+            {/* <Route path="/teacher/class/:classId/garden" component={ClassGarden} /> */}
+            {/* <Route path="/classes/:classId/garden" component={ClassGarden} /> */}
             <Route path="/community" component={CommunityHub} />
             <Route path="/community/discussion/:id" component={DiscussionDetail} />
             <Route path="/colors" component={ColorPreview} />

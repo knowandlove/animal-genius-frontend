@@ -14,7 +14,8 @@ import {
   UserPlus,
   FileText,
   Home,
-  Layout
+  Layout,
+  Sprout
 } from "lucide-react";
 
 interface SidebarItem {
@@ -62,12 +63,13 @@ export function Sidebar({
       href: `/class/${classId}/analytics`,
       icon: BarChart3
     },
-    {
-      id: 'island',
-      label: 'Class Island',
-      href: `/teacher/class/${classId}/island`,
-      icon: MapPin
-    },
+    // v2 Feature - Garden navigation disabled
+    // {
+    //   id: 'garden',
+    //   label: 'Class Garden',
+    //   href: `/classes/${classId}/garden`,
+    //   icon: Sprout
+    // },
     {
       id: 'economy',
       label: 'Economy',

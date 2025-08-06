@@ -1,12 +1,11 @@
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRoomStore } from '@/stores/roomStore';
 import { cn } from '@/lib/utils';
-import { Sparkles, HardHat, Glasses, Gem } from 'lucide-react';
+import { Sparkles, HardHat, Glasses, Gem, Palette } from 'lucide-react';
+// Removed avatarStore - using roomStore for all avatar state
 import { useStoreItems } from '@/contexts/StoreDataContext';
-import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -14,17 +13,75 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ANIMAL_COLOR_PALETTES, getDefaultColors } from '@/config/animal-color-palettes';
+import { CustomizerSkeleton } from '@/components/skeletons/AvatarSkeleton';
 
-export default function AvatarCustomizerView() {
+interface AvatarCustomizerViewProps {
+  isMobile?: boolean;
+  storeCatalog?: any[];
+  onColorChange?: (colors: { primaryColor: string; secondaryColor: string }) => void;
+  animalType?: string;
+}
+
+function AvatarCustomizerViewInner({ 
+  isMobile = false, 
+  storeCatalog,
+  onColorChange,
+  animalType = 'meerkat'
+}: AvatarCustomizerViewProps) {
   const inventory = useRoomStore((state) => state.inventory);
   const draftAvatar = useRoomStore((state) => state.draftAvatar);
   const updateDraftAvatar = useRoomStore((state) => state.updateDraftAvatar);
   const storeItems = useStoreItems(); // Get store items to access image URLs
   
+  // State for current tab
+  const [activeTab, setActiveTab] = useState('hat');
+  
   // State for hovered item
-  const [hoveredItem, setHoveredItem] = useState<any>(null);
-  const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 });
-  const [showAutoSaveInfo, setShowAutoSaveInfo] = useState(true);
+  const [showAutoSaveInfo, setShowAutoSaveInfo] = useState(false); // Disabled auto-save messages
+  
+  // Get current colors from room store's avatar state
+  const avatarColors = useRoomStore((state) => state.avatar.colors);
+  const animalDefaults = getDefaultColors(animalType);
+  const defaultColors = {
+    primaryColor: animalDefaults.primaryColor,
+    secondaryColor: animalDefaults.secondaryColor,
+    hasCustomized: false
+  };
+  const [tempColors, setTempColors] = useState(() => avatarColors || defaultColors);
+  const [isChangingColors, setIsChangingColors] = useState(false);
+  
+  // Debounce color changes to prevent rapid API calls
+  const colorChangeTimeoutRef = useRef<NodeJS.Timeout>();
+  
+  const handleColorChange = (newColors: typeof tempColors) => {
+    setTempColors(newColors);
+    setIsChangingColors(true);
+    
+    // Update room store's avatar colors immediately for instant visual feedback
+    useRoomStore.getState().setAvatarColors({ ...newColors, hasCustomized: true });
+    
+    // Clear any existing timeout
+    if (colorChangeTimeoutRef.current) {
+      clearTimeout(colorChangeTimeoutRef.current);
+    }
+    
+    // Set a new timeout to call onColorChange after 100ms of no changes (reduced from 500ms)
+    colorChangeTimeoutRef.current = setTimeout(() => {
+      onColorChange?.(newColors);
+      // Remove loading state after color change is processed
+      setTimeout(() => setIsChangingColors(false), 200);
+    }, 100);
+  };
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (colorChangeTimeoutRef.current) {
+        clearTimeout(colorChangeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Filter inventory for avatar items only
   const avatarItems = inventory.items.filter(item => 
@@ -87,20 +144,9 @@ export default function AvatarCustomizerView() {
       gridItems.push(
         <motion.button
           key={item.id}
+          title={`${item.name} - ${item.rarity || 'common'}`}
           whileTap={{ scale: 0.95 }}
           onClick={() => handleItemClick(slot, item.id, item)}
-          onMouseEnter={(e) => {
-            setHoveredItem(item);
-            const rect = e.currentTarget.getBoundingClientRect();
-            // Position tooltip to the left of the item
-            setHoverPosition({ 
-              x: Math.max(280, rect.left), // Ensure tooltip doesn't go off-screen 
-              y: rect.top 
-            });
-          }}
-          onMouseLeave={() => {
-            setHoveredItem(null);
-          }}
           className={cn(
             "aspect-square p-2 rounded-lg transition-all flex flex-col items-center justify-center relative group",
             "bg-white hover:bg-gray-50",
@@ -158,155 +204,245 @@ export default function AvatarCustomizerView() {
     accessory: !!draftAvatar.equipped.accessory
   };
 
+  // Tab info for dynamic header
+  const tabInfo = {
+    hat: {
+      title: "Hats & Headwear",
+      description: "Choose from your collection of headwear"
+    },
+    glasses: {
+      title: "Glasses & Eyewear", 
+      description: "Select stylish glasses"
+    },
+    accessory: {
+      title: "Accessories",
+      description: "Pick necklaces, bows, and other decorative items"
+    },
+    colors: {
+      title: "Avatar Colors",
+      description: "Customize your avatar's primary and secondary colors"
+    }
+  };
+
   return (
     <TooltipProvider>
       <div className="h-full flex flex-col">
-        {/* Auto-save info message */}
-        {showAutoSaveInfo && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 mx-4 mb-3 text-sm flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-blue-600" />
-              <span className="text-blue-700">Changes save automatically</span>
-            </div>
-            <button
-              onClick={() => setShowAutoSaveInfo(false)}
-              className="text-blue-600 hover:text-blue-800 text-xs"
-            >
-              ✕
-            </button>
-          </div>
-        )}
         
-        {/* Tabs for different categories */}
-        <Tabs defaultValue="hat" className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-3 mb-4">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <TabsTrigger value="hat" className="flex items-center justify-center p-2 relative">
-                  <HardHat className="w-5 h-5" />
-                  {equippedSlots.hat && (
-                    <div className="absolute -top-1 -right-1 bg-purple-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
-                      •
-                    </div>
-                  )}
-                </TabsTrigger>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Hats - Headwear and top accessories</p>
-              </TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <TabsTrigger value="glasses" className="flex items-center justify-center p-2 relative">
-                  <Glasses className="w-5 h-5" />
-                  {equippedSlots.glasses && (
-                    <div className="absolute -top-1 -right-1 bg-purple-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
-                      •
-                    </div>
-                  )}
-                </TabsTrigger>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Glasses - Eyewear and face accessories</p>
-              </TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <TabsTrigger value="accessory" className="flex items-center justify-center p-2 relative">
-                  <Gem className="w-5 h-5" />
-                  {equippedSlots.accessory && (
-                    <div className="absolute -top-1 -right-1 bg-purple-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
-                      •
-                    </div>
-                  )}
-                </TabsTrigger>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Accessories - Necklaces, bows, and other items</p>
-              </TooltipContent>
-            </Tooltip>
-          </TabsList>
-
-        <div className="flex-1 overflow-y-auto">
-          <TabsContent value="hat" className="mt-0">
-            <div className="grid grid-cols-4 gap-2 mt-4 p-2">
-              {renderItemGrid(categorizedItems.hat, 'hat')}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="glasses" className="mt-0">
-            <div className="grid grid-cols-4 gap-2 mt-4 p-2">
-              {renderItemGrid(categorizedItems.glasses, 'glasses')}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="accessory" className="mt-0">
-            <div className="grid grid-cols-4 gap-2 mt-4 p-2">
-              {renderItemGrid(categorizedItems.accessory, 'accessory')}
-            </div>
-          </TabsContent>
+        {/* Dynamic Header */}
+        <div className="p-4 border-b bg-gradient-to-r from-purple-50 to-pink-50 flex-shrink-0">
+          <h3 className="text-lg font-semibold text-gray-800">
+            {tabInfo[activeTab as keyof typeof tabInfo].title}
+          </h3>
+          <p className="text-sm text-gray-600 mt-1">
+            {tabInfo[activeTab as keyof typeof tabInfo].description}
+          </p>
         </div>
-      </Tabs>
-      
-      {/* Item Info Box - Rendered as Portal */}
-      {hoveredItem && createPortal(
-        <div
-          className={cn(
-            "fixed z-[9999] bg-white rounded-lg shadow-2xl border-2 p-4 w-64 pointer-events-none",
-            hoveredItem.rarity === 'common' || !hoveredItem.rarity ? "border-green-500" :
-            hoveredItem.rarity === 'rare' ? "border-blue-500" :
-            hoveredItem.rarity === 'epic' ? "border-purple-500" :
-            hoveredItem.rarity === 'legendary' ? "border-orange-500" :
-            "border-gray-200"
-          )}
-          style={{
-            left: `${Math.max(10, hoverPosition.x - 280)}px`,
-            top: `${hoverPosition.y}px`,
-          }}
-        >
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-lg">{hoveredItem.name}</h3>
-              {hoveredItem.rarity && (
-                <Badge 
-                  variant="secondary"
-                  className={cn(
-                    "text-xs",
-                    hoveredItem.rarity === 'common' && "bg-green-500 text-white",
-                    hoveredItem.rarity === 'rare' && "bg-blue-500 text-white",
-                    hoveredItem.rarity === 'epic' && "bg-purple-500 text-white",
-                    hoveredItem.rarity === 'legendary' && "bg-orange-500 text-white"
-                  )}
-                >
-                  {hoveredItem.rarity === 'legendary' ? '⭐ Legendary' : 
-                   hoveredItem.rarity === 'epic' ? '💎 Epic' :
-                   hoveredItem.rarity === 'rare' ? '★ Rare' : 
-                   '• Common'}
-                </Badge>
-              )}
-            </div>
-            {hoveredItem.description && (
-              <p className="text-sm text-gray-600">{hoveredItem.description}</p>
+        
+        {/* Custom Tab Navigation */}
+        <div className="grid grid-cols-4 gap-1 p-1 mb-4 bg-gray-100 rounded-lg flex-shrink-0">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setActiveTab('hat')}
+                className={cn(
+                  "flex items-center justify-center p-3 rounded-md relative transition-all",
+                  activeTab === 'hat' 
+                    ? "bg-gray-700 text-white shadow-md" 
+                    : "bg-transparent text-gray-600 hover:bg-gray-200"
+                )}
+              >
+                <HardHat className="w-5 h-5" />
+                {equippedSlots.hat && (
+                  <div className="absolute -top-1 -right-1 bg-purple-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
+                    •
+                  </div>
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Hats - Headwear and top accessories</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setActiveTab('glasses')}
+                className={cn(
+                  "flex items-center justify-center p-3 rounded-md relative transition-all",
+                  activeTab === 'glasses' 
+                    ? "bg-gray-700 text-white shadow-md" 
+                    : "bg-transparent text-gray-600 hover:bg-gray-200"
+                )}
+              >
+                <Glasses className="w-5 h-5" />
+                {equippedSlots.glasses && (
+                  <div className="absolute -top-1 -right-1 bg-purple-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
+                    •
+                  </div>
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Glasses - Eyewear and face accessories</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setActiveTab('accessory')}
+                className={cn(
+                  "flex items-center justify-center p-3 rounded-md relative transition-all",
+                  activeTab === 'accessory' 
+                    ? "bg-gray-700 text-white shadow-md" 
+                    : "bg-transparent text-gray-600 hover:bg-gray-200"
+                )}
+              >
+                <Gem className="w-5 h-5" />
+                {equippedSlots.accessory && (
+                  <div className="absolute -top-1 -right-1 bg-purple-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs">
+                    •
+                  </div>
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Accessories - Necklaces, bows, and other items</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setActiveTab('colors')}
+                className={cn(
+                  "flex items-center justify-center p-3 rounded-md relative transition-all",
+                  activeTab === 'colors' 
+                    ? "bg-gray-700 text-white shadow-md" 
+                    : "bg-transparent text-gray-600 hover:bg-gray-200"
+                )}
+              >
+                <Palette className="w-5 h-5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Colors - Customize your avatar colors</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+
+        {/* Tab Content with fixed height */}
+        <div className="bg-white rounded-lg" style={{ height: '500px' }}>
+          <div className="h-full relative">
+            {activeTab === 'hat' && (
+              <div className="absolute inset-0 grid grid-cols-4 gap-2 p-4 overflow-y-auto">
+                {renderItemGrid(categorizedItems.hat, 'hat')}
+              </div>
             )}
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-gray-500">Type:</span>
-              <span className="text-gray-700 capitalize">
-                {hoveredItem.type?.replace(/_/g, ' ') || 'Unknown'}
-              </span>
-            </div>
-            {hoveredItem.cost > 0 && (
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-gray-500">Cost:</span>
-                <span className="text-yellow-600 font-semibold">{hoveredItem.cost} coins</span>
+
+            {activeTab === 'glasses' && (
+              <div className="absolute inset-0 grid grid-cols-4 gap-2 p-4 overflow-y-auto">
+                {renderItemGrid(categorizedItems.glasses, 'glasses')}
+              </div>
+            )}
+
+            {activeTab === 'accessory' && (
+              <div className="absolute inset-0 grid grid-cols-4 gap-2 p-4 overflow-y-auto">
+                {renderItemGrid(categorizedItems.accessory, 'accessory')}
+              </div>
+            )}
+
+            {activeTab === 'colors' && (
+              <div className="absolute inset-0 grid grid-cols-4 gap-2 p-4 overflow-y-auto">
+                <div className="col-span-4 space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium mb-2">Primary Color</h3>
+                    <div className="grid grid-cols-4 gap-2">
+                      {(() => {
+                        const normalizedType = animalType.toLowerCase().replace(/\s+/g, '-');
+                        const palette = ANIMAL_COLOR_PALETTES[normalizedType] || ANIMAL_COLOR_PALETTES.meerkat;
+                        return palette.primary.map((colorOption) => (
+                          <Tooltip key={colorOption.value}>
+                            <TooltipTrigger asChild>
+                              <button
+                                onClick={() => {
+                                  const newColors = { ...tempColors, primaryColor: colorOption.value };
+                                  handleColorChange(newColors);
+                                }}
+                                className={cn(
+                                  "aspect-square p-2 rounded-lg transition-all flex items-center justify-center",
+                                  "bg-white hover:bg-gray-50",
+                                  tempColors.primaryColor === colorOption.value 
+                                    ? "border-4 border-teal-500 shadow-lg scale-105"
+                                    : "border-2 border-gray-300 hover:border-gray-400"
+                                )}
+                              >
+                                <div 
+                                  className="w-full h-full rounded-md"
+                                  style={{ backgroundColor: colorOption.value }}
+                                />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{colorOption.name}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-medium mb-2">Secondary Color</h3>
+                    <div className="grid grid-cols-4 gap-2">
+                      {(() => {
+                        const normalizedType = animalType.toLowerCase().replace(/\s+/g, '-');
+                        const palette = ANIMAL_COLOR_PALETTES[normalizedType] || ANIMAL_COLOR_PALETTES.meerkat;
+                        return palette.secondary.map((colorOption) => (
+                          <Tooltip key={colorOption.value}>
+                            <TooltipTrigger asChild>
+                              <button
+                                onClick={() => {
+                                  const newColors = { ...tempColors, secondaryColor: colorOption.value };
+                                  handleColorChange(newColors);
+                                }}
+                                className={cn(
+                                  "aspect-square p-2 rounded-lg transition-all flex items-center justify-center",
+                                  "bg-white hover:bg-gray-50",
+                                  tempColors.secondaryColor === colorOption.value
+                                    ? "border-4 border-teal-500 shadow-lg scale-105"
+                                    : "border-2 border-gray-300 hover:border-gray-400"
+                                )}
+                              >
+                                <div 
+                                  className="w-full h-full rounded-md"
+                                  style={{ backgroundColor: colorOption.value }}
+                                />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{colorOption.name}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
-        </div>,
-        document.body
-      )}
+        </div>
       </div>
     </TooltipProvider>
+  );
+}
+
+export default function AvatarCustomizerView(props: AvatarCustomizerViewProps) {
+  return (
+    <Suspense fallback={<CustomizerSkeleton />}>
+      <AvatarCustomizerViewInner {...props} />
+    </Suspense>
   );
 }

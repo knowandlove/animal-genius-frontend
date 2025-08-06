@@ -16,6 +16,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { useRoomStore } from '@/stores/roomStore';
 import { LoadingSpinner } from '@/components/loading-spinner';
 import { useToast } from '@/hooks/use-toast';
+import { getStoredPassportCode, getPassportAuthHeaders } from '@/lib/passport-auth';
 
 interface StoreModalProps {
   open: boolean;
@@ -43,7 +44,7 @@ export default function StoreModal({
   const [petNameError, setPetNameError] = useState('');
   const queryClient = useQueryClient();
   const pet = useRoomStore((state) => state.pet);
-  const passportCode = useRoomStore((state) => state.passportCode);
+  const passportCode = getStoredPassportCode(); // Get directly from storage instead of Zustand
   const { toast } = useToast();
   
   // Pet name validation regex - alphanumeric, spaces, hyphens, apostrophes
@@ -77,6 +78,8 @@ export default function StoreModal({
       return apiRequest('POST', '/api/pets/purchase', { 
         petId,
         customName: petName 
+      }, {
+        headers: getPassportAuthHeaders()
       });
     },
     onSuccess: (data) => {

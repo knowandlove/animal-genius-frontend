@@ -589,11 +589,14 @@ export default function StudentQuiz() {
 
   // Show results page
   if (quizComplete && results) {
+    // Use the backend animal type if available (from submission response), otherwise fall back to frontend
+    const animalType = submissionData?.animalType || results.animal;
+    
     // Map correct animal emojis for your 8 animals
-    const animal = ANIMAL_TYPES[results.animal] || {
-      name: results.animal,
+    const animal = ANIMAL_TYPES[animalType.toLowerCase()] || {
+      name: animalType,
       imagePath: null, // Don't use a fallback image
-      description: `You have the personality traits of a ${results.animal}!`,
+      description: `You have the personality traits of a ${animalType}!`,
       traits: [],
       emoji: '🐾'
     };
@@ -622,11 +625,11 @@ export default function StudentQuiz() {
                 />
               ) : (
                 <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-4xl font-bold">
-                  {results.animal.charAt(0).toUpperCase()}
+                  {animalType.charAt(0).toUpperCase()}
                 </div>
               )}
             </div>
-            <h1 className="text-4xl font-heading text-foreground mb-2">You're a {results.animal}!</h1>
+            <h1 className="text-4xl font-heading text-foreground mb-2">You're a {animalType}!</h1>
             <p className="text-xl font-body text-muted-foreground mb-4">{animal.traits}</p>
             <p className="text-lg font-body mb-6">{animal.description}</p>
             

@@ -182,7 +182,7 @@ export default function QuizResults() {
     );
   }
 
-  const animalData = ANIMAL_TYPES[result.animal.toLowerCase()];
+  const animalData = ANIMAL_TYPES[result.animal];
   const animalColor = animalData?.color || "#6366F1";
 
   return (
@@ -325,16 +325,27 @@ export default function QuizResults() {
         <div className="text-center">
           <Button 
             onClick={() => {
-              // TODO: Navigate to full results page
-              // For now, this could go to a more detailed view or back to their room
+              // Navigate to student dashboard
               if (result.passportCode) {
-                setLocation(`/room/${result.passportCode}`);
+                // Store passport code for authentication
+                localStorage.setItem('passportCode', result.passportCode);
+                localStorage.setItem('studentData', JSON.stringify({
+                  id: result.id,
+                  name: result.studentName,
+                  animalType: result.animal,
+                  geniusType: result.mbtiType,
+                  passportCode: result.passportCode,
+                  classId: result.classId,
+                }));
+                // Set flag for first-time avatar customization
+                localStorage.setItem('showAvatarCustomization', 'true');
+                setLocation('/student/dashboard');
               }
             }} 
             className="px-8 py-4 text-lg"
             style={{ backgroundColor: animalColor }}
           >
-            Read My Full Results
+            Go to My Dashboard
           </Button>
         </div>
       </div>

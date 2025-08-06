@@ -30,6 +30,7 @@ interface User {
 
 interface Submission {
   id: number;
+  studentId: string;
   studentName: string;
   gradeLevel: string;
   personalityType: string;
@@ -759,7 +760,7 @@ export default function ClassAnalytics() {
                                       size="sm"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setLocation(`/teacher/student/${submission.id}?classId=${classId}&from=analytics`);
+                                        setLocation(`/teacher/student/${submission.studentId}?classId=${classId}&from=analytics`);
                                       }}
                                       className="h-6 px-2 text-xs"
                                     >

@@ -289,7 +289,6 @@ export default function StudentRoom() {
   const purchaseMutation = useMutation({
     mutationFn: (itemId: string) => 
       apiRequest('POST', `/api/store-direct/purchase`, { 
-        passportCode: passportCode!,
         itemId 
       }, {
         headers: getPassportAuthHeaders()
@@ -618,7 +617,7 @@ export default function StudentRoom() {
                 >
                   <Home className="w-4 h-4 text-blue-600" />
                   <span className="font-bold text-sm">
-                    {useRoomStore.getState().draftRoom.placedItems.length} / {ROOM_ITEM_LIMIT}
+                    {draftRoom.placedItems.length} / {ROOM_ITEM_LIMIT}
                   </span>
                 </motion.div>
               )}

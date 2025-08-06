@@ -1,6 +1,7 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { api } from "@/config/api";
 import { showSessionExpiryToast } from "./session-expiry-toast";
+import { handleAuthError } from "./handle-auth-error";
 
 async function refreshAuthToken(): Promise<string | null> {
   const refreshToken = localStorage.getItem("refreshToken");
@@ -202,7 +203,13 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
+      retry: (failureCount, error: any) => {
+        // Don't retry auth errors
+        if (error?.status === 401 || error?.status === 403) {
+          return false;
+        }
+        return failureCount < 1;
+      },
     },
     mutations: {
       retry: false,

@@ -1,14 +1,35 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { LoadingSpinner } from '@/components/loading-spinner';
 import { apiRequest } from '@/lib/queryClient';
-import { getStoredStudentData, getStoredPassportCode, clearPassportCode } from '@/lib/passport-auth';
-import { Trophy, Home, ChartBar, LogOut } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { getStoredStudentData, getStoredPassportCode, clearPassportCode, getPassportAuthHeaders } from '@/lib/passport-auth';
+import { Trophy, Home, ChartBar, LogOut, Trees, Sparkles, Wand2, Coins, ShoppingBag } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { StudentHeader } from '@/components/StudentHeader';
+import FirstTimeAvatarCustomization from '@/components/avatar/FirstTimeAvatarCustomization';
+import NormalizedAvatar from '@/components/avatar-v2/NormalizedAvatar';
+import { SVGAvatar } from '@/components/avatar/SVGAvatar';
+import FullScreenAvatarCustomizer from '@/components/room/FullScreenAvatarCustomizer';
+import StoreModal from '@/components/room/StoreModal';
+// Removed roomStore - using React Query data directly for state management
+import { cn } from '@/lib/utils';
+import { StoreDataProvider } from '@/contexts/StoreDataContext';
+import { getAssetUrl } from '@/utils/cloud-assets';
+import { getDefaultColors } from '@/config/animal-color-palettes';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { DashboardSkeleton } from '@/components/skeletons/AvatarSkeleton';
 
 // Map animal types to their emoji representations
 const animalEmojis: Record<string, string> = {
@@ -26,7 +47,7 @@ const animalEmojis: Record<string, string> = {
 const defaultAchievements = [
   { id: 'quiz_complete', name: 'Quiz Champion', icon: '🌟' },
   { id: 'first_login', name: 'First Login', icon: '🎯' },
-  { id: 'room_decorator', name: 'Room Decorator', icon: '💎' },
+  { id: 'garden_cultivator', name: 'Garden Cultivator', icon: '🌱' },
   { id: 'social_butterfly', name: 'Social Butterfly', icon: '🏅' },
   { id: 'knowledge_seeker', name: 'Knowledge Seeker', icon: '🎪' },
   { id: 'leader', name: 'Leader', icon: '🚀' },
@@ -43,6 +64,18 @@ interface DashboardData {
     className?: string;
     gradeLevel?: string;
     coins?: number;
+    avatarData?: {
+      colors?: {
+        primaryColor?: string;
+        secondaryColor?: string;
+        hasCustomized?: boolean;
+      };
+      equipped?: {
+        hat?: string;
+        glasses?: string;
+        accessory?: string;
+      };
+    };
     quizResults?: {
       personalityType: string;
       learningStyle: string;
@@ -59,10 +92,29 @@ interface DashboardData {
   }>;
 }
 
+// Note: Removed initializeRoomStore function - components now use React Query data directly
+// This eliminates the need for manual state synchronization
+
 export default function StudentDashboard() {
   const [location, setLocation] = useLocation();
+  const queryClient = useQueryClient();
   const passportCode = getStoredPassportCode();
   const studentData = getStoredStudentData();
+  const [showColorCustomization, setShowColorCustomization] = useState(false);
+  const [showFullCustomization, setShowFullCustomization] = useState(false);
+  const [isStoreDataReady, setIsStoreDataReady] = useState(false);
+  const [showStore, setShowStore] = useState(false);
+  const [selectedStoreItem, setSelectedStoreItem] = useState<any>(null);
+  const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
+
+  // Check for first-time avatar customization flag
+  useEffect(() => {
+    const shouldShowAvatar = localStorage.getItem('showAvatarCustomization');
+    if (shouldShowAvatar === 'true') {
+      setShowColorCustomization(true);
+      localStorage.removeItem('showAvatarCustomization');
+    }
+  }, []);
 
   // Redirect to login if no passport code
   useEffect(() => {
@@ -72,7 +124,7 @@ export default function StudentDashboard() {
   }, [passportCode, setLocation]);
 
   // Fetch dashboard data
-  const { data, isLoading, error } = useQuery<DashboardData>({
+  const { data, isLoading, error, refetch } = useQuery<DashboardData>({
     queryKey: ['/api/student-passport/dashboard', passportCode],
     queryFn: async () => {
       return apiRequest('GET', '/api/student-passport/dashboard', undefined, {
@@ -81,7 +133,65 @@ export default function StudentDashboard() {
         },
       });
     },
-    enabled: !!passportCode,
+    enabled: !!passportCode
+  });
+  
+  // Fetch room data which includes inventory
+  const { data: roomData, refetch: refetchRoomData } = useQuery({
+    queryKey: [`/api/room-page-data/${passportCode}`],
+    queryFn: async () => {
+      return apiRequest('GET', `/api/room-page-data/${passportCode}`, undefined, {
+        headers: getPassportAuthHeaders()
+      });
+    },
+    enabled: !!passportCode
+  });
+  
+  // Note: Removed Zustand sync logic - using React Query data directly
+  // This eliminates race conditions and simplifies state management
+
+  // Single mutation for saving avatar data (handles both colors and equipped items)
+  const saveAvatarDataMutation = useMutation({
+    mutationFn: async (data: { equipped?: any; colors?: any }) => {
+      // If colors are provided, add metadata
+      const colors = data.colors ? {
+        ...data.colors,
+        hasCustomized: true,
+        customizedAt: new Date().toISOString()
+      } : (roomData?.room?.avatarData?.colors || {});
+      
+      return apiRequest('POST', `/api/room/${passportCode}/avatar`, {
+        colors,
+        equipped: data.equipped || {}
+      }, {
+        headers: getPassportAuthHeaders()
+      });
+    },
+    onSuccess: () => {
+      refetch();
+      refetchRoomData();
+    }
+  });
+
+  // Simplified purchase mutation
+  const purchaseMutation = useMutation({
+    mutationFn: async (itemId: string) => {
+      return apiRequest('POST', `/api/store-direct/purchase`, {
+        itemId
+      }, {
+        headers: getPassportAuthHeaders()
+      });
+    },
+    onSuccess: () => {
+      // Simple invalidation - let React Query handle the rest
+      queryClient.invalidateQueries({ queryKey: [`/api/room-page-data/${passportCode}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/student-passport/dashboard'] });
+      setShowPurchaseDialog(false);
+    },
+    onError: (error) => {
+      console.error('Purchase failed:', error);
+      // Could add toast notification here
+    }
   });
 
   const handleLogout = () => {
@@ -89,11 +199,12 @@ export default function StudentDashboard() {
     setLocation('/');
   };
 
-  const handleNavigateToRoom = () => {
-    if (passportCode) {
-      setLocation(`/room/${passportCode}`);
-    }
-  };
+  // v2 Feature - Garden navigation disabled
+  // const handleNavigateToRoom = () => {
+  //   if (passportCode) {
+  //     setLocation(`/garden/${passportCode}`);
+  //   }
+  // };
 
   const handleNavigateToQuizResults = () => {
     setLocation('/student/quiz-results');
@@ -103,12 +214,29 @@ export default function StudentDashboard() {
     setLocation('/student/achievements');
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-mint/20 to-soft-lime/20">
-        <LoadingSpinner />
-      </div>
-    );
+  const handlePurchaseClick = (item: any) => {
+    setSelectedStoreItem(item);
+    setShowPurchaseDialog(true);
+  };
+
+  const confirmPurchase = () => {
+    if (selectedStoreItem) {
+      purchaseMutation.mutate(selectedStoreItem.id);
+    }
+  };
+
+  // Wait for StoreDataProvider to be ready - MUST be before any conditional returns
+  useEffect(() => {
+    // Give StoreDataProvider time to initialize
+    const timer = setTimeout(() => {
+      setIsStoreDataReady(true);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Show skeleton while loading initial data
+  if (isLoading || !data) {
+    return <DashboardSkeleton />;
   }
 
   if (error || (!data && !studentData)) {
@@ -131,177 +259,332 @@ export default function StudentDashboard() {
     );
   }
 
-  const { student } = data || { student: studentData };
-  const animalEmoji = animalEmojis[student?.animalType || ''] || '🐾';
+  // Only create merged student data when BOTH queries have completed
+  // This prevents the avatar from rendering with incomplete/default data
+  const student = data?.student;
+  
+  // Wait for both dashboard and room data before creating the final student object
+  const studentWithAvatar = (student && roomData) ? {
+    ...student,
+    avatarData: roomData.room?.avatarData || student.avatarData,
+    coins: roomData.room?.currencyBalance ?? student.coins
+  } : undefined;
+  
+  const animalEmoji = animalEmojis[studentWithAvatar?.animalType || ''] || '🐾';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-mint/20 to-soft-lime/20">
-      {/* Header with logout */}
-      <div className="bg-white/80 backdrop-blur-sm shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-muted-foreground">
-              {(student as any)?.className || 'Animal Genius'}
+    <StoreDataProvider>
+      <>
+      {/* First-time color customization */}
+      {showColorCustomization && studentWithAvatar && (
+        <ErrorBoundary 
+          componentName="First Time Avatar Customization"
+          isolate
+          resetKeys={[studentWithAvatar.animalType]}
+        >
+          <FirstTimeAvatarCustomization
+            animalType={studentWithAvatar.animalType}
+            studentName={studentWithAvatar.name}
+            onComplete={(colors) => {
+              saveAvatarDataMutation.mutate({ colors });
+              setShowColorCustomization(false);
+            }}
+          />
+        </ErrorBoundary>
+      )}
+
+      {/* Full avatar customization modal */}
+      <AnimatePresence>
+        {showFullCustomization && isStoreDataReady && (
+          <ErrorBoundary 
+            componentName="Avatar Customizer"
+            isolate
+            resetKeys={studentWithAvatar?.animalType ? [studentWithAvatar.animalType] : []}
+          >
+            <FullScreenAvatarCustomizer
+              student={studentWithAvatar}
+              onClose={() => setShowFullCustomization(false)}
+              onSave={(data) => {
+                // Save both equipped items and colors together
+                saveAvatarDataMutation.mutate(data);
+              }}
+              onColorChange={(colors) => {
+                // This is for real-time color preview updates
+                // The actual save happens when clicking "Save & Close"
+              }}
+              inventoryData={roomData?.room || roomData}
+            />
+          </ErrorBoundary>
+        )}
+      </AnimatePresence>
+
+      {/* Store Modal */}
+      <ErrorBoundary 
+        componentName="Store Modal"
+        isolate
+        resetKeys={[showStore ? 'store-open' : 'store-closed']}
+      >
+        <StoreModal
+          open={showStore}
+          onOpenChange={setShowStore}
+          storeStatus={{
+            isOpen: true,
+            message: "Welcome to the Island Store!"
+          }}
+          storeCatalog={roomData?.storeCatalog || []}
+          availableBalance={studentWithAvatar?.coins || 0}
+          onPurchaseClick={handlePurchaseClick}
+        />
+      </ErrorBoundary>
+
+      {/* Purchase Confirmation Dialog */}
+      <Dialog open={showPurchaseDialog} onOpenChange={setShowPurchaseDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Purchase</DialogTitle>
+            <DialogDescription>
+              Your coins will be deducted immediately and the item will be added to your inventory.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedStoreItem && (
+            <div className="space-y-4 py-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="font-semibold">{selectedStoreItem.name}</h4>
+                  <p className="text-sm text-muted-foreground">{selectedStoreItem.description}</p>
+                </div>
+                <Badge variant={selectedStoreItem.rarity === 'rare' ? 'default' : 'outline'}>
+                  {selectedStoreItem.rarity || 'common'}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t">
+                <div className="flex items-center gap-2">
+                  <Coins className="w-5 h-5 text-yellow-600" />
+                  <span className="font-semibold text-lg">{selectedStoreItem.cost} coins</span>
+                </div>
+                <div className="text-sm">
+                  <div>Current balance: <span className="font-semibold">{studentWithAvatar?.coins || 0}</span> coins</div>
+                  <div className={cn(
+                    "mt-1",
+                    (studentWithAvatar?.coins || 0) - selectedStoreItem.cost < 0 ? "text-red-600" : "text-green-600"
+                  )}>
+                    After purchase: <span className="font-semibold">{(studentWithAvatar?.coins || 0) - selectedStoreItem.cost}</span> coins
+                  </div>
+                </div>
+              </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="gap-2"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPurchaseDialog(false)}>
+              Cancel
             </Button>
-          </div>
-        </div>
-      </div>
+            <Button 
+              onClick={confirmPurchase} 
+              disabled={purchaseMutation.isPending || (selectedStoreItem ? (studentWithAvatar?.coins || 0) < selectedStoreItem.cost : false)}
+              className={cn(
+                selectedStoreItem && (studentWithAvatar?.coins || 0) >= selectedStoreItem.cost 
+                  ? "bg-green-600 hover:bg-green-700" 
+                  : ""
+              )}
+            >
+              {purchaseMutation.isPending ? (
+                <>
+                  <LoadingSpinner className="w-4 h-4 mr-2" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <ShoppingBag className="w-4 h-4 mr-2" />
+                  Buy Now
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Welcome Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
-        >
-          {/* Avatar */}
-          <div className="w-32 h-32 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
-            <span className="text-6xl">{animalEmoji}</span>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
+        {/* Student Header */}
+        <StudentHeader />
 
-          {/* Welcome Message */}
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Welcome back, {student?.name?.split(' ')[0] || 'Student'}!
-          </h1>
-          
-          {/* Animal Type and Passport Code */}
-          <div className="flex items-center justify-center gap-2 text-muted-foreground">
-            <span>{student?.animalType || 'Animal'}</span>
-            <Badge variant="secondary" className="font-mono">
-              {student?.passportCode || passportCode}
-            </Badge>
-            {(student as any)?.coins !== undefined && (
-              <Badge variant="outline" className="gap-1">
-                🪙 {(student as any).coins}
-              </Badge>
-            )}
-          </div>
+        {/* Main Content */}
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+          <div className="grid lg:grid-cols-[400px,1fr] gap-8">
+            {/* Left Side - Avatar Section */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex flex-col items-start justify-center h-full py-4"
+            >
+              {/* Avatar Display */}
+              <div className="relative flex flex-col items-start w-full">
+                <div className="-ml-12">
+                  {/* Show loading state until we have BOTH student AND room data */}
+                  {(!studentWithAvatar?.animalType || !roomData) ? (
+                    <div className="w-[350px] h-[450px] flex items-center justify-center bg-white/80 backdrop-blur rounded-2xl shadow-lg">
+                      <div className="text-center">
+                        <div className="w-12 h-12 mx-auto mb-4 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                        <p className="text-gray-600 font-medium">Loading your avatar...</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <SVGAvatar
+                      animalType={studentWithAvatar.animalType}
+                      width={350}
+                      height={450}
+                      primaryColor={studentWithAvatar.avatarData?.colors?.primaryColor || getDefaultColors(studentWithAvatar.animalType).primaryColor}
+                      secondaryColor={studentWithAvatar.avatarData?.colors?.secondaryColor || getDefaultColors(studentWithAvatar.animalType).secondaryColor}
+                      items={studentWithAvatar.avatarData?.equipped || {}}
+                      animated
+                    />
+                  )}
+                </div>
+                {/* Customize Button - only show when avatar is loaded */}
+                {studentWithAvatar?.animalType && roomData && (
+                  <Button
+                    onClick={() => setShowFullCustomization(true)}
+                    className="mt-10 gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 px-8"
+                    style={{ marginLeft: '100px' }}
+                  >
+                    <Wand2 className="w-4 h-4" />
+                    Customize Avatar
+                  </Button>
+                )}
+              </div>
 
-          {/* Achievement Badges */}
-          <div className="flex gap-3 justify-center flex-wrap mt-6">
-            {(data?.achievements || defaultAchievements).map((achievement) => (
+            </motion.div>
+
+            {/* Right Side - Welcome and Cards */}
+            <div className="flex flex-col gap-6">
+              {/* Welcome Section with Coins */}
               <motion.div
-                key={achievement.id}
-                whileHover={{ scale: 1.1 }}
-                className={`w-16 h-16 rounded-lg flex items-center justify-center text-2xl transition-all ${
-                  (achievement as any).earned
-                    ? 'bg-gradient-to-br from-yellow-300 to-orange-400 shadow-md'
-                    : 'bg-gray-200 opacity-50'
-                }`}
-                title={(achievement as any).description || achievement.name}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-between items-start"
               >
-                {achievement.icon}
+                <div>
+                  <h1 className="text-4xl font-bold text-gray-800 mb-2">
+                    Welcome back, {studentWithAvatar?.name?.split(' ')[0] || 'Student'}!
+                  </h1>
+                  <p className="text-gray-600">
+                    Here's your learning dashboard. Click your avatar to customize your look!
+                  </p>
+                </div>
+                {studentWithAvatar?.coins !== undefined && (
+                  <div className="bg-yellow-400 rounded-full px-5 py-3 flex items-center gap-2 shadow-lg">
+                    <div className="w-8 h-8 bg-yellow-300 rounded-full flex items-center justify-center text-yellow-700 font-bold text-lg border-2 border-yellow-500">
+                      $
+                    </div>
+                    <span className="font-bold text-xl text-gray-800">{studentWithAvatar.coins} coins</span>
+                  </div>
+                )}
               </motion.div>
-            ))}
+
+              {/* Action Cards - Now just Store and Quiz Results */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Island Store Card */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <Card 
+                    className="cursor-pointer hover:shadow-xl transition-all bg-white/90 backdrop-blur border-0 h-full"
+                    onClick={() => setShowStore(true)}
+                  >
+                    <CardHeader className="text-center p-6">
+                      <div className="w-24 h-24 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <Sparkles className="w-12 h-12 text-white" />
+                      </div>
+                      <CardTitle className="text-lg font-semibold">Island Store</CardTitle>
+                      <CardDescription className="text-xs mt-2">
+                        Shop for cool items and decorations!
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                </motion.div>
+
+                {/* My Quiz Results Card */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <Card 
+                    className="cursor-pointer hover:shadow-xl transition-all bg-white/90 backdrop-blur border-0 h-full"
+                    onClick={handleNavigateToQuizResults}
+                  >
+                    <CardHeader className="text-center p-6">
+                      <div className="w-24 h-24 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <ChartBar className="w-12 h-12 text-white" />
+                      </div>
+                      <CardTitle className="text-lg font-semibold">My Quiz Results</CardTitle>
+                      <CardDescription className="text-xs mt-2">
+                        View your personality type and learning style!
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                </motion.div>
+              </div>
+
+              {/* Coming Soon Section for Gardens */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mt-4"
+              >
+                <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 border-dashed">
+                  <CardHeader className="text-center py-6">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <Trees className="w-5 h-5 text-green-600" />
+                      <CardTitle className="text-lg font-semibold text-green-800">Gardens Coming Soon!</CardTitle>
+                      <Home className="w-5 h-5 text-green-600" />
+                    </div>
+                    <CardDescription className="text-green-700">
+                      Your personal Grow Zone and Class Garden are being planted and will bloom in v2!
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              </motion.div>
+
+              {/* My Achievements Card */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="mt-6"
+              >
+                <Card 
+                  className="cursor-pointer hover:shadow-xl transition-all bg-white/90 backdrop-blur border-0"
+                  onClick={handleNavigateToAchievements}
+                >
+                  <CardHeader className="text-center">
+                    <CardTitle className="text-xl font-semibold mb-4">My Achievements</CardTitle>
+                    <div className="flex gap-3 flex-wrap justify-center">
+                      {(data?.achievements || defaultAchievements).map((achievement) => (
+                        <motion.div
+                          key={achievement.id}
+                          whileHover={{ scale: 1.1 }}
+                          className={`w-14 h-14 rounded-xl flex items-center justify-center text-2xl transition-all ${
+                            (achievement as any).earned
+                              ? 'bg-gradient-to-br from-yellow-300 to-orange-400 shadow-md'
+                              : 'bg-gray-200 opacity-50'
+                          }`}
+                          title={(achievement as any).description || achievement.name}
+                        >
+                          {achievement.icon}
+                        </motion.div>
+                      ))}
+                    </div>
+                  </CardHeader>
+                </Card>
+              </motion.div>
+              </div>
+            </div>
           </div>
-        </motion.div>
-
-        {/* Action Cards */}
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* Quiz Results Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <Card 
-              className="cursor-pointer hover:shadow-lg transition-all border-t-4 border-t-primary"
-              onClick={handleNavigateToQuizResults}
-            >
-              <CardHeader>
-                <div className="text-4xl mb-2">
-                  <ChartBar className="w-12 h-12 text-primary" />
-                </div>
-                <CardTitle>My Quiz Results</CardTitle>
-                <CardDescription>
-                  View your personality type, learning style, and discover what makes you unique!
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </motion.div>
-
-          {/* My Room Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Card 
-              className="cursor-pointer hover:shadow-lg transition-all border-t-4 border-t-secondary"
-              onClick={handleNavigateToRoom}
-            >
-              <CardHeader>
-                <div className="text-4xl mb-2">
-                  <Home className="w-12 h-12 text-secondary" />
-                </div>
-                <CardTitle>My Room</CardTitle>
-                <CardDescription>
-                  Visit your personalized space where you can explore and express yourself!
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </motion.div>
-
-          {/* Achievements Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Card 
-              className="cursor-pointer hover:shadow-lg transition-all border-t-4 border-t-accent"
-              onClick={handleNavigateToAchievements}
-            >
-              <CardHeader>
-                <div className="text-4xl mb-2">
-                  <Trophy className="w-12 h-12 text-accent" />
-                </div>
-                <CardTitle>Achievements</CardTitle>
-                <CardDescription>
-                  Track all your badges and see what you can unlock next!
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </motion.div>
         </div>
-
-        {/* Recent Activity or Tips */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="mt-8"
-        >
-          <Card className="bg-gradient-to-r from-primary/5 to-secondary/5 border-none">
-            <CardHeader>
-              <CardTitle className="text-lg">Did you know?</CardTitle>
-              <CardDescription>
-                As a {student?.animalType || 'student'}, you're naturally {
-                  student?.animalType === 'Otter' ? 'playful and social' :
-                  student?.animalType === 'Owl' ? 'thoughtful and analytical' :
-                  student?.animalType === 'Panda' ? 'wise and balanced' :
-                  student?.animalType === 'Meerkat' ? 'creative and caring' :
-                  student?.animalType === 'Elephant' ? 'supportive and loyal' :
-                  student?.animalType === 'Beaver' ? 'hardworking and organized' :
-                  student?.animalType === 'Parrot' ? 'communicative and energetic' :
-                  student?.animalType === 'Border Collie' ? 'focused and determined' :
-                  'unique and special'
-                }! Visit your room to learn more about your personality.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </motion.div>
-      </div>
-    </div>
+      </>
+    </StoreDataProvider>
   );
 }

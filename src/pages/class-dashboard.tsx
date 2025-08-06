@@ -224,14 +224,15 @@ export default function ClassDashboard() {
 
   // Quick access actions
   const quickAccessActions = [
-    {
-      id: 'island',
-      label: 'Class Island',
-      description: 'Virtual space',
-      icon: MapPin,
-      color: 'blue',
-      action: () => setLocation(`/teacher/class/${classId}/island`)
-    },
+    // v2 Feature - Class Island disabled
+    // {
+    //   id: 'island',
+    //   label: 'Class Island',
+    //   description: 'Virtual space',
+    //   icon: MapPin,
+    //   color: 'blue',
+    //   action: () => setLocation(`/teacher/class/${classId}/island`)
+    // },
     {
       id: 'analytics',
       label: 'Analytics',
