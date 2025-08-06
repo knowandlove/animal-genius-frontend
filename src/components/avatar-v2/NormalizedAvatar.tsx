@@ -13,7 +13,7 @@ import {
   getTransformOrigin,
   DEFAULT_ANCHORS
 } from '@/utils/normalized-positioning';
-import { SVGAvatar } from '../avatar/SVGAvatar';
+import { ServerAvatar } from '../avatar/ServerAvatar';
 import { useRoomStore } from '@/stores/roomStore';
 
 interface NormalizedAvatarProps {
@@ -199,16 +199,16 @@ export default function NormalizedAvatar({
   const hasCustomColors = (effectivePrimaryColor && effectiveSecondaryColor) || 
                          (avatarColors?.hasCustomized && avatarColors?.primaryColor && avatarColors?.secondaryColor);
   
-  // If we have custom colors, use SVGAvatar instead
+  // If we have custom colors, use ServerAvatar instead
   if (hasCustomColors) {
     return (
-      <SVGAvatar
+      <ServerAvatar
         animalType={animalType}
         primaryColor={effectivePrimaryColor}
         secondaryColor={effectiveSecondaryColor}
         width={width}
         height={height}
-        items={items}
+        equippedItems={Object.values(items).filter(Boolean) as string[]}
         className={className}
         onClick={onClick}
         animated={animated}
@@ -225,7 +225,9 @@ export default function NormalizedAvatar({
   // Get item position from database
   const getItemPositionFromDB = (itemId: string): NormalizedPosition | null => {
     if (!positionsMap) {
-      console.warn('No positionsMap available');
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('No positionsMap available');
+      }
       return null;
     }
     
@@ -421,13 +423,15 @@ export default function NormalizedAvatar({
         />
       );
     } catch (error) {
-      console.error('Error rendering item:', {
-        itemId,
-        slot,
-        error,
-        position,
-        imageBounds
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error rendering item:', {
+          itemId,
+          slot,
+          error,
+          position,
+          imageBounds
+        });
+      }
       return null;
     }
   };
@@ -534,7 +538,9 @@ export default function NormalizedAvatar({
         
         // Must have at least one valid URL
         if (!imageUrl && !riveUrl) {
-          console.warn('No valid asset URL for item:', itemId);
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('No valid asset URL for item:', itemId);
+          }
           return null;
         }
         

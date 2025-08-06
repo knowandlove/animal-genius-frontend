@@ -9,6 +9,10 @@ export interface Lesson {
     teacher?: string;  // Vimeo ID for teacher prep video
     student?: string;  // Vimeo ID for student-facing video
   };
+  caselCompetencies?: {
+    primary: string[];
+    secondary?: string[];
+  };
   activities: {
     activity1: Activity;
     activity2: Activity;
@@ -33,13 +37,13 @@ export const lessons: Lesson[] = [
   {
     id: 1,
     title: "Taking the Animal Genius Quiz®",
-    duration: "60 minutes",
-    description: "Students take the interactive Animal Genius Quiz® to discover their personality animal and begin understanding their unique traits.",
+    duration: "30-60 minutes",
+    description: "Students take the interactive Animal Genius Quiz and begin their journey of self-discovery, Teachers gain insights into class dynamics.",
     objectives: [
-      "Students will complete the Animal Genius Personality Quiz®",
-      "Students will discover their personality animal",
-      "Students will begin to understand personality differences",
-      "Students will create visual representations of their animal identity"
+      "Complete the Animal Genius Personality Quiz®",
+      "Discover their personality animal",
+      "Begin to understand personality differences",
+      "Create visual representations of their animal identity"
     ],
     materialsNeeded: [
       "Computers/tablets for quiz access",
@@ -53,12 +57,16 @@ export const lessons: Lesson[] = [
       teacher: "1106590110",
       student: "1106555044"
     },
+    caselCompetencies: {
+      primary: ["Self-Awareness: Students identify their personality type, learning style, and group role."],
+      secondary: ["Social Awareness (optional extension): Recognize and respect that others may operate very differently."]
+    },
     activities: {
       activity1: {
         title: "Take the Animal Genius Quiz®",
         steps: [
           {
-            instruction: "Play Student-facing video [LINK TO A POP UP VIDEO TEACHERS CAN DRAG TO PROJECTOR SCREEN TO SHOW KIDS]"
+            instruction: "Play Student-facing video"
           },
           {
             instruction: "Students take the Animal Genius Quiz® individually (15-20 min)",
@@ -137,14 +145,14 @@ export const lessons: Lesson[] = [
   },
   {
     id: 2,
-    title: "Build Our Habitat",
+    title: "Building our Habitat Homes",
     duration: "50-60 minutes",
-    description: "Students gather with others who share their Animal Genius type to co-create a visual 'home' on Personality Island—a space where they feel seen, safe, and understood. Through this creative collaboration, students begin to recognize the common strengths, preferences, and needs of their personality group, building connection and belonging.",
+    description: "Students group together with others who share the same Animal Genius type to co-create a visual \"home\" on Personality Island. Through this creative collaboration, students begin to recognize the common strengths, preferences, and needs of their personality group, building connection and belonging.",
     objectives: [
-      "Students will identify shared characteristics, perspectives, and emotional needs within their animal group",
-      "Students will practice cooperative planning and shared decision-making",
-      "Students will create a visual representation of their group's ideal habitat",
-      "Students will present their collaborative work to build class community"
+      "Identify shared characteristics, perspectives, and emotional needs within their animal group.",
+      "Practice cooperative planning and shared decision-making.",
+      "Create a visual representation of their group's ideal habitat.",
+      "Present their collaborative work to build class community."
     ],
     materialsNeeded: [
       "Large poster paper or 11x17 blank paper (1 per group)",
@@ -152,6 +160,12 @@ export const lessons: Lesson[] = [
       "Habitat Inspiration Questions (printable or projected)",
       "Optional: Additional art supplies for decoration"
     ],
+    caselCompetencies: {
+      primary: [
+        "Social Awareness: Identifying shared characteristics, perspectives, and emotional needs within a group.",
+        "Relationship Skills: Cooperative planning, respectful discussion, shared decision-making."
+      ]
+    },
     activities: {
       activity1: {
         title: "Form Animal Groups & Begin Habitat Design",
@@ -160,7 +174,7 @@ export const lessons: Lesson[] = [
             instruction: "Group students by their Animal Genius type",
             tips: [
               "If a student is the only one of their animal type, encourage them to design their home independently",
-              "For solo students who prefer to join a group, use these pairings: Meerkat/Owl, Otter/Parrot, Panda/Beaver, Elephant/Border Collie"
+              "For solo students who prefer to join a group, use these pairings:\n\n- Meerkat/Owl\n- Otter/Parrot\n- Panda/Beaver\n- Elephant/Border Collie"
             ]
           },
           {
@@ -171,7 +185,7 @@ export const lessons: Lesson[] = [
             ]
           },
           {
-            instruction: "Distribute 1 poster per group and ensure students have creative supplies",
+            instruction: "Distribute 1 poster per group and creative supplies.",
             tips: [
               "Have markers, crayons, and colored pencils readily available",
               "Consider playing soft background music to encourage creativity"
@@ -186,7 +200,7 @@ export const lessons: Lesson[] = [
             guidingQuestions: [
               "What's the big idea behind your home?",
               "What does your group need to feel safe and happy?",
-              "How will your home show who you are and what's important to your personality?",
+              "How will your home show who you are and what's important to you?",
               "What special features will help your group thrive?"
             ]
           }
@@ -198,6 +212,7 @@ export const lessons: Lesson[] = [
           {
             instruction: "Give groups 20-30 minutes to draw, talk, and collaborate on their habitat design",
             tips: [
+              "Pro-Tip: Break up the plan phase and design phase to help group collaboration be more efficient.",
               "Walk around and listen to group discussions",
               "Offer encouragement and ask clarifying questions",
               "Remind groups that each member needs their own room in the habitat"
@@ -227,7 +242,7 @@ export const lessons: Lesson[] = [
             instruction: "Lead a brief reflection discussion after all presentations",
             guidingQuestions: [
               "What did you notice about how different groups designed their homes?",
-              "How did each group's personality show up in their designs?",
+              "How did each groups Animal Genius show up in their designs?",
               "What similarities or differences did you observe between habitats?"
             ]
           },
@@ -264,17 +279,17 @@ export const lessons: Lesson[] = [
   },
   {
     id: 3,
-    title: "Learn Our Differences",
-    duration: "45-60 minutes",
-    description: "Students will explore their preferences and visually represent their individuality by creating a shape on a graph, learning how each person—though similar in personality—still brings unique qualities to the classroom.",
+    title: "Our Unique Preferences",
+    duration: "30-45 minutes",
+    description: "Students will explore their preferences and visually represent their individuality by creating a shape on a graph, learning how each person—though similar in Animal Genius—still brings unique qualities to the classroom.",
     objectives: [
-      "Students will recognize their individual likes, values, and tendencies",
-      "Students will appreciate how differences contribute to group diversity—even within shared traits",
-      "Students will create a visual representation of their preferences using coordinate graphing",
-      "Students will compare and contrast patterns within their animal groups"
+      "Recognize their individual likes, values, and tendencies.",
+      "Appreciate how differences contribute to group diversity—even within shared traits.",
+      "Create a visual representation of their preferences using coordinate graphing.",
+      "Compare and contrast patterns within their animal groups."
     ],
     materialsNeeded: [
-      "Grade-specific Coordinate Graph worksheets (4-5 or 6th grade version)",
+      "Grade-specific Coordinate Graph worksheets (4-5 or 6th+ grade version)",
       "Crayons or colored pencils (with all 8 animal colors available)",
       "Space to display finished graphs by animal group",
       "Optional: Document camera or projector for demonstration"
@@ -294,7 +309,7 @@ export const lessons: Lesson[] = [
             instruction: "Pass out the correct worksheet based on grade level",
             tips: [
               "Grade 4-5: Positive X/Y axis graph only",
-              "Grade 6: Four-quadrant coordinate plane with negative values",
+              "Grade 6+: Four-quadrant coordinate plane with negative values",
               "Have extra copies available for mistakes"
             ]
           },
@@ -322,10 +337,9 @@ export const lessons: Lesson[] = [
             ]
           },
           {
-            instruction: "Students color their Personality Pattern using their animal's specific color",
+            instruction: "Students color their unique shape using their animal's specific color",
             tips: [
-              "Owls = Red, Meerkats = Orange, Otters = Yellow, Elephants = Green",
-              "Pandas = Blue, Beavers = Purple, Parrots = Pink, Border Collies = Black",
+              "Owls = Red\nMeerkats = Orange\nOtters = Yellow\nElephants = Green\nPandas = Blue\nBeavers = Purple\nParrots = Pink\nBorder Collies = Black",
               "Post the color key where all students can see it"
             ]
           }
@@ -350,7 +364,7 @@ export const lessons: Lesson[] = [
               "Encourage them to look at both their own animal group and others"
             ],
             guidingQuestions: [
-              "What do you notice about the personality patterns within the same animal group?",
+              "What do you notice about the patterns within the same animal group?",
               "How are the shapes similar? How are they different?",
               "Which animal groups seem to have the most variety in their shapes?"
             ]
@@ -388,6 +402,11 @@ export const lessons: Lesson[] = [
             tips: [
               "Provide 2-3 interview questions about learning preferences",
               "This helps students practice appreciating differences directly"
+            ],
+            guidingQuestions: [
+              "Do you prefer working alone or in a group? Why?",
+              "When you learn something new, do you like to try it right away or think about it first?",
+              "What helps you focus best - quiet spaces or some background noise?"
             ]
           },
           {
@@ -407,10 +426,10 @@ export const lessons: Lesson[] = [
     duration: "35-45 minutes",
     description: "Students will co-create their classroom agreements using shared core values. Through discussion, voting, and reflection, they'll establish a foundation of trust, collaboration, and shared expectations.",
     objectives: [
-      "Students will co-create their classroom agreements using shared core values",
-      "Students will participate in democratic decision-making through values voting",
-      "Students will establish a foundation of trust and collaboration",
-      "Students will understand how shared values support classroom community"
+      "Co-create their classroom agreements using shared core values.",
+      "Participate in democratic decision-making through values voting.",
+      "Establish a foundation of trust and collaboration.",
+      "Understand how shared values support classroom community."
     ],
     materialsNeeded: [
       "Student devices for voting (Chromebooks/tablets)",
@@ -484,10 +503,10 @@ export const lessons: Lesson[] = [
     duration: "30 minutes",
     description: "Students will launch a classroom economy by earning and managing digital coins to contribute to their 'room' in their Habitat Home. They'll be assigned class jobs, gain responsibility, practice collaboration, and learn how their contributions shape the class ecosystem.",
     objectives: [
-      "Students will understand the classroom economy system and their role within it",
-      "Students will apply for and receive classroom jobs with specific responsibilities",
-      "Students will learn to manage digital coins through earning and spending",
-      "Students will practice collaboration and responsibility through their job roles"
+      "Understand the classroom economy system and their role within it.",
+      "Apply for and receive classroom jobs with specific responsibilities.",
+      "Learn to manage digital coins through earning and spending.",
+      "Practice collaboration and responsibility through their job roles."
     ],
     materialsNeeded: [
       "Student devices (computers/tablets) for accessing rooms",

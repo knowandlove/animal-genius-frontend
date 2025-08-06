@@ -1,4 +1,3 @@
-import React from 'react';
 import { cn } from '@/lib/utils';
 
 interface AvatarSkeletonProps {
@@ -14,21 +13,14 @@ export function AvatarSkeleton({
 }: AvatarSkeletonProps) {
   return (
     <div 
-      className={cn("relative animate-pulse", className)}
+      className={cn("relative flex items-center justify-center", className)}
       style={{ width, height }}
     >
-      {/* Body */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-3/5 bg-gray-200 rounded-t-full" />
-      
-      {/* Head */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-1/2 h-1/3 bg-gray-200 rounded-full" />
-      
-      {/* Arms */}
-      <div className="absolute top-1/2 left-1/4 w-1/6 h-1/3 bg-gray-200 rounded-full transform -rotate-12" />
-      <div className="absolute top-1/2 right-1/4 w-1/6 h-1/3 bg-gray-200 rounded-full transform rotate-12" />
-      
-      {/* Shimmer effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
+      {/* Just show a spinner, no gray blob shapes! */}
+      <div className="text-center">
+        <div className="w-16 h-16 mx-auto mb-4 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-gray-600 font-medium animate-pulse">Loading avatar...</p>
+      </div>
     </div>
   );
 }

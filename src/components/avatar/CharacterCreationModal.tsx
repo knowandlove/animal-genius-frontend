@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Shuffle, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { SVGAvatar } from './SVGAvatar';
+import { ServerAvatar } from './ServerAvatar';
 import { ANIMAL_COLOR_PALETTES, getDefaultColors, getRandomColors, type ColorOption } from '@/config/animal-color-palettes';
 
 interface CharacterCreationModalProps {
@@ -102,7 +102,7 @@ export default function CharacterCreationModal({
                     transition={{ duration: 0.3 }}
                     className="relative bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl p-8 shadow-lg"
                   >
-                    <SVGAvatar
+                    <ServerAvatar
                       animalType={animalType}
                       primaryColor={selectedPrimary}
                       secondaryColor={selectedSecondary}

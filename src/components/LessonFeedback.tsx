@@ -20,6 +20,8 @@ interface FeedbackData {
   teacherId: string;
   rating: number;
   comment: string | null;
+  whatWorkedWell: string | null;
+  howToImprove: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -28,6 +30,8 @@ export function LessonFeedback({ lessonId, lessonTitle }: LessonFeedbackProps) {
   const [rating, setRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [whatWorkedWell, setWhatWorkedWell] = useState("");
+  const [howToImprove, setHowToImprove] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
   const { toast } = useToast();
@@ -44,13 +48,15 @@ export function LessonFeedback({ lessonId, lessonTitle }: LessonFeedbackProps) {
     if (existingFeedback) {
       setRating(existingFeedback.rating);
       setComment(existingFeedback.comment || "");
+      setWhatWorkedWell(existingFeedback.whatWorkedWell || "");
+      setHowToImprove(existingFeedback.howToImprove || "");
       setShowThankYou(true);
     }
   }, [existingFeedback]);
 
   // Submit feedback mutation
   const submitFeedbackMutation = useMutation({
-    mutationFn: async (data: { rating: number; comment: string }) => {
+    mutationFn: async (data: { rating: number; comment: string; whatWorkedWell: string; howToImprove: string }) => {
       setIsSubmitting(true);
       return apiRequest("POST", `/api/classes/lessons/${lessonId}/feedback`, data);
     },
@@ -79,7 +85,12 @@ export function LessonFeedback({ lessonId, lessonTitle }: LessonFeedbackProps) {
       return;
     }
 
-    submitFeedbackMutation.mutate({ rating, comment: comment.trim() });
+    submitFeedbackMutation.mutate({ 
+      rating, 
+      comment: comment.trim(),
+      whatWorkedWell: whatWorkedWell.trim(),
+      howToImprove: howToImprove.trim()
+    });
   };
 
   const renderStars = () => {
@@ -97,11 +108,13 @@ export function LessonFeedback({ lessonId, lessonTitle }: LessonFeedbackProps) {
           >
             <Star
               className={cn(
-                "h-8 w-8 transition-colors duration-200",
+                "h-8 w-8 transition-all duration-200",
                 star <= (hoveredRating || rating)
-                  ? "fill-yellow-400 text-yellow-400"
-                  : "fill-none text-gray-300"
+                  ? "text-yellow-400"
+                  : "text-gray-300"
               )}
+              fill={star <= (hoveredRating || rating) ? "#facc15" : "transparent"}
+              stroke={star <= (hoveredRating || rating) ? "#facc15" : "#d1d5db"}
             />
           </button>
         ))}
@@ -165,6 +178,40 @@ export function LessonFeedback({ lessonId, lessonTitle }: LessonFeedbackProps) {
         </div>
 
         <div>
+          <label htmlFor="whatWorkedWell" className="block text-sm font-medium mb-2">
+            What worked well?
+          </label>
+          <Textarea
+            id="whatWorkedWell"
+            value={whatWorkedWell}
+            onChange={(e) => setWhatWorkedWell(e.target.value)}
+            placeholder="Share what you liked about this lesson..."
+            className="min-h-[80px] resize-none"
+            maxLength={500}
+          />
+          <p className="mt-1 text-xs text-muted-foreground text-right">
+            {whatWorkedWell.length}/500 characters
+          </p>
+        </div>
+
+        <div>
+          <label htmlFor="howToImprove" className="block text-sm font-medium mb-2">
+            How can we make this better?
+          </label>
+          <Textarea
+            id="howToImprove"
+            value={howToImprove}
+            onChange={(e) => setHowToImprove(e.target.value)}
+            placeholder="Share your suggestions for improvement..."
+            className="min-h-[80px] resize-none"
+            maxLength={500}
+          />
+          <p className="mt-1 text-xs text-muted-foreground text-right">
+            {howToImprove.length}/500 characters
+          </p>
+        </div>
+
+        <div>
           <label htmlFor="comment" className="block text-sm font-medium mb-2">
             Additional comments (optional)
           </label>
@@ -172,12 +219,12 @@ export function LessonFeedback({ lessonId, lessonTitle }: LessonFeedbackProps) {
             id="comment"
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            placeholder="Share your thoughts about this lesson..."
-            className="min-h-[100px] resize-none"
-            maxLength={1000}
+            placeholder="Any other thoughts about this lesson..."
+            className="min-h-[80px] resize-none"
+            maxLength={500}
           />
           <p className="mt-1 text-xs text-muted-foreground text-right">
-            {comment.length}/1000 characters
+            {comment.length}/500 characters
           </p>
         </div>
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Shuffle, ArrowRight, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { SVGAvatar } from './SVGAvatar';
+import { ServerAvatar } from './ServerAvatar';
 import { ANIMAL_COLOR_PALETTES, getDefaultColors, getRandomColors, type ColorOption } from '@/config/animal-color-palettes';
 import confetti from 'canvas-confetti';
 
@@ -101,7 +101,7 @@ export default function FirstTimeAvatarCustomization({
                 transition={{ delay: 0.5 }}
                 className="mb-8"
               >
-                <SVGAvatar
+                <ServerAvatar
                   animalType={animalType}
                   primaryColor={selectedPrimary}
                   secondaryColor={selectedSecondary}
@@ -192,7 +192,7 @@ export default function FirstTimeAvatarCustomization({
                     >
                       <div className="absolute inset-0 bg-gradient-to-br from-purple-200 to-pink-200 rounded-3xl blur-2xl opacity-50" />
                       <div className="relative bg-white rounded-3xl p-12 shadow-2xl">
-                        <SVGAvatar
+                        <ServerAvatar
                           animalType={animalType}
                           primaryColor={selectedPrimary}
                           secondaryColor={selectedSecondary}

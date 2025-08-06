@@ -1019,17 +1019,17 @@ function LessonSectionsView({ lesson, lessonProgress, onCompleteActivity, onRese
                     </div>
                   ) : /* Special handling for Activity 2 of Lesson 4 (Class Values Voting) - always show buttons for testing */
                   lesson.id === 4 && number === 2 ? (
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={onShowValuesVoting}
-                        size="sm"
-                        className="bg-[#85B2C8] hover:bg-[#6d94a6] text-white text-xs"
-                      >
-                        <Vote className="w-3 h-3 mr-1" />
-                        Start Class Values Voting
-                      </Button>
-                      {isComplete ? (
-                        <>
+                    <div className="flex flex-col gap-2 items-end">
+                      <div className="flex gap-2 flex-wrap justify-end">
+                        <Button
+                          onClick={onShowValuesVoting}
+                          size="sm"
+                          className="bg-[#85B2C8] hover:bg-[#6d94a6] text-white text-xs"
+                        >
+                          <Vote className="w-3 h-3 mr-1" />
+                          Start Class Values Voting
+                        </Button>
+                        {isComplete && (
                           <Button
                             onClick={() => window.open(`/class-values-results/${classId}`, '_blank')}
                             size="sm"
@@ -1039,37 +1039,40 @@ function LessonSectionsView({ lesson, lessonProgress, onCompleteActivity, onRese
                             <Trophy className="w-3 h-3 mr-1" />
                             View Results
                           </Button>
-                          <div className="flex items-center text-green-600">
-                            <CheckIcon className="w-5 h-5 mr-1" />
-                            <span className="text-sm font-medium">Complete</span>
-                          </div>
-                        </>
-                      ) : (
-                        <Button
-                          onClick={() => onCompleteActivity(number)}
-                          size="sm"
-                          variant="outline"
-                          className="text-xs"
-                        >
-                          Mark Complete
-                        </Button>
-                      )}
-                      <Button
-                        onClick={onResetValuesVoting}
-                        size="sm"
-                        variant="destructive"
-                        className="text-xs"
-                        disabled={isResettingVoting}
-                      >
-                        {isResettingVoting ? (
-                          <LoadingSpinner size="sm" />
-                        ) : (
-                          <>
-                            <RotateCcw className="w-3 h-3 mr-1" />
-                            Reset Voting
-                          </>
                         )}
-                      </Button>
+                        {!isComplete && (
+                          <Button
+                            onClick={() => onCompleteActivity(number)}
+                            size="sm"
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            Mark Complete
+                          </Button>
+                        )}
+                        <Button
+                          onClick={onResetValuesVoting}
+                          size="sm"
+                          variant="destructive"
+                          className="text-xs"
+                          disabled={isResettingVoting}
+                        >
+                          {isResettingVoting ? (
+                            <LoadingSpinner size="sm" />
+                          ) : (
+                            <>
+                              <RotateCcw className="w-3 h-3 mr-1" />
+                              Reset Voting
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                      {isComplete && (
+                        <div className="flex items-center text-green-600 mt-1">
+                          <CheckIcon className="w-5 h-5 mr-1" />
+                          <span className="text-sm font-medium">Complete</span>
+                        </div>
+                      )}
                     </div>
                   ) : isComplete ? (
                     <div className="flex items-center gap-2">
@@ -1286,9 +1289,9 @@ function LessonSidebar({ lesson }: { lesson: Lesson }) {
                 <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
                   Jung's work on how people perceive and decide forms the foundation of the Animal Genius Quiz®, reframed into kid-friendly animal metaphors that help students understand how they think and connect.
                 </p>
-                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                <a href="https://pdx.pressbooks.pub/thebalanceofpersonality/chapter/chapter-5-carl-jung/" target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
                   Read more
-                </button>
+                </a>
               </div>
 
               <div className="space-y-2">
@@ -1298,9 +1301,9 @@ function LessonSidebar({ lesson }: { lesson: Lesson }) {
                 <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
                   Hammond stresses the importance of identity in learning. The quiz supports her independence-building strategies by helping students name how they think, learn, and process the world.
                 </p>
-                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                <a href="https://crtandthebrain.com/book/" target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
                   Read more
-                </button>
+                </a>
               </div>
 
               <div className="space-y-2">
@@ -1310,9 +1313,9 @@ function LessonSidebar({ lesson }: { lesson: Lesson }) {
                 <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
                   Steele's research shows that students thrive when their identity is valued. The Animal Genius Quiz® provides a safe, affirming starting point that reduces stereotype threat and boosts belonging.
                 </p>
-                <button className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
+                <a href="https://www.identitysafeclassrooms.com/resources" target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline">
                   Read more
-                </button>
+                </a>
               </div>
 
               <div className="space-y-2">

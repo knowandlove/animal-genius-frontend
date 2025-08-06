@@ -19,11 +19,9 @@ import { Trophy, Home, ChartBar, LogOut, Trees, Sparkles, Wand2, Coins, Shopping
 import { motion, AnimatePresence } from 'framer-motion';
 import { StudentHeader } from '@/components/StudentHeader';
 import FirstTimeAvatarCustomization from '@/components/avatar/FirstTimeAvatarCustomization';
-import NormalizedAvatar from '@/components/avatar-v2/NormalizedAvatar';
-import { SVGAvatar } from '@/components/avatar/SVGAvatar';
+import { ServerAvatar } from '@/components/avatar/ServerAvatar';
 import FullScreenAvatarCustomizer from '@/components/room/FullScreenAvatarCustomizer';
 import StoreModal from '@/components/room/StoreModal';
-// Removed roomStore - using React Query data directly for state management
 import { cn } from '@/lib/utils';
 import { StoreDataProvider } from '@/contexts/StoreDataContext';
 import { getAssetUrl } from '@/utils/cloud-assets';
@@ -92,9 +90,6 @@ interface DashboardData {
   }>;
 }
 
-// Note: Removed initializeRoomStore function - components now use React Query data directly
-// This eliminates the need for manual state synchronization
-
 export default function StudentDashboard() {
   const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
@@ -147,8 +142,6 @@ export default function StudentDashboard() {
     enabled: !!passportCode
   });
   
-  // Note: Removed Zustand sync logic - using React Query data directly
-  // This eliminates race conditions and simplifies state management
 
   // Single mutation for saving avatar data (handles both colors and equipped items)
   const saveAvatarDataMutation = useMutation({
@@ -199,12 +192,6 @@ export default function StudentDashboard() {
     setLocation('/');
   };
 
-  // v2 Feature - Garden navigation disabled
-  // const handleNavigateToRoom = () => {
-  //   if (passportCode) {
-  //     setLocation(`/garden/${passportCode}`);
-  //   }
-  // };
 
   const handleNavigateToQuizResults = () => {
     setLocation('/student/quiz-results');
@@ -428,13 +415,13 @@ export default function StudentDashboard() {
                       </div>
                     </div>
                   ) : (
-                    <SVGAvatar
+                    <ServerAvatar
                       animalType={studentWithAvatar.animalType}
                       width={350}
                       height={450}
                       primaryColor={studentWithAvatar.avatarData?.colors?.primaryColor || getDefaultColors(studentWithAvatar.animalType).primaryColor}
                       secondaryColor={studentWithAvatar.avatarData?.colors?.secondaryColor || getDefaultColors(studentWithAvatar.animalType).secondaryColor}
-                      items={studentWithAvatar.avatarData?.equipped || {}}
+                      equippedItems={Object.values(studentWithAvatar.avatarData?.equipped || {}).filter(Boolean) as string[]}
                       animated
                     />
                   )}

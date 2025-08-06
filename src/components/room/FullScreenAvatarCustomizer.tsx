@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { X, Save, Check } from 'lucide-react';
-import { SVGAvatar } from '@/components/avatar/SVGAvatar';
+import { ServerAvatar } from '@/components/avatar/ServerAvatar';
 import AvatarCustomizerView from './AvatarCustomizerView';
 import { useRoomStore } from '@/stores/roomStore';
-// Removed avatarStore - using roomStore for all avatar state
 import { getAssetUrl } from '@/utils/cloud-assets';
 import { getDefaultColors } from '@/config/animal-color-palettes';
 
@@ -25,6 +24,7 @@ export default function FullScreenAvatarCustomizer({
   inventoryData
 }: FullScreenAvatarCustomizerProps) {
   const draftAvatar = useRoomStore((state) => state.draftAvatar);
+  const setAvatarColors = useRoomStore((state) => state.setAvatarColors);
   
   // Get colors from room store's avatar state or use defaults
   const avatarColors = useRoomStore((state) => state.avatar.colors);
@@ -36,15 +36,27 @@ export default function FullScreenAvatarCustomizer({
   };
   
   const [currentColors, setCurrentColors] = useState(() => {
-    // Ensure we always have both colors, even if one is missing
+    // Prioritize student's saved colors, then room store, then defaults
     return {
-      primaryColor: avatarColors?.primaryColor || defaultColors.primaryColor,
-      secondaryColor: avatarColors?.secondaryColor || defaultColors.secondaryColor,
-      hasCustomized: avatarColors?.hasCustomized || defaultColors.hasCustomized
+      primaryColor: student?.avatarData?.colors?.primaryColor || avatarColors?.primaryColor || animalDefaults.primaryColor,
+      secondaryColor: student?.avatarData?.colors?.secondaryColor || avatarColors?.secondaryColor || animalDefaults.secondaryColor,
+      hasCustomized: student?.avatarData?.colors?.hasCustomized || avatarColors?.hasCustomized || false
     };
   });
   
+  // Initialize room store with student's colors when component mounts
+  useEffect(() => {
+    if (student?.avatarData?.colors) {
+      setAvatarColors({
+        primaryColor: student.avatarData.colors.primaryColor || animalDefaults.primaryColor,
+        secondaryColor: student.avatarData.colors.secondaryColor || animalDefaults.secondaryColor,
+        hasCustomized: student.avatarData.colors.hasCustomized || false
+      });
+    }
+  }, []); // Only run on mount
+  
   const handleColorChange = (colors: { primaryColor: string; secondaryColor: string }) => {
+    console.log('FullScreenAvatarCustomizer handleColorChange:', colors);
     setCurrentColors({ ...colors, hasCustomized: true });
     // Update room store's avatar colors for real-time preview
     useRoomStore.getState().setAvatarColors({ ...colors, hasCustomized: true });
@@ -109,14 +121,14 @@ export default function FullScreenAvatarCustomizer({
             <div className="relative flex flex-col items-center">
               {/* Fixed size container for avatar to prevent size changes */}
               <div style={{ width: AVATAR_WIDTH, height: AVATAR_HEIGHT }} className="flex items-center justify-center">
-                {/* Always use SVGAvatar for consistency */}
-                <SVGAvatar
+                {/* Always use ServerAvatar for consistency */}
+                <ServerAvatar
                   animalType={student?.animalType || 'meerkat'}
                   width={AVATAR_WIDTH}
                   height={AVATAR_HEIGHT}
                   primaryColor={currentColors.primaryColor || animalDefaults.primaryColor}
                   secondaryColor={currentColors.secondaryColor || animalDefaults.secondaryColor}
-                  items={draftAvatar?.equipped || student?.avatarData?.equipped || {}}
+                  equippedItems={Object.values(draftAvatar?.equipped || {}).filter(Boolean) as string[]}
                   animated
                 />
               </div>

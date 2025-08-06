@@ -1,4 +1,4 @@
-import { Monitor, Play, ExternalLink } from 'lucide-react';
+import { Play, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ProjectorVideoButtonProps {

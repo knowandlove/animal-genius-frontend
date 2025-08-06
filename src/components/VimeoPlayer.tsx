@@ -67,7 +67,7 @@ export function VimeoPlayer({
                 className="flex items-center gap-1"
               >
                 <GraduationCap className="h-4 w-4" />
-                Teacher Prep
+                Lesson Overview Video
               </Button>
               <Button
                 variant={activeVideo === 'student' ? 'default' : 'outline'}
@@ -76,7 +76,7 @@ export function VimeoPlayer({
                 className="flex items-center gap-1"
               >
                 <Users className="h-4 w-4" />
-                Student Video
+                For Students
               </Button>
             </div>
           )}
@@ -87,12 +87,12 @@ export function VimeoPlayer({
           {activeVideo === 'teacher' ? (
             <Badge variant="secondary" className="bg-[#BD85C8] text-white border-0">
               <GraduationCap className="h-3 w-3 mr-1" />
-              Teacher Preparation Video
+              Lesson Overview Video
             </Badge>
           ) : (
             <Badge variant="secondary" className="bg-[#85B2C8] text-white border-0">
               <Users className="h-3 w-3 mr-1" />
-              Student-Facing Video
+              For Students
             </Badge>
           )}
           

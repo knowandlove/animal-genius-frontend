@@ -3,7 +3,6 @@ import { Badge } from '@/components/ui/badge';
 import { useRoomStore } from '@/stores/roomStore';
 import { cn } from '@/lib/utils';
 import { Sparkles, HardHat, Glasses, Gem, Palette } from 'lucide-react';
-// Removed avatarStore - using roomStore for all avatar state
 import { useStoreItems } from '@/contexts/StoreDataContext';
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
@@ -49,39 +48,23 @@ function AvatarCustomizerViewInner({
     hasCustomized: false
   };
   const [tempColors, setTempColors] = useState(() => avatarColors || defaultColors);
-  const [isChangingColors, setIsChangingColors] = useState(false);
   
-  // Debounce color changes to prevent rapid API calls
-  const colorChangeTimeoutRef = useRef<NodeJS.Timeout>();
+  // Sync tempColors when avatarColors changes (e.g., when customizer opens with saved colors)
+  useEffect(() => {
+    if (avatarColors) {
+      setTempColors(avatarColors);
+    }
+  }, [avatarColors]);
   
   const handleColorChange = (newColors: typeof tempColors) => {
     setTempColors(newColors);
-    setIsChangingColors(true);
     
     // Update room store's avatar colors immediately for instant visual feedback
     useRoomStore.getState().setAvatarColors({ ...newColors, hasCustomized: true });
     
-    // Clear any existing timeout
-    if (colorChangeTimeoutRef.current) {
-      clearTimeout(colorChangeTimeoutRef.current);
-    }
-    
-    // Set a new timeout to call onColorChange after 100ms of no changes (reduced from 500ms)
-    colorChangeTimeoutRef.current = setTimeout(() => {
-      onColorChange?.(newColors);
-      // Remove loading state after color change is processed
-      setTimeout(() => setIsChangingColors(false), 200);
-    }, 100);
+    // Call onColorChange immediately for instant feedback
+    onColorChange?.(newColors);
   };
-  
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (colorChangeTimeoutRef.current) {
-        clearTimeout(colorChangeTimeoutRef.current);
-      }
-    };
-  }, []);
 
   // Filter inventory for avatar items only
   const avatarItems = inventory.items.filter(item => 
@@ -105,8 +88,6 @@ function AvatarCustomizerViewInner({
     const currentItem = draftAvatar.equipped[slot as keyof typeof draftAvatar.equipped];
     updateDraftAvatar(slot, currentItem === itemId ? null : itemId);
   };
-
-  // Removed equip/remove handlers - now using auto-equip on click
 
   const getItemImage = (itemId: string) => {
     const storeItem = storeItems?.find(item => item.id === itemId);
