@@ -87,7 +87,7 @@ export default function StudentEntry() {
       >
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">Welcome to Classtopia</CardTitle>
+            <CardTitle className="text-2xl font-heading">Welcome to Classtopia</CardTitle>
             <CardDescription>
               Enter your passport code to login
             </CardDescription>
