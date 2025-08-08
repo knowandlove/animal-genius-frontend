@@ -716,22 +716,9 @@ export default function StudentRoom() {
                 whileHover={{ scale: storeStatus?.isOpen ? 1.1 : 1 }}
                 whileTap={{ scale: storeStatus?.isOpen ? 0.95 : 1 }}
                 onClick={() => {
-                  if (!storeStatus?.isOpen) return;
-                  
-                  const store = useRoomStore.getState();
-                  
-                  // Exit editing mode if active
-                  if (store.ui.editingMode) {
-                    store.closeInventory();
-                    useRoomStore.setState((state) => ({
-                      ui: {
-                        ...state.ui,
-                        editingMode: null,
-                        inventoryMode: null,
-                      },
-                    }));
-                  }
-                  setShowStore(true);
+                  // DEMO: Store temporarily disabled
+                  alert("🛍️ Store is temporarily unavailable!\n\nComing soon in the next update!");
+                  return;
                 }}
                 className={cn(
                   "w-12 h-12 sm:w-16 sm:h-16 rounded-full shadow-lg flex items-center justify-center transition-colors relative",
@@ -782,8 +769,8 @@ export default function StudentRoom() {
           )}
         </AnimatePresence>
 
-        {/* Store Modal - Only for owners */}
-        {canEdit && (
+        {/* Store Modal - DISABLED FOR DEMO */}
+        {/* {canEdit && (
           <StoreModal
             open={showStore}
             onOpenChange={setShowStore}
@@ -792,7 +779,7 @@ export default function StudentRoom() {
             availableBalance={wallet.total}
             onPurchaseClick={handlePurchaseClick}
           />
-        )}
+        )} */}
 
         {/* Purchase Confirmation Dialog - Only for owners */}
         {canEdit && (

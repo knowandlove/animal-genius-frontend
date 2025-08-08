@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import { apiRequest } from '@/lib/queryClient';
 import { storePassportCode, storeStudentData } from '@/lib/passport-auth';
 import { useToast } from '@/hooks/use-toast';
-import { Sprout, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 export default function StudentEntry() {
   const [passportCode, setPassportCode] = useState('');
@@ -87,17 +87,9 @@ export default function StudentEntry() {
       >
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <motion.div
-              initial={{ rotate: -10 }}
-              animate={{ rotate: 10 }}
-              transition={{ duration: 2, repeat: Infinity, repeatType: "reverse" }}
-              className="inline-block"
-            >
-              <Sprout className="w-16 h-16 text-green-600 mx-auto mb-2" />
-            </motion.div>
-            <CardTitle className="text-2xl font-bold">Welcome to Animal Genius!</CardTitle>
+            <CardTitle className="text-2xl font-bold">Welcome to Classtopia</CardTitle>
             <CardDescription>
-              Enter your passport code to visit your grow zone
+              Enter your passport code to login
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -133,10 +125,7 @@ export default function StudentEntry() {
                     Logging in...
                   </>
                 ) : (
-                  <>
-                    <Sprout className="mr-2 h-5 w-5" />
-                    Go to My Grow Zone
-                  </>
+                  'Login'
                 )}
               </Button>
             </form>

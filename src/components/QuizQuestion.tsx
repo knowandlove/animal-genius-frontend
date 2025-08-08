@@ -61,14 +61,14 @@ export default function QuizQuestion({
               {question.text}
             </h3>
             
-            {/* Audio Button */}
-            <Button
+            {/* Audio Button - TEMPORARILY DISABLED FOR DEMO */}
+            {/* <Button
               variant="secondary"
               onClick={handleSpeakQuestion}
               className="mb-6"
             >
               🔊 Listen to Question
-            </Button>
+            </Button> */}
           </div>
 
           {/* Answer Options */}

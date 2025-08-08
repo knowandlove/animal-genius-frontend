@@ -34,7 +34,7 @@ function AvatarCustomizerViewInner({
   const storeItems = useStoreItems(); // Get store items to access image URLs
   
   // State for current tab
-  const [activeTab, setActiveTab] = useState('hat');
+  const [activeTab, setActiveTab] = useState('colors');
   
   // State for hovered item
   const [showAutoSaveInfo, setShowAutoSaveInfo] = useState(false); // Disabled auto-save messages
@@ -224,6 +224,25 @@ function AvatarCustomizerViewInner({
           <Tooltip>
             <TooltipTrigger asChild>
               <button
+                onClick={() => setActiveTab('colors')}
+                className={cn(
+                  "flex items-center justify-center p-3 rounded-md relative transition-all",
+                  activeTab === 'colors' 
+                    ? "bg-gray-700 text-white shadow-md" 
+                    : "bg-transparent text-gray-600 hover:bg-gray-200"
+                )}
+              >
+                <Palette className="w-5 h-5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Colors - Customize your avatar colors</p>
+            </TooltipContent>
+          </Tooltip>
+          
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
                 onClick={() => setActiveTab('hat')}
                 className={cn(
                   "flex items-center justify-center p-3 rounded-md relative transition-all",
@@ -290,25 +309,6 @@ function AvatarCustomizerViewInner({
             </TooltipTrigger>
             <TooltipContent>
               <p>Accessories - Necklaces, bows, and other items</p>
-            </TooltipContent>
-          </Tooltip>
-          
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => setActiveTab('colors')}
-                className={cn(
-                  "flex items-center justify-center p-3 rounded-md relative transition-all",
-                  activeTab === 'colors' 
-                    ? "bg-gray-700 text-white shadow-md" 
-                    : "bg-transparent text-gray-600 hover:bg-gray-200"
-                )}
-              >
-                <Palette className="w-5 h-5" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Colors - Customize your avatar colors</p>
             </TooltipContent>
           </Tooltip>
         </div>

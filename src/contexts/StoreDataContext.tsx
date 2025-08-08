@@ -15,6 +15,7 @@ export const StoreDataContext = createContext<StoreDataContextType | undefined>(
 
 // Provider component that fetches data once at app level
 export function StoreDataProvider({ children }: { children: ReactNode }) {
+  // TEMPORARILY DISABLED FOR DEMO - Store queries commented out to prevent backend errors
   // Fetch store items from database
   const { 
     data: storeItems, 
@@ -25,6 +26,7 @@ export function StoreDataProvider({ children }: { children: ReactNode }) {
     queryFn: () => apiRequest('GET', '/api/store/catalog'),
     staleTime: 1000 * 60 * 10, // Cache for 10 minutes
     gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
+    enabled: false // DISABLED FOR DEMO
   });
 
   // Fetch item positions from database
@@ -39,7 +41,8 @@ export function StoreDataProvider({ children }: { children: ReactNode }) {
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes to reduce API calls
     gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
     refetchOnWindowFocus: true, // Refetch when window gains focus
-    refetchOnMount: false // Don't refetch on every mount to reduce API calls
+    refetchOnMount: false, // Don't refetch on every mount to reduce API calls
+    enabled: false // DISABLED FOR DEMO
   });
 
   useEffect(() => {

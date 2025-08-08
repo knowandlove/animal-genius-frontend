@@ -44,12 +44,37 @@ export default function StudentAchievements() {
       });
       
       // Transform the data into achievements format
-      const achievements = dashboardData.achievements || [];
-      const totalPoints = achievements.length * 10; // 10 points per achievement
-      const earnedPoints = achievements.filter((a: Achievement) => a.earned).length * 10;
+      const originalAchievements = dashboardData.achievements || [];
+      
+      // Keep only first 2 achievements and modify Quiz Champion
+      const visibleAchievements = originalAchievements.slice(0, 2).map((achievement: Achievement) => {
+        if (achievement.name === 'Quiz Champion') {
+          return {
+            ...achievement,
+            name: 'Animal Genius',
+            description: 'You discovered your Animal Genius!'
+          };
+        }
+        return achievement;
+      });
+      
+      // Add 4 placeholder achievements
+      for (let i = 0; i < 4; i++) {
+        visibleAchievements.push({
+          id: `placeholder-${i}`,
+          name: '',
+          icon: '🔒',
+          description: '',
+          earned: false,
+          category: 'placeholder'
+        });
+      }
+      
+      const totalPoints = visibleAchievements.length * 10;
+      const earnedPoints = visibleAchievements.filter((a: Achievement) => a.earned).length * 10;
       
       return {
-        achievements,
+        achievements: visibleAchievements,
         totalPoints,
         earnedPoints,
       };
@@ -134,29 +159,7 @@ export default function StudentAchievements() {
           <Card className="mb-8">
             <CardHeader>
               <CardTitle className="text-2xl">Your Achievement Progress</CardTitle>
-              <CardDescription>
-                You've earned {earnedCount} out of {totalCount} achievements!
-              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>{earnedCount} Earned</span>
-                  <span>{totalCount - earnedCount} Remaining</span>
-                </div>
-                <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-gradient-to-r from-yellow-400 to-orange-500"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progressPercentage}%` }}
-                    transition={{ duration: 1, delay: 0.5 }}
-                  />
-                </div>
-                <div className="text-center text-lg font-semibold mt-4">
-                  {Math.round(progressPercentage)}% Complete
-                </div>
-              </div>
-            </CardContent>
           </Card>
         </motion.div>
 

@@ -43,12 +43,12 @@ const animalEmojis: Record<string, string> = {
 
 // Default achievement icons for fallback display
 const defaultAchievements = [
-  { id: 'quiz_complete', name: 'Quiz Champion', icon: '🌟' },
+  { id: 'quiz_complete', name: 'Animal Genius', icon: '🌟' },
   { id: 'first_login', name: 'First Login', icon: '🎯' },
-  { id: 'garden_cultivator', name: 'Garden Cultivator', icon: '🌱' },
-  { id: 'social_butterfly', name: 'Social Butterfly', icon: '🏅' },
-  { id: 'knowledge_seeker', name: 'Knowledge Seeker', icon: '🎪' },
-  { id: 'leader', name: 'Leader', icon: '🚀' },
+  { id: 'placeholder_1', name: '', icon: '🔒' },
+  { id: 'placeholder_2', name: '', icon: '🔒' },
+  { id: 'placeholder_3', name: '', icon: '🔒' },
+  { id: 'placeholder_4', name: '', icon: '🔒' },
 ];
 
 interface DashboardData {
@@ -122,11 +122,42 @@ export default function StudentDashboard() {
   const { data, isLoading, error, refetch } = useQuery<DashboardData>({
     queryKey: ['/api/student-passport/dashboard', passportCode],
     queryFn: async () => {
-      return apiRequest('GET', '/api/student-passport/dashboard', undefined, {
+      const dashboardData = await apiRequest('GET', '/api/student-passport/dashboard', undefined, {
         headers: {
           'X-Passport-Code': passportCode || '',
         },
       });
+      
+      // Transform achievements data to match the new format
+      if (dashboardData.achievements) {
+        // Keep only first 2 achievements and modify Quiz Champion
+        const visibleAchievements = dashboardData.achievements.slice(0, 2).map((achievement: any) => {
+          if (achievement.name === 'Quiz Champion') {
+            return {
+              ...achievement,
+              name: 'Animal Genius',
+              description: 'You discovered your Animal Genius!'
+            };
+          }
+          return achievement;
+        });
+        
+        // Add 4 placeholder achievements
+        for (let i = 0; i < 4; i++) {
+          visibleAchievements.push({
+            id: `placeholder-${i}`,
+            name: '',
+            icon: '🔒',
+            description: '',
+            earned: false,
+            category: 'placeholder'
+          });
+        }
+        
+        dashboardData.achievements = visibleAchievements;
+      }
+      
+      return dashboardData;
     },
     enabled: !!passportCode
   });
@@ -193,8 +224,31 @@ export default function StudentDashboard() {
   };
 
 
+  const getAnimalResultUrl = (animalType: string) => {
+    // Convert animal type to URL format
+    const animalUrlMap: Record<string, string> = {
+      'Meerkat': 'meerkat-result',
+      'Panda': 'panda-result',
+      'Owl': 'owl-result',
+      'Beaver': 'beaver-result',
+      'Elephant': 'elephant-result',
+      'Otter': 'otter-result',
+      'Parrot': 'parrot-result',
+      'Border Collie': 'border-collie-result'
+    };
+    
+    return `https://knowandlove.com/${animalUrlMap[animalType] || 'panda-result'}`;
+  };
+
   const handleNavigateToQuizResults = () => {
-    setLocation('/student/quiz-results');
+    const animalType = data?.student?.animalType;
+    if (animalType) {
+      const resultUrl = getAnimalResultUrl(animalType);
+      window.open(resultUrl, '_blank');
+    } else {
+      // Fallback to internal page if no animal type found
+      setLocation('/student/quiz-results');
+    }
   };
 
   const handleNavigateToAchievements = () => {
@@ -469,33 +523,11 @@ export default function StudentDashboard() {
 
               {/* Action Cards - Now just Store and Quiz Results */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Island Store Card */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <Card 
-                    className="cursor-pointer hover:shadow-xl transition-all bg-white/90 backdrop-blur border-0 h-full"
-                    onClick={() => setShowStore(true)}
-                  >
-                    <CardHeader className="text-center p-6">
-                      <div className="w-24 h-24 bg-gradient-to-br from-purple-400 to-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <Sparkles className="w-12 h-12 text-white" />
-                      </div>
-                      <CardTitle className="text-lg font-semibold">Island Store</CardTitle>
-                      <CardDescription className="text-xs mt-2">
-                        Shop for cool items and decorations!
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
-                </motion.div>
-
                 {/* My Quiz Results Card */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
+                  transition={{ delay: 0.1 }}
                 >
                   <Card 
                     className="cursor-pointer hover:shadow-xl transition-all bg-white/90 backdrop-blur border-0 h-full"
@@ -510,6 +542,31 @@ export default function StudentDashboard() {
                         View your personality type and learning style!
                       </CardDescription>
                     </CardHeader>
+                  </Card>
+                </motion.div>
+
+                {/* Island Store Card */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <Card className="relative bg-white/90 backdrop-blur border-0 h-full opacity-60">
+                    <CardHeader className="text-center p-6">
+                      <div className="w-24 h-24 bg-gradient-to-br from-gray-400 to-gray-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <Sparkles className="w-12 h-12 text-white opacity-50" />
+                      </div>
+                      <CardTitle className="text-lg font-semibold text-gray-500">Island Store</CardTitle>
+                      <CardDescription className="text-xs mt-2 text-gray-400">
+                        Shop for cool items!
+                      </CardDescription>
+                    </CardHeader>
+                    {/* Coming Soon Overlay */}
+                    <div className="absolute inset-0 bg-black/10 rounded-lg flex items-center justify-center">
+                      <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold px-4 py-2 rounded-full text-sm shadow-xl animate-pulse">
+                        ✨ COMING SOON ✨
+                      </div>
+                    </div>
                   </Card>
                 </motion.div>
               </div>

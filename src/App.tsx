@@ -10,6 +10,7 @@ import { preloadRiveRuntime } from "@/utils/rive-runtime-loader";
 
 // Lazy load all page components
 const Landing = lazy(() => import("@/pages/Landing"));
+const RoleSelectorLanding = lazy(() => import("@/pages/RoleSelectorLanding"));
 const TeacherLogin = lazy(() => import("@/pages/teacher-login"));
 const TeacherRegistration = lazy(() => import("@/pages/teacher-registration"));
 const ResetPassword = lazy(() => import("@/pages/reset-password"));
@@ -186,13 +187,14 @@ function Router() {
         
         {/* Authentication routes - always available */}
         <Route path="/register" component={TeacherRegistration} />
-        <Route path="/login" component={TeacherLogin} />
+        <Route path="/login" component={Landing} />
+        <Route path="/teacher-login" component={TeacherLogin} />
         <Route path="/reset-password" component={ResetPassword} />
         
         {/* Protected teacher routes - only when authenticated */}
         {token ? (
           <>
-            <Route path="/" component={TeacherDashboard} />
+            <Route path="/" component={RoleSelectorLanding} />
             <Route path="/dashboard" component={TeacherDashboard} />
             <Route path="/account" component={Account} />
             <Route path="/create-class" component={CreateClass} />
@@ -236,8 +238,8 @@ function Router() {
           </>
         ) : (
           <>
-            {/* Redirect protected routes to login when not authenticated */}
-            <Route path="/" component={Landing} />
+            {/* Show role selector landing when not authenticated */}
+            <Route path="/" component={RoleSelectorLanding} />
             <Route path="/dashboard" component={RedirectToLogin} />
             <Route path="/account" component={RedirectToLogin} />
             <Route path="/create-class" component={RedirectToLogin} />
