@@ -34,22 +34,25 @@ export function ServerAvatar({
   const baseUrl = import.meta.env.VITE_API_URL || 
     (window.location.hostname === 'localhost' ? 'http://localhost:5001' : 'https://animal-genius-backend.onrender.com');
   
-  // Build URL with all parameters - add a cache buster based on the colors themselves
+  // Build URL with all parameters - add a timestamp cache buster for production debugging
   const params = new URLSearchParams({
     primary: primaryColor,
     secondary: secondaryColor,
     ...(equippedItems.length && { items: equippedItems.join(',') }),
-    // Use a hash of the colors as cache buster to ensure updates
-    cb: `${primaryColor.replace('#', '')}-${secondaryColor.replace('#', '')}`
+    // Add timestamp cache buster to force fresh load in production
+    t: Date.now().toString()
   });
   
   const svgUrl = `${baseUrl}/api/avatar/${animalType}?${params}`;
   
-  // Debug: Log URL changes
-  console.log('ServerAvatar URL params:', {
+  // Debug: Log URL changes and environment
+  console.log('ServerAvatar Debug:', {
     animalType,
     primaryColor,
     secondaryColor,
+    baseUrl,
+    envUrl: import.meta.env.VITE_API_URL,
+    hostname: window.location.hostname,
     fullUrl: svgUrl
   });
   const fallbackUrl = `/avatars/animals/${animalType.toLowerCase().replace(/\s+/g, '_').replace(/-/g, '_')}.png`;
@@ -101,8 +104,14 @@ export function ServerAvatar({
           transition: 'opacity 0.2s ease-in-out'
         }}
         onClick={onClick}
-        onLoad={() => setImageLoaded(true)}
-        onError={() => setImageError(true)}
+        onLoad={() => {
+          console.log('ServerAvatar loaded successfully:', svgUrl);
+          setImageLoaded(true);
+        }}
+        onError={(e) => {
+          console.error('ServerAvatar failed to load:', svgUrl, e);
+          setImageError(true);
+        }}
       />
     </div>
   );
