@@ -12,12 +12,13 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { submitQuiz, checkQuizEligibility } from '@/lib/edge-functions/client';
 import { storePassportCode, storeStudentData } from '@/lib/passport-auth';
 import { Link } from 'wouter';
-// Removed icon imports to optimize build performance
+import { FileText, Home } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { QuizProgressTimeline } from '@/components/quiz-progress-timeline';
 import { KalCharacter } from '@/components/KalCharacter';
 import { LoadingSpinner } from '@/components/loading-spinner';
 import { ANIMAL_TYPES } from '@/lib/animals';
+import { ServerAvatar } from '@/components/avatar/ServerAvatar';
 
 interface ClassInfo {
   id: number;
@@ -592,14 +593,21 @@ export default function StudentQuiz() {
     // Use the backend animal type if available (from submission response), otherwise fall back to frontend
     const animalType = submissionData?.animalType || results.animal;
     
-    // Map correct animal emojis for your 8 animals
-    const animal = ANIMAL_TYPES[animalType.toLowerCase()] || {
-      name: animalType,
-      imagePath: null, // Don't use a fallback image
-      description: `You have the personality traits of a ${animalType}!`,
-      traits: [],
-      emoji: '🐾'
+    // Map animal names to their file names for Supabase storage
+    const animalFileMap: Record<string, string> = {
+      'meerkat': 'meerkat',
+      'panda': 'panda', 
+      'owl': 'owl',
+      'beaver': 'beaver',
+      'elephant': 'elephant',
+      'otter': 'otter',
+      'parrot': 'parrot',
+      'border collie': 'border_collie',
+      'collie': 'border_collie'  // Handle both variations
     };
+    
+    const animalFileName = animalFileMap[animalType.toLowerCase()] || animalType.toLowerCase();
+    const animalHeadUrl = `https://zqyvfnbwpagguutzdvpy.supabase.co/storage/v1/object/public/public-assets/animals/head_icons/${animalFileName}.png`;
     
     return (
       <div className="max-w-4xl mx-auto p-6 min-h-screen" style={{
@@ -612,80 +620,81 @@ export default function StudentQuiz() {
             animate={{ scale: 1 }}
             transition={{ type: "spring", duration: 0.5 }}
           >
-            <div className="mb-4 flex justify-center">
-              {animal.imagePath ? (
-                <img 
-                  src={animal.imagePath} 
-                  alt={animal.name}
-                  className="w-24 h-24 object-contain"
-                  onError={(e) => {
-                    // Hide image if it fails to load
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-4xl font-bold">
-                  {animalType.charAt(0).toUpperCase()}
-                </div>
+            {/* Large animal head icon from Supabase - no circle */}
+            <div className="mb-8 flex justify-center">
+              <img
+                src={animalHeadUrl}
+                alt={`${animalType} head`}
+                className="w-56 h-56 object-contain drop-shadow-xl"
+                onError={(e) => {
+                  // Fallback if image fails - show large letter
+                  const imgElement = e.target as HTMLImageElement;
+                  const container = imgElement.parentElement;
+                  if (container) {
+                    container.innerHTML = `<div class="w-56 h-56 flex items-center justify-center"><span class="text-8xl font-bold text-primary">${animalType.charAt(0).toUpperCase()}</span></div>`;
+                  }
+                }}
+              />
+            </div>
+            
+            {/* Main message - smaller intro text, bigger animal name */}
+            <h1 className="font-heading text-foreground mb-8">
+              <span className="text-xl block mb-2">We think you're a...</span>
+              <span className="text-6xl font-bold block text-primary">{animalType.toUpperCase()}!</span>
+            </h1>
+            
+            {/* Action buttons container - stacked with colorful styles */}
+            <div className="space-y-4 mb-8 max-w-sm mx-auto">
+              {/* Read full results button - primary action */}
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="w-full py-5 px-6 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold text-lg rounded-2xl shadow-lg hover:shadow-xl hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 flex items-center justify-center gap-3"
+                onClick={() => {
+                  // Redirect to external knowandlove.com with the animal result
+                  const externalUrl = `https://knowandlove.com/${animalType.toLowerCase().replace(/\s+/g, '-')}-result`;
+                  window.open(externalUrl, '_blank');
+                }}
+              >
+                <FileText className="w-5 h-5" />
+                <span>Read My Full Results</span>
+              </motion.button>
+              
+              {/* Go to dashboard button - secondary action */}
+              {submissionData?.passportCode && (
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="w-full py-5 px-6 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold text-lg rounded-2xl shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-cyan-600 transition-all duration-200 flex items-center justify-center gap-3"
+                  onClick={() => setLocation('/student/dashboard')}
+                >
+                  <Home className="w-5 h-5" />
+                  <span>Go to My Dashboard</span>
+                </motion.button>
               )}
             </div>
-            <h1 className="text-4xl font-heading text-foreground mb-2">You're a {animalType}!</h1>
-            <p className="text-xl font-body text-muted-foreground mb-4">{animal.traits}</p>
-            <p className="text-lg font-body mb-6">{animal.description}</p>
             
-            {/* Show passport code if already received */}
+            {/* Passport code box with better styling */}
             {submissionData?.passportCode && (
-              <div className="bg-green-100 border-2 border-green-300 rounded-lg p-4 mb-6">
-                <h3 className="font-semibold text-green-800 mb-2">Your Passport Code:</h3>
-                <div className="text-3xl font-mono font-bold text-green-900">
-                  {submissionData.passportCode}
-                </div>
-                <p className="text-sm text-green-700 mt-2">
-                  Save this code! You'll need it to visit your room.
-                </p>
-                <Button 
-                  onClick={() => setLocation('/student/dashboard')}
-                  className="mt-3 bg-green-600 hover:bg-green-700"
-                >
-                  🎯 Go to Your Dashboard
-                </Button>
-              </div>
-            )}
-            
-            <div className="bg-muted rounded-lg p-4 mb-6">
-              <h3 className="font-subheading text-foreground mb-2">Your Personality Type: {results.mbtiType}</h3>
-              <div className="grid grid-cols-2 gap-2 text-sm font-body">
-                <div>Extroversion: {results.scores.E} | Introversion: {results.scores.I}</div>
-                <div>Sensing: {results.scores.S} | Intuition: {results.scores.N}</div>
-                <div>Thinking: {results.scores.T} | Feeling: {results.scores.F}</div>
-                <div>Judging: {results.scores.J} | Perceiving: {results.scores.P}</div>
-              </div>
-            </div>
-            
-            {results.learningStyle && (
-              <div className="bg-mint border border-dark-mint rounded-lg p-4 mb-4">
-                <p className="text-sm font-body text-foreground">
-                  <strong>Learning Style:</strong> {results.learningStyle === 'readingWriting' ? 'Reading/Writing' : 
-                    results.learningStyle.charAt(0).toUpperCase() + results.learningStyle.slice(1)}
-                </p>
-              </div>
-            )}
-            
-            <div className="flex gap-4 justify-center">
-              <Button onClick={() => window.print()}>
-                Print My Results
-              </Button>
-              <Button 
-                onClick={handleSubmitResults}
-                disabled={submitResultsMutation.isPending || hasSubmitted}
-                variant={hasSubmitted ? "secondary" : "default"}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-orange-200 rounded-2xl p-6 max-w-md mx-auto shadow-md"
               >
-                {submitResultsMutation.isPending ? 'Saving...' : hasSubmitted ? 'Results Saved' : 'Save My Results'}
-              </Button>
-              <Button variant="outline" onClick={resetQuiz}>
-                Take Quiz Again
-              </Button>
-            </div>
+                <h3 className="font-bold text-orange-800 mb-3 text-lg">
+                  Your Passport Code
+                </h3>
+                <div className="bg-white rounded-xl px-4 py-3 shadow-inner">
+                  <div className="text-3xl font-mono font-bold text-orange-600 tracking-wider">
+                    {submissionData.passportCode}
+                  </div>
+                </div>
+                <p className="text-sm text-orange-700 mt-3 font-medium">
+                  Save this code! You'll need it to log back in.
+                </p>
+              </motion.div>
+            )}
           </motion.div>
         </Card>
       </div>
@@ -797,13 +806,14 @@ export default function StudentQuiz() {
               <span className="ml-2 text-xs opacity-70">(Enter)</span>
             </Button>
             
-            <Button
+            {/* Audio Button - TEMPORARILY DISABLED FOR DEMO */}
+            {/* <Button
               variant="outline"
               onClick={playAudio}
               className="px-6 py-2 flex items-center gap-2"
             >
               🔊 Listen to Question
-            </Button>
+            </Button> */}
           </div>
           
           <div className="mt-4 text-center text-sm text-muted-foreground">
