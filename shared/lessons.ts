@@ -40,10 +40,10 @@ export const lessons: Lesson[] = [
     duration: "30-60 minutes",
     description: "Students take the interactive Animal Genius Quiz and begin their journey of self-discovery, Teachers gain insights into class dynamics.",
     objectives: [
-      "Complete the Animal Genius Personality Quiz®",
-      "Discover their personality animal",
-      "Begin to understand personality differences",
-      "Create visual representations of their animal identity"
+      "Complete the Animal Genius Quiz®.",
+      "Discover their Animal Genius.",
+      "Personalize their table tent.",
+      "Reflect on their Animal Genius Results."
     ],
     materialsNeeded: [
       "Computers/tablets for quiz access",
@@ -66,17 +66,17 @@ export const lessons: Lesson[] = [
         title: "Take the Animal Genius Quiz®",
         steps: [
           {
-            instruction: "Play Student-facing video"
+            instruction: "Play Student-facing video."
           },
           {
-            instruction: "Students take the Animal Genius Quiz® individually (15-20 min)",
+            instruction: "Students take the Animal Genius Quiz® individually (10-12 minutes).",
             tips: [
               "Project 'Live View' so students can see the results coming in live",
               "Remind students: there are no wrong answers, just be honest about their answers. Do not answer based on what their parents, friends or teacher would want them to say"
             ]
           },
           {
-            instruction: "Students receive their animal type + results description"
+            instruction: "Students receive their animal type + results description."
           },
           {
             instruction: "Prompt students to read and reflect",
@@ -92,7 +92,7 @@ export const lessons: Lesson[] = [
         title: "Decorate Table Tents",
         steps: [
           {
-            instruction: "Pass out Table Tent templates"
+            instruction: "Pass out Table Tent templates."
           },
           {
             instruction: "Offer supplies: markers, colored pencils, crayons, etc.",
@@ -101,10 +101,10 @@ export const lessons: Lesson[] = [
             ]
           },
           {
-            instruction: "Let students decorate their Table Tents"
+            instruction: "Let students decorate their Table Tents."
           },
           {
-            instruction: "Optional: Do a classroom gallery walk or table group discussions"
+            instruction: "Optional: Do a classroom gallery walk or table group discussions."
           }
         ]
       },
@@ -113,12 +113,12 @@ export const lessons: Lesson[] = [
         optional: true,
         steps: [
           {
-            instruction: "Hand out the 'Knowing and Loving, Me!' worksheet"
+            instruction: "Hand out the 'Knowing and Loving, Me!' worksheet."
           },
           {
             instruction: "Invite students to thoughtfully respond to the prompts, using insights from their Animal Genius Quiz® results",
             tips: [
-              "If you'd prefer a printed version of each Animal Genius animal profile for students to reference while they work, downloadable PDFs are available in the Resource tab"
+              "If you'd prefer a printed hand-out of each Animal Genius result for students to read and reference while they work, downloadable PDF's are available in the resource tab."
             ]
           }
         ]
@@ -128,16 +128,13 @@ export const lessons: Lesson[] = [
         optional: true,
         steps: [
           {
-            instruction: "Send home a Parent Letter introducing the Animal Genius Quiz® and explaining how it supports self-awareness and classroom culture",
-            tips: [
-              "Objective: extend self-awareness into the home by exploring family personality dynamics in a fun and inclusive way"
-            ]
+            instruction: "Send home a Parent Letter introducing the Animal Genius Quiz® and explaining how it supports self-awareness and classroom culture."
           },
           {
-            instruction: "Include the 'Who's in My Family Zoo?' worksheet for students to complete with their family"
+            instruction: "Include the 'Who's in My Family Zoo?' worksheet for students to complete with their family."
           },
           {
-            instruction: "Students return and share one insight or reflection from their family discussion"
+            instruction: "Students return and share one insight or reflection from their family discussion."
           }
         ]
       }

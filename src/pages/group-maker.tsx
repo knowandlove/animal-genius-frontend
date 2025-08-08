@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Shuffle, Users, Printer, RotateCcw, Download, Grid3X3, Square, Rows, Move } from "lucide-react";
 import { calculateResults } from "@shared/scoring";
 import { AuthenticatedLayout } from "@/components/layouts/AuthenticatedLayout";
+import { API_URL } from "@/config/api";
 
 // Helper function to get animal image path
 function getAnimalImagePath(animalType: string): string {
@@ -103,7 +104,7 @@ export default function GroupMaker() {
     queryKey: ["/api/classes"],
     queryFn: async () => {
       const token = localStorage.getItem("authToken");
-      const response = await fetch("/api/classes", {
+      const response = await fetch(`${API_URL}/api/classes`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error("Failed to fetch classes");
@@ -117,7 +118,7 @@ export default function GroupMaker() {
     queryKey: ["/api/classes", selectedClassId, "analytics"],
     queryFn: async () => {
       const token = localStorage.getItem("authToken");
-      const response = await fetch(`/api/classes/${selectedClassId}/analytics`, {
+      const response = await fetch(`${API_URL}/api/classes/${selectedClassId}/analytics`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error("Failed to fetch students");
