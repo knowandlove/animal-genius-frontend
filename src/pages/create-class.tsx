@@ -209,7 +209,7 @@ export default function CreateClass() {
                     Go to Class Dashboard
                   </Button>
                   <Button 
-                    onClick={() => setLocation(`/classes/${createdClass.id}/live`)} 
+                    onClick={() => window.open(`/classes/${createdClass.id}/live`, '_blank')} 
                     variant="outline" 
                     className="flex-1"
                   >
