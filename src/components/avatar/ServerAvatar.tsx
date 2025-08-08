@@ -42,6 +42,11 @@ export function ServerAvatar({
   
   const svgUrl = `${baseUrl}/api/avatar/${animalType}?${params}`;
   
+  // One-time debug log on mount only
+  useEffect(() => {
+    console.log('Avatar URL:', svgUrl, 'Base:', baseUrl, 'Env:', import.meta.env.VITE_API_URL);
+  }, []); // Empty deps = only on mount
+  
   const fallbackUrl = `/avatars/animals/${animalType.toLowerCase().replace(/\s+/g, '_').replace(/-/g, '_')}.png`;
   
   // Reset loaded and error state when URL changes
