@@ -34,13 +34,11 @@ export function ServerAvatar({
   const baseUrl = import.meta.env.VITE_API_URL || 
     (window.location.hostname === 'localhost' ? 'http://localhost:5001' : 'https://animal-genius-backend.onrender.com');
   
-  // Build URL with all parameters - add a timestamp cache buster for production debugging
+  // Build URL with all parameters
   const params = new URLSearchParams({
     primary: primaryColor,
     secondary: secondaryColor,
-    ...(equippedItems.length && { items: equippedItems.join(',') }),
-    // Add timestamp cache buster to force fresh load in production
-    t: Date.now().toString()
+    ...(equippedItems.length && { items: equippedItems.join(',') })
   });
   
   const svgUrl = `${baseUrl}/api/avatar/${animalType}?${params}`;
