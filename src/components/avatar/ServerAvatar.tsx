@@ -30,8 +30,9 @@ export function ServerAvatar({
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   
-  // Use backend URL from environment or default to localhost
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+  // Use backend URL from environment with production fallback
+  const baseUrl = import.meta.env.VITE_API_URL || 
+    (window.location.hostname === 'localhost' ? 'http://localhost:5001' : 'https://animal-genius-backend.onrender.com');
   
   // Build URL with all parameters - add a cache buster based on the colors themselves
   const params = new URLSearchParams({
