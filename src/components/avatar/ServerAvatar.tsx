@@ -30,9 +30,8 @@ export function ServerAvatar({
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   
-  // Use backend URL from environment with production fallback
-  const baseUrl = import.meta.env.VITE_API_URL || 
-    (window.location.hostname === 'localhost' ? 'http://localhost:5001' : 'https://animal-genius-backend.onrender.com');
+  // Use backend URL from environment or default to localhost
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
   
   // Build URL with all parameters
   const params = new URLSearchParams({
@@ -43,21 +42,10 @@ export function ServerAvatar({
   
   const svgUrl = `${baseUrl}/api/avatar/${animalType}?${params}`;
   
-  // Debug: Log URL changes and environment
-  console.log('ServerAvatar Debug:', {
-    animalType,
-    primaryColor,
-    secondaryColor,
-    baseUrl,
-    envUrl: import.meta.env.VITE_API_URL,
-    hostname: window.location.hostname,
-    fullUrl: svgUrl
-  });
   const fallbackUrl = `/avatars/animals/${animalType.toLowerCase().replace(/\s+/g, '_').replace(/-/g, '_')}.png`;
   
   // Reset loaded and error state when URL changes
   useEffect(() => {
-    console.log('ServerAvatar URL changed, resetting state:', svgUrl);
     setImageLoaded(false);
     setImageError(false); // Reset error state to retry loading
   }, [svgUrl]);
@@ -102,14 +90,8 @@ export function ServerAvatar({
           transition: 'opacity 0.2s ease-in-out'
         }}
         onClick={onClick}
-        onLoad={() => {
-          console.log('ServerAvatar loaded successfully:', svgUrl);
-          setImageLoaded(true);
-        }}
-        onError={(e) => {
-          console.error('ServerAvatar failed to load:', svgUrl, e);
-          setImageError(true);
-        }}
+        onLoad={() => setImageLoaded(true)}
+        onError={() => setImageError(true)}
       />
     </div>
   );
